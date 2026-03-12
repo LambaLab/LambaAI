@@ -5,6 +5,7 @@ import {
   tightenPriceRange,
   getConfidenceLabel,
   isPricingVisible,
+  formatPriceRange,
 } from '../engine'
 
 describe('calculatePriceRange', () => {
@@ -107,5 +108,19 @@ describe('isPricingVisible', () => {
   it('returns true at and above 30%', () => {
     expect(isPricingVisible(30)).toBe(true)
     expect(isPricingVisible(75)).toBe(true)
+  })
+})
+
+describe('formatPriceRange', () => {
+  it('formats clean thousand values without decimal', () => {
+    expect(formatPriceRange({ min: 2000, max: 5000 })).toBe('$2k–$5k')
+  })
+
+  it('formats non-round values with one decimal', () => {
+    expect(formatPriceRange({ min: 1500, max: 3500 })).toBe('$1.5k–$3.5k')
+  })
+
+  it('formats sub-$1000 values as plain dollars', () => {
+    expect(formatPriceRange({ min: 500, max: 900 })).toBe('$500–$900')
   })
 })

@@ -47,7 +47,8 @@ export function isPricingVisible(score: number): boolean {
 }
 
 export function formatPriceRange(range: PriceRange): string {
+  // Use one decimal place and strip trailing .0 (e.g. 1500 → "$1.5k", 2000 → "$2k")
   const fmt = (n: number) =>
-    n >= 1000 ? `$${(n / 1000).toFixed(0)}k` : `$${n}`
+    n >= 1000 ? `$${(n / 1000).toFixed(1).replace(/\.0$/, '')}k` : `$${n}`
   return `${fmt(range.min)}–${fmt(range.max)}`
 }
