@@ -1,0 +1,133 @@
+export type Module = {
+  id: string
+  name: string
+  description: string
+  category: 'core' | 'payments' | 'communication' | 'ai' | 'storage' | 'admin'
+  priceMin: number  // USD
+  priceMax: number  // USD
+  estimatedWeeks: [number, number]  // [min, max]
+  icon: string  // lucide icon name
+}
+
+export const MODULE_CATALOG: Module[] = [
+  {
+    id: 'auth',
+    name: 'Authentication',
+    description: 'User sign-up, login, session management, password reset',
+    category: 'core',
+    priceMin: 1500,
+    priceMax: 3000,
+    estimatedWeeks: [1, 2],
+    icon: 'Shield',
+  },
+  {
+    id: 'database',
+    name: 'Database & API',
+    description: 'Core data models, REST/GraphQL API, CRUD operations',
+    category: 'core',
+    priceMin: 2000,
+    priceMax: 5000,
+    estimatedWeeks: [2, 4],
+    icon: 'Database',
+  },
+  {
+    id: 'web_app',
+    name: 'Web App',
+    description: 'Responsive web interface, navigation, core UI components',
+    category: 'core',
+    priceMin: 3000,
+    priceMax: 7000,
+    estimatedWeeks: [2, 5],
+    icon: 'Monitor',
+  },
+  {
+    id: 'mobile_app',
+    name: 'Mobile App',
+    description: 'iOS and Android app (React Native or PWA)',
+    category: 'core',
+    priceMin: 5000,
+    priceMax: 12000,
+    estimatedWeeks: [4, 8],
+    icon: 'Smartphone',
+  },
+  {
+    id: 'payments',
+    name: 'Payments',
+    description: 'Stripe integration, subscriptions, invoices, payment history',
+    category: 'payments',
+    priceMin: 2000,
+    priceMax: 4000,
+    estimatedWeeks: [1, 3],
+    icon: 'CreditCard',
+  },
+  {
+    id: 'messaging',
+    name: 'Messaging / Chat',
+    description: 'Real-time in-app messaging, notifications, chat history',
+    category: 'communication',
+    priceMin: 2500,
+    priceMax: 5000,
+    estimatedWeeks: [2, 4],
+    icon: 'MessageSquare',
+  },
+  {
+    id: 'admin_dashboard',
+    name: 'Admin Dashboard',
+    description: 'Internal management UI, user/data management, analytics',
+    category: 'admin',
+    priceMin: 2000,
+    priceMax: 5000,
+    estimatedWeeks: [2, 4],
+    icon: 'LayoutDashboard',
+  },
+  {
+    id: 'ai_features',
+    name: 'AI Features',
+    description: 'AI-powered features: chat, recommendations, content generation, analysis',
+    category: 'ai',
+    priceMin: 3000,
+    priceMax: 8000,
+    estimatedWeeks: [2, 5],
+    icon: 'Sparkles',
+  },
+  {
+    id: 'file_uploads',
+    name: 'File Uploads',
+    description: 'File/image upload, storage (S3/CDN), processing, previews',
+    category: 'storage',
+    priceMin: 1000,
+    priceMax: 2500,
+    estimatedWeeks: [1, 2],
+    icon: 'Upload',
+  },
+  {
+    id: 'notifications',
+    name: 'Notifications',
+    description: 'Email, push, and in-app notifications with templates',
+    category: 'communication',
+    priceMin: 1000,
+    priceMax: 2500,
+    estimatedWeeks: [1, 2],
+    icon: 'Bell',
+  },
+  {
+    id: 'search',
+    name: 'Search',
+    description: 'Full-text search, filters, faceted navigation',
+    category: 'core',
+    priceMin: 1500,
+    priceMax: 3500,
+    estimatedWeeks: [1, 3],
+    icon: 'Search',
+  },
+  {
+    id: 'analytics',
+    name: 'Analytics',
+    description: 'Usage tracking, dashboards, reporting, data export',
+    category: 'admin',
+    priceMin: 1500,
+    priceMax: 4000,
+    estimatedWeeks: [1, 3],
+    icon: 'BarChart3',
+  },
+]
