@@ -41,9 +41,13 @@ describe('applyComplexityAdjustment', () => {
     expect(result.max).toBe(16000)
   })
 
-  it('clamps multiplier between 0.5 and 2.0', () => {
+  it('clamps multiplier at 2.0 maximum', () => {
     const base = { min: 10000, max: 20000 }
     expect(applyComplexityAdjustment(base, 3.0).max).toBe(40000) // clamped to 2.0
+  })
+
+  it('clamps multiplier at 0.5 minimum', () => {
+    const base = { min: 10000, max: 20000 }
     expect(applyComplexityAdjustment(base, 0.1).min).toBe(5000) // clamped to 0.5
   })
 })
@@ -73,10 +77,23 @@ describe('tightenPriceRange', () => {
 })
 
 describe('getConfidenceLabel', () => {
-  it('maps score ranges to labels', () => {
+  it('returns Low for scores below 30', () => {
     expect(getConfidenceLabel(10)).toBe('Low')
+    expect(getConfidenceLabel(0)).toBe('Low')
+  })
+
+  it('returns Fair for scores 30–54', () => {
+    expect(getConfidenceLabel(30)).toBe('Fair')
     expect(getConfidenceLabel(45)).toBe('Fair')
+  })
+
+  it('returns Good for scores 55–74', () => {
+    expect(getConfidenceLabel(55)).toBe('Good')
     expect(getConfidenceLabel(65)).toBe('Good')
+  })
+
+  it('returns High for scores 75+', () => {
+    expect(getConfidenceLabel(75)).toBe('High')
     expect(getConfidenceLabel(85)).toBe('High')
   })
 })
