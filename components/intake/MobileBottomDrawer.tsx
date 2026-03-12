@@ -38,9 +38,9 @@ export default function MobileBottomDrawer({ summary, activeModules, confidenceS
         >
           <span className="text-brand-gray-mid">{summary}</span>
           {open ? (
-            <ChevronDown className="w-4 h-4 text-brand-gray-mid" />
-          ) : (
             <ChevronUp className="w-4 h-4 text-brand-gray-mid" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-brand-gray-mid" />
           )}
         </button>
 

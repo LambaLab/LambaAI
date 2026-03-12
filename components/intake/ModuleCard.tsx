@@ -1,3 +1,5 @@
+'use client'
+
 import { getModuleById, validateModuleRemoval } from '@/lib/modules/dependencies'
 import * as Icons from 'lucide-react'
 import { X, Plus } from 'lucide-react'
@@ -18,20 +20,17 @@ export default function ModuleCard({ moduleId, isActive, activeModules, onToggle
 
   const IconComponent = (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[mod.icon] ?? Icons.Box
 
-  function handleClick() {
-    if (!canToggle) return
-    onToggle(moduleId)
-  }
-
   return (
-    <div
-      className={`p-3 rounded-xl border transition-all ${
+    <button
+      type="button"
+      onClick={() => canToggle && onToggle(moduleId)}
+      disabled={!canToggle}
+      title={!canToggle ? `Required by: ${blockedBy.join(', ')}` : undefined}
+      className={`w-full p-3 rounded-xl border transition-all text-left ${
         isActive
           ? 'bg-brand-yellow/5 border-brand-yellow/30'
           : 'bg-white/2 border-white/5 opacity-50'
-      } ${canToggle ? 'cursor-pointer hover:border-brand-yellow/50' : 'cursor-not-allowed'}`}
-      onClick={handleClick}
-      title={!canToggle ? `Required by: ${blockedBy.join(', ')}` : undefined}
+      } ${canToggle ? 'hover:border-brand-yellow/50' : 'cursor-not-allowed'}`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
@@ -45,10 +44,10 @@ export default function ModuleCard({ moduleId, isActive, activeModules, onToggle
             <p className="text-xs text-brand-gray-mid truncate">${mod.priceMin.toLocaleString()}–${mod.priceMax.toLocaleString()}</p>
           </div>
         </div>
-        <button className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${isActive ? 'bg-brand-yellow/20 text-brand-yellow' : 'bg-white/5 text-brand-gray-mid'}`}>
+        <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${isActive ? 'bg-brand-yellow/20 text-brand-yellow' : 'bg-white/5 text-brand-gray-mid'}`}>
           {isActive ? <X className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
-        </button>
+        </span>
       </div>
-    </div>
+    </button>
   )
 }

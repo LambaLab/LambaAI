@@ -30,12 +30,12 @@ export default function MessageBubble({ message, isStreaming }: Props) {
         {message.capabilityCards && message.capabilityCards.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {message.capabilityCards.map((card) => (
-              <button
+              <span
                 key={card}
-                className="px-3 py-1.5 text-xs font-medium border border-brand-yellow/30 text-brand-yellow rounded-lg hover:bg-brand-yellow/10 transition-colors"
+                className="px-3 py-1.5 text-xs font-medium border border-brand-yellow/30 text-brand-yellow rounded-lg"
               >
-                + {card}
-              </button>
+                {card}
+              </span>
             ))}
           </div>
         )}
