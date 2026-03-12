@@ -41,6 +41,7 @@ export default function HeroInput({ onFirstMessage }: Props) {
           value={value}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
+          aria-label="Describe your project idea"
           placeholder="Describe your idea... (e.g. A marketplace for local service providers)"
           rows={1}
           className="flex-1 bg-transparent text-brand-white placeholder:text-brand-gray-mid resize-none outline-none text-base leading-relaxed min-h-[24px] max-h-[200px] overflow-y-auto font-inter"
