@@ -1,9 +1,11 @@
 'use client'
 
 import { useRef, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { ArrowRight } from 'lucide-react'
 import MessageBubble from './MessageBubble'
 import ConfidenceBar from './ConfidenceBar'
+import AuthGateModal from './AuthGateModal'
 import type { ChatMessage } from '@/hooks/useIntakeChat'
 import type { PriceRange } from '@/lib/pricing/engine'
 import { formatPriceRange } from '@/lib/pricing/engine'
@@ -22,6 +24,7 @@ export default function ChatPanel({
   messages, isStreaming, confidenceScore, onSend,
   proposalId, pricingVisible, priceRange,
 }: Props) {
+  const router = useRouter()
   const [input, setInput] = useState('')
   const [showAuthGate, setShowAuthGate] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -39,6 +42,11 @@ export default function ChatPanel({
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
     }
+  }
+
+  function handleAuthSuccess() {
+    setShowAuthGate(false)
+    router.push(`/proposal/${proposalId}?status=pending`)
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -115,16 +123,12 @@ export default function ChatPanel({
         </div>
       </div>
 
-      {/* Auth gate placeholder — Task 10 will replace this */}
       {showAuthGate && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/70" onClick={() => setShowAuthGate(false)} />
-          <div className="relative bg-[#1d1d1d] border border-white/10 rounded-2xl p-6 w-full max-w-sm text-center">
-            <p className="text-brand-white font-medium mb-2">Auth gate coming in Task 10</p>
-            <p className="text-brand-gray-mid text-sm mb-4">Proposal ID: {proposalId}</p>
-            <button onClick={() => setShowAuthGate(false)} className="text-brand-gray-mid text-sm hover:text-brand-white">Close</button>
-          </div>
-        </div>
+        <AuthGateModal
+          proposalId={proposalId}
+          onClose={() => setShowAuthGate(false)}
+          onSuccess={handleAuthSuccess}
+        />
       )}
     </div>
   )
