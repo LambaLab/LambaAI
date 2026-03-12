@@ -17,6 +17,7 @@ export type Database = {
           updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['sessions']['Insert']>
+        Relationships: []
       }
       proposals: {
         Row: {
@@ -56,6 +57,7 @@ export type Database = {
           milestone_plan?: Json | null
         }
         Update: Partial<Database['public']['Tables']['proposals']['Insert']>
+        Relationships: []
       }
       chat_messages: {
         Row: {
@@ -75,7 +77,20 @@ export type Database = {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['chat_messages']['Insert']>
+        Relationships: []
       }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
     }
   }
 }
