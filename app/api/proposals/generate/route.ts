@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase/server'
 import type { Json } from '@/lib/supabase/types'
 
 const anthropic = new Anthropic()
 
 export async function POST(req: NextRequest) {
+  const userSupabase = await createServerSupabaseClient()
+  const { data: { user } } = await userSupabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const { proposalId } = await req.json()
   if (!proposalId) return NextResponse.json({ error: 'Missing proposalId' }, { status: 400 })
 
@@ -15,6 +19,7 @@ export async function POST(req: NextRequest) {
     .from('proposals')
     .select('*')
     .eq('id', proposalId)
+    .eq('user_id', user.id)
     .single()
 
   if (!proposal) return NextResponse.json({ error: 'Proposal not found' }, { status: 404 })

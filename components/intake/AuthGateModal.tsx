@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { X, Mail, ArrowRight, Loader2 } from 'lucide-react'
+import { getStoredSession } from '@/lib/session'
 
 type Step = 'email' | 'otp' | 'loading' | 'success'
 
@@ -43,10 +44,11 @@ export default function AuthGateModal({ proposalId, onClose, onSuccess }: Props)
     setStep('loading')
     setError('')
 
+    const session = getStoredSession()
     const res = await fetch('/api/auth/verify-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email.trim(), otp: otp.trim(), proposalId }),
+      body: JSON.stringify({ email: email.trim(), otp: otp.trim(), proposalId, sessionId: session?.sessionId ?? '' }),
     })
 
     if (res.ok) {
