@@ -48,7 +48,8 @@ alter table chat_messages enable row level security;
 
 -- Sessions: owner can read/write their own
 create policy "sessions_owner" on sessions
-  using (auth.uid() = user_id);
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
 
 -- Proposals: owner can read
 create policy "proposals_owner_read" on proposals
