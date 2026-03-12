@@ -12,6 +12,7 @@ type Props = {
 
 export default function IntakeOverlay({ initialMessage, onMinimize }: Props) {
   const [session, setSession] = useState<SessionData | null>(null)
+  const [sessionError, setSessionError] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -26,8 +27,21 @@ export default function IntakeOverlay({ initialMessage, onMinimize }: Props) {
   }, [])
 
   useEffect(() => {
-    getOrCreateSession().then(setSession)
+    getOrCreateSession().then(setSession).catch(() => setSessionError(true))
   }, [])
+
+  if (sessionError) {
+    return (
+      <div className={`fixed inset-0 z-50 bg-brand-dark flex items-center justify-center transition-opacity duration-300 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+        <div className="text-center space-y-3">
+          <p className="text-brand-white">Couldn't start session. Please try again.</p>
+          <button onClick={onMinimize} className="text-brand-gray-mid text-sm hover:text-brand-white transition-colors">
+            Close
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   if (!session) {
     return (

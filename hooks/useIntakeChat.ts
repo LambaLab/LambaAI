@@ -24,7 +24,7 @@ type Props = {
   initialMessage: string
 }
 
-export function useIntakeChat({ proposalId, initialMessage }: Props) {
+export function useIntakeChat({ proposalId: _proposalId, initialMessage }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [activeModules, setActiveModules] = useState<string[]>([])
   const [confidenceScore, setConfidenceScore] = useState(0)
@@ -32,12 +32,18 @@ export function useIntakeChat({ proposalId, initialMessage }: Props) {
   const [priceRange, setPriceRange] = useState<PriceRange>({ min: 0, max: 0 })
   const [isStreaming, setIsStreaming] = useState(false)
   const initialSentRef = useRef(false)
+  // Keep a ref to always-current messages for building API history without stale closure issues
+  const messagesRef = useRef<ChatMessage[]>([])
+  const confidenceRef = useRef(0)
 
-  function updatePriceRange(modules: string[], multiplier: number, score: number) {
+  // Keep refs in sync with state
+  useEffect(() => { messagesRef.current = messages }, [messages])
+  useEffect(() => { confidenceRef.current = confidenceScore }, [confidenceScore])
+
+  function computePriceRange(modules: string[], multiplier: number, score: number): PriceRange {
     const base = calculatePriceRange(modules)
     const adjusted = applyComplexityAdjustment(base, multiplier)
-    const tightened = tightenPriceRange(adjusted, score)
-    setPriceRange(tightened)
+    return tightenPriceRange(adjusted, score)
   }
 
   const sendMessage = useCallback(async (content: string) => {
@@ -49,6 +55,12 @@ export function useIntakeChat({ proposalId, initialMessage }: Props) {
       content,
     }
 
+    // Build API history from ref (always current) before adding the new message
+    const apiMessages = [...messagesRef.current, userMessage].map((m) => ({
+      role: m.role,
+      content: m.content,
+    }))
+
     setMessages((prev) => [...prev, userMessage])
     setIsStreaming(true)
 
@@ -58,12 +70,6 @@ export function useIntakeChat({ proposalId, initialMessage }: Props) {
       content: '',
     }
     setMessages((prev) => [...prev, assistantMessage])
-
-    // Build message history for API (use functional update to get current state)
-    const apiMessages = [...messages, userMessage].map((m) => ({
-      role: m.role,
-      content: m.content,
-    }))
 
     try {
       const res = await fetch('/api/intake/chat', {
@@ -95,26 +101,35 @@ export function useIntakeChat({ proposalId, initialMessage }: Props) {
           const raw = line.slice(6)
           if (!raw.trim()) continue
 
-          const { event, data } = JSON.parse(raw)
+          let parsed: { event: string; data: Record<string, unknown> }
+          try {
+            parsed = JSON.parse(raw)
+          } catch {
+            console.warn('Failed to parse SSE line:', raw)
+            continue
+          }
+
+          const { event, data } = parsed
 
           if (event === 'text') {
             setMessages((prev) => {
               const last = prev[prev.length - 1]
               if (last?.role !== 'assistant') return prev
-              return [...prev.slice(0, -1), { ...last, content: last.content + data.text }]
+              return [...prev.slice(0, -1), { ...last, content: last.content + (data.text as string) }]
             })
           } else if (event === 'tool_result') {
             const input = data.input as UpdateProposalInput
-            const newScore = Math.max(0, Math.min(100, confidenceScore + input.confidence_score_delta))
-            const newMultiplier = input.complexity_multiplier
-            const newModules = input.detected_modules
+            const newModules = Array.isArray(input?.detected_modules) ? input.detected_modules : []
+            const newMultiplier = typeof input?.complexity_multiplier === 'number' ? input.complexity_multiplier : 1.0
+            const delta = typeof input?.confidence_score_delta === 'number' ? input.confidence_score_delta : 0
+            const newScore = Math.max(0, Math.min(100, confidenceRef.current + delta))
 
             setActiveModules(newModules)
             setConfidenceScore(newScore)
             setComplexityMultiplier(newMultiplier)
-            updatePriceRange(newModules, newMultiplier, newScore)
+            setPriceRange(computePriceRange(newModules, newMultiplier, newScore))
 
-            if (input.capability_cards?.length) {
+            if (input?.capability_cards?.length) {
               setMessages((prev) => {
                 const last = prev[prev.length - 1]
                 if (last?.role !== 'assistant') return prev
@@ -134,16 +149,15 @@ export function useIntakeChat({ proposalId, initialMessage }: Props) {
     } finally {
       setIsStreaming(false)
     }
-  }, [messages, activeModules, confidenceScore, isStreaming])
+  }, [activeModules, confidenceScore, isStreaming])
 
   function toggleModule(moduleId: string) {
-    setActiveModules((prev) => {
-      const newModules = prev.includes(moduleId)
-        ? prev.filter((m) => m !== moduleId)
-        : [...prev, moduleId]
-      updatePriceRange(newModules, complexityMultiplier, confidenceScore)
-      return newModules
-    })
+    // Compute new modules directly from closure value — no side effects in state updater
+    const newModules = activeModules.includes(moduleId)
+      ? activeModules.filter((m) => m !== moduleId)
+      : [...activeModules, moduleId]
+    setActiveModules(newModules)
+    setPriceRange(computePriceRange(newModules, complexityMultiplier, confidenceScore))
   }
 
   // Send initial message on mount
@@ -153,9 +167,6 @@ export function useIntakeChat({ proposalId, initialMessage }: Props) {
       sendMessage(initialMessage)
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Suppress unused variable warning for proposalId (used by caller context)
-  void proposalId
 
   return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule }
 }
