@@ -8,14 +8,16 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('proposals')
     .update({ status: 'accepted' })
     .eq('id', id)
     .eq('user_id', user.id)
     .eq('status', 'approved')
+    .select('id')
+    .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error || !data) return NextResponse.json({ error: 'Proposal not found or not eligible' }, { status: 404 })
 
   return NextResponse.json({ success: true })
 }

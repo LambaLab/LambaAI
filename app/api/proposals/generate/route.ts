@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (!proposal) return NextResponse.json({ error: 'Proposal not found' }, { status: 404 })
+  if (proposal.status !== 'draft') return NextResponse.json({ error: 'Proposal already generated' }, { status: 409 })
 
   const { data: messages } = await supabase
     .from('chat_messages')

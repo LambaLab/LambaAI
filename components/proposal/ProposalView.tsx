@@ -9,12 +9,16 @@ type Props = { proposal: Proposal }
 export default function ProposalView({ proposal }: Props) {
   const [accepting, setAccepting] = useState(false)
   const [accepted, setAccepted] = useState(false)
+  const [acceptError, setAcceptError] = useState<string | null>(null)
 
   async function handleAccept() {
     setAccepting(true)
+    setAcceptError(null)
     const res = await fetch(`/api/proposals/${proposal.id}/accept`, { method: 'POST' })
     if (res.ok) {
       setAccepted(true)
+    } else {
+      setAcceptError('Failed to accept proposal. Please try again or contact us.')
     }
     setAccepting(false)
   }
@@ -145,9 +149,14 @@ export default function ProposalView({ proposal }: Props) {
         >
           {accepting ? 'Processing...' : 'Accept Proposal & Start Project →'}
         </button>
-        <p className="text-center text-xs text-brand-gray-mid mt-2">
-          By accepting, you agree to begin the project under these terms
-        </p>
+        {acceptError && (
+          <p className="text-center text-xs text-red-400 mt-2">{acceptError}</p>
+        )}
+        {!acceptError && (
+          <p className="text-center text-xs text-brand-gray-mid mt-2">
+            By accepting, you agree to begin the project under these terms
+          </p>
+        )}
       </div>
     </div>
   )
