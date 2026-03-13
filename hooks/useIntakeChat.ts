@@ -271,5 +271,81 @@ export function useIntakeChat({ idea }: Props) {
     setPriceRange(computePriceRange(newModules, complexityMultiplier, confidenceScore))
   }
 
-  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview }
+  // editMessage — re-opens a previous user message for editing.
+  // During onboarding (step < 3): resets to that onboarding step.
+  // After onboarding: injects a correction and calls the AI.
+  const editMessage = useCallback(async (messageId: string, newContent: string) => {
+    if (isStreaming) return
+
+    const msgIndex = messagesRef.current.findIndex((m) => m.id === messageId)
+    if (msgIndex === -1) return
+
+    // Determine which onboarding index this message corresponds to
+    // Onboarding user messages are at positions 1, 3, 5 (after each Q)
+    const onboardingUserMessages = messagesRef.current
+      .slice(0, onboardingStep * 2 + 1) // rough slice during onboarding
+      .filter((m) => m.role === 'user' && !m.id.startsWith('onboarding-'))
+
+    const onboardingUserIndex = onboardingUserMessages.findIndex((m) => m.id === messageId)
+
+    if (onboardingUserIndex !== -1 && onboardingStep >= onboardingUserIndex + 1) {
+      // This is an onboarding message — reset to that step
+      const stepIndex = onboardingUserIndex // 0 = answer to Q1, etc.
+
+      // Clear messages from the user message onward, re-inject the question
+      const keptMessages = messagesRef.current.slice(0, msgIndex) // everything before this user msg
+      const nextQ = ONBOARDING_QUESTIONS[stepIndex]
+      const newMessages: ChatMessage[] = [
+        ...keptMessages,
+        {
+          id: `onboarding-${stepIndex}`,
+          role: 'assistant' as const,
+          content: nextQ.content,
+          quickReplies: nextQ.quickReplies,
+        },
+      ]
+      setMessages(newMessages)
+      setOnboardingStep(stepIndex)
+      setOnboardingAnswers((prev) => prev.slice(0, stepIndex))
+      return
+    }
+
+    // Post-onboarding: inject correction and call AI
+    const correctionMsg: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: `Actually, let me clarify my earlier answer: ${newContent}`,
+    }
+
+    // Keep messages up to (but not including) the edited message, then add correction
+    const kept = messagesRef.current.slice(0, msgIndex)
+    setMessages([...kept, correctionMsg])
+
+    const aiHistory = [...kept, correctionMsg]
+      .filter((m) => !m.id.startsWith('onboarding-'))
+      .map((m): ApiMessage => ({ role: m.role, content: m.content }))
+
+    await streamAIResponse(aiHistory)
+  }, [onboardingStep, isStreaming]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const reset = useCallback(() => {
+    setMessages([
+      {
+        id: 'onboarding-0',
+        role: 'assistant',
+        content: ONBOARDING_QUESTIONS[0].content,
+        quickReplies: ONBOARDING_QUESTIONS[0].quickReplies,
+      },
+    ])
+    setOnboardingStep(0)
+    setOnboardingAnswers([])
+    setActiveModules([])
+    setConfidenceScore(0)
+    setComplexityMultiplier(1.0)
+    setPriceRange({ min: 0, max: 0 })
+    setIsStreaming(false)
+    setProductOverview('')
+  }, [])
+
+  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, onboardingStep, editMessage, reset }
 }

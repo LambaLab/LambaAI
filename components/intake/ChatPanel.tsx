@@ -9,9 +9,10 @@ type Props = {
   messages: ChatMessage[]
   isStreaming: boolean
   onSend: (message: string) => void
+  onEdit?: (messageId: string, newContent: string) => void
 }
 
-export default function ChatPanel({ messages, isStreaming, onSend }: Props) {
+export default function ChatPanel({ messages, isStreaming, onSend, onEdit }: Props) {
   const [input, setInput] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -55,6 +56,7 @@ export default function ChatPanel({ messages, isStreaming, onSend }: Props) {
             isStreaming={isStreaming && i === messages.length - 1 && msg.role === 'assistant'}
             onQuickReply={onSend}
             isLastMessage={i === messages.length - 1}
+            onEdit={onEdit}
           />
         ))}
         <div ref={bottomRef} />

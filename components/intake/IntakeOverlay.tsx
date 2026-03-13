@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Minus } from 'lucide-react'
 import IntakeLayout from './IntakeLayout'
 import MinimizedBar from './MinimizedBar'
@@ -46,6 +46,23 @@ export default function IntakeOverlay({ initialMessage }: Props) {
     setLiveConfidenceScore(c)
   }, [])
 
+  const [resetConfirm, setResetConfirm] = useState(false)
+  const resetRef = useRef<(() => void) | null>(null)
+
+  function handleResetClick() {
+    if (!resetConfirm) {
+      setResetConfirm(true)
+      setTimeout(() => setResetConfirm(false), 3000)
+      return
+    }
+    // Confirmed: call reset + clear session
+    resetRef.current?.()
+    setResetConfirm(false)
+    sessionStorage.removeItem('lamba_session')
+    setSession(null)
+    getOrCreateSession().then(setSession).catch(() => setSessionError(true))
+  }
+
   return (
     <>
       {/* MinimizedBar — always rendered when minimized */}
@@ -81,13 +98,40 @@ export default function IntakeOverlay({ initialMessage }: Props) {
           {/* Top bar */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 flex-shrink-0">
             <span className="font-bebas text-xl tracking-widest text-brand-white">LAMBA LAB</span>
-            <button
-              onClick={() => setMinimized(true)}
-              className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-brand-gray-mid hover:text-brand-white transition-colors"
-              aria-label="Minimize"
-            >
-              <Minus className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              {resetConfirm ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-brand-gray-mid">Start over?</span>
+                  <button
+                    onClick={handleResetClick}
+                    className="text-xs text-red-400 hover:text-red-300 transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
+                  >
+                    Yes
+                  </button>
+                  <button
+                    onClick={() => setResetConfirm(false)}
+                    className="text-xs text-brand-gray-mid hover:text-brand-white transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
+                  >
+                    No
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={handleResetClick}
+                  className="text-xs text-brand-gray-mid hover:text-brand-white transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
+                  aria-label="Reset conversation"
+                >
+                  ↺ Reset
+                </button>
+              )}
+              <button
+                onClick={() => setMinimized(true)}
+                className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-brand-gray-mid hover:text-brand-white transition-colors"
+                aria-label="Minimize"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* Main content — stays mounted, preserving all chat state */}
@@ -95,6 +139,7 @@ export default function IntakeOverlay({ initialMessage }: Props) {
             proposalId={session.proposalId}
             initialMessage={initialMessage}
             onStateChange={handleStateChange}
+            onResetRef={resetRef}
           />
         </div>
       )}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 import ChatPanel from './ChatPanel'
 import ModulesPanel from './ModulesPanel'
 import MobileBottomDrawer from './MobileBottomDrawer'
@@ -11,9 +11,10 @@ type Props = {
   proposalId: string
   initialMessage: string
   onStateChange?: (moduleCount: number, confidenceScore: number) => void
+  onResetRef?: React.MutableRefObject<(() => void) | null>
 }
 
-export default function IntakeLayout({ proposalId, initialMessage, onStateChange }: Props) {
+export default function IntakeLayout({ proposalId, initialMessage, onStateChange, onResetRef }: Props) {
   const {
     messages,
     activeModules,
@@ -23,10 +24,17 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
     sendMessage,
     toggleModule,
     productOverview,
+    onboardingStep: _onboardingStep,
+    editMessage,
+    reset,
   } = useIntakeChat({ proposalId, idea: initialMessage })
 
   const onStateChangeRef = useRef(onStateChange)
   useEffect(() => { onStateChangeRef.current = onStateChange })
+
+  useEffect(() => {
+    if (onResetRef) onResetRef.current = reset
+  }, [reset, onResetRef])
 
   useEffect(() => {
     onStateChangeRef.current?.(activeModules.length, confidenceScore)
@@ -50,6 +58,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             messages={messages}
             isStreaming={isStreaming}
             onSend={sendMessage}
+            onEdit={editMessage}
           />
         </div>
         <div className="w-[45%] overflow-hidden">
@@ -72,6 +81,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             messages={messages}
             isStreaming={isStreaming}
             onSend={sendMessage}
+            onEdit={editMessage}
           />
         </div>
         <MobileBottomDrawer
