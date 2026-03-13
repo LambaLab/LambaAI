@@ -2,23 +2,27 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
-  const { email, proposalId } = await req.json()
-  if (!email || !proposalId) {
+  const { email, proposalId, sessionId } = await req.json()
+  if (!email || !proposalId || !sessionId) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
   }
 
   const supabase = await createServerSupabaseClient()
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? `https://${req.headers.get('host')}`
+  const emailRedirectTo = `${appUrl}/auth/callback?proposalId=${proposalId}&sessionId=${sessionId}`
 
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
       shouldCreateUser: true,
       data: { proposal_id: proposalId },
+      emailRedirectTo,
     },
   })
 
   if (error) {
-    console.error('OTP send error:', error)
+    console.error('Magic link send error:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
