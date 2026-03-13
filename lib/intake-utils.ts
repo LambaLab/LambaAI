@@ -1,12 +1,16 @@
 import type { OnboardingContext } from './intake-types'
 
 export function bundleOnboardingContext(ctx: OnboardingContext): string {
-  return [
-    `User idea: "${ctx.idea}"`,
+  const lines: string[] = []
+  if (ctx.idea.trim()) {
+    lines.push(`User idea: "${ctx.idea.trim()}"`)
+  }
+  lines.push(
     `Platform: ${ctx.platform}`,
     `Product type: ${ctx.productType}`,
     `Expected scale: ${ctx.scale}`,
-  ].join('\n')
+  )
+  return lines.join('\n')
 }
 
 export function serializeMultiSelect(values: string[]): string {

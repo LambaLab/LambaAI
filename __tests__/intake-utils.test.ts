@@ -14,6 +14,29 @@ describe('bundleOnboardingContext', () => {
     expect(result).toContain('Marketplace')
     expect(result).toContain('<100 users')
   })
+
+  it('formats output as newline-separated labelled fields', () => {
+    const result = bundleOnboardingContext({
+      idea: 'sell stories',
+      platform: 'Web App',
+      productType: 'Marketplace',
+      scale: '<100 users',
+    })
+    expect(result).toBe(
+      'User idea: "sell stories"\nPlatform: Web App\nProduct type: Marketplace\nExpected scale: <100 users'
+    )
+  })
+
+  it('omits idea line when idea is empty string', () => {
+    const result = bundleOnboardingContext({
+      idea: '',
+      platform: 'Web App',
+      productType: 'Marketplace',
+      scale: '<100 users',
+    })
+    expect(result).not.toContain('User idea')
+    expect(result).toBe('Platform: Web App\nProduct type: Marketplace\nExpected scale: <100 users')
+  })
 })
 
 describe('serializeMultiSelect', () => {
