@@ -46,57 +46,58 @@ export default function IntakeOverlay({ initialMessage }: Props) {
     setLiveConfidenceScore(c)
   }, [])
 
-  if (minimized) {
-    return (
-      <MinimizedBar
-        moduleCount={liveModuleCount}
-        confidenceScore={liveConfidenceScore}
-        onExpand={() => setMinimized(false)}
-      />
-    )
-  }
-
-  if (sessionError) {
-    return (
-      <div className={`fixed inset-0 z-50 bg-brand-dark flex items-center justify-center transition-opacity duration-300 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-        <div className="text-center space-y-3">
-          <p className="text-brand-white">Couldn't start session. Please try again.</p>
-          <button onClick={() => setMinimized(true)} className="text-brand-gray-mid text-sm hover:text-brand-white transition-colors">
-            Dismiss
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  if (!session) {
-    return (
-      <div className={`fixed inset-0 z-50 bg-brand-dark flex items-center justify-center transition-opacity duration-300 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-        <div className="w-8 h-8 border-2 border-brand-yellow border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
-
   return (
-    <div className={`fixed inset-0 z-50 bg-brand-dark flex flex-col transition-opacity duration-300 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 flex-shrink-0">
-        <span className="font-bebas text-xl tracking-widest text-brand-white">LAMBA LAB</span>
-        <button
-          onClick={() => setMinimized(true)}
-          className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-brand-gray-mid hover:text-brand-white transition-colors"
-          aria-label="Minimize"
-        >
-          <Minus className="w-4 h-4" />
-        </button>
-      </div>
+    <>
+      {/* MinimizedBar — always rendered when minimized */}
+      {minimized && (
+        <MinimizedBar
+          moduleCount={liveModuleCount}
+          confidenceScore={liveConfidenceScore}
+          onExpand={() => setMinimized(false)}
+        />
+      )}
 
-      {/* Main content */}
-      <IntakeLayout
-        proposalId={session.proposalId}
-        initialMessage={initialMessage}
-        onStateChange={handleStateChange}
-      />
-    </div>
+      {/* Loading / error states — only shown when not minimized and session not ready */}
+      {!minimized && sessionError && (
+        <div className={`fixed inset-0 z-50 bg-brand-dark flex items-center justify-center transition-opacity duration-300 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+          <div className="text-center space-y-3">
+            <p className="text-brand-white">Couldn't start session. Please try again.</p>
+            <button onClick={() => setMinimized(true)} className="text-brand-gray-mid text-sm hover:text-brand-white transition-colors">
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!minimized && !session && !sessionError && (
+        <div className={`fixed inset-0 z-50 bg-brand-dark flex items-center justify-center transition-opacity duration-300 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+          <div className="w-8 h-8 border-2 border-brand-yellow border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+
+      {/* Full overlay — always mounted once session is ready, hidden via CSS when minimized */}
+      {session && (
+        <div className={`fixed inset-0 z-50 bg-brand-dark flex flex-col transition-opacity duration-300 ${mounted ? 'opacity-100' : 'opacity-0'} ${minimized ? 'hidden' : ''}`}>
+          {/* Top bar */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 flex-shrink-0">
+            <span className="font-bebas text-xl tracking-widest text-brand-white">LAMBA LAB</span>
+            <button
+              onClick={() => setMinimized(true)}
+              className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-brand-gray-mid hover:text-brand-white transition-colors"
+              aria-label="Minimize"
+            >
+              <Minus className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Main content — stays mounted, preserving all chat state */}
+          <IntakeLayout
+            proposalId={session.proposalId}
+            initialMessage={initialMessage}
+            onStateChange={handleStateChange}
+          />
+        </div>
+      )}
+    </>
   )
 }
