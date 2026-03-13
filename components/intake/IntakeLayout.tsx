@@ -9,9 +9,10 @@ import { formatPriceRange, isPricingVisible } from '@/lib/pricing/engine'
 type Props = {
   proposalId: string
   initialMessage: string
+  onStateChange?: (moduleCount: number, confidenceScore: number) => void
 }
 
-export default function IntakeLayout({ proposalId, initialMessage }: Props) {
+export default function IntakeLayout({ proposalId, initialMessage, onStateChange }: Props) {
   const {
     messages,
     activeModules,

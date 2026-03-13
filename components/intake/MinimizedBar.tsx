@@ -1,0 +1,36 @@
+'use client'
+
+import { ChevronUp } from 'lucide-react'
+
+type Props = {
+  moduleCount: number
+  confidenceScore: number
+  onExpand: () => void
+}
+
+export default function MinimizedBar({ moduleCount, confidenceScore, onExpand }: Props) {
+  const pct = Math.min(100, Math.max(0, confidenceScore))
+  return (
+    <button
+      onClick={onExpand}
+      className="fixed bottom-4 right-4 z-50 flex items-center gap-3 px-4 py-3 bg-[#1a1a1a] border border-white/10 rounded-2xl shadow-2xl hover:border-brand-yellow/30 transition-all w-72"
+    >
+      <span className="text-base">🔨</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-bebas tracking-widest text-brand-white">LAMBA LAB</p>
+        <div className="flex items-center gap-2 mt-0.5">
+          <p className="text-[11px] text-brand-gray-mid whitespace-nowrap">
+            {moduleCount} module{moduleCount !== 1 ? 's' : ''} · {pct}%
+          </p>
+          <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-brand-yellow rounded-full transition-all duration-500"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </div>
+      </div>
+      <ChevronUp className="w-4 h-4 text-brand-gray-mid flex-shrink-0" />
+    </button>
+  )
+}

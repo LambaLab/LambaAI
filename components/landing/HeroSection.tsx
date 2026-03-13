@@ -43,7 +43,6 @@ export default function HeroSection() {
       {intakeOpen && (
         <IntakeOverlay
           initialMessage={initialMessage}
-          onMinimize={() => setIntakeOpen(false)}
         />
       )}
     </>

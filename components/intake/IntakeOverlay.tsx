@@ -3,17 +3,20 @@
 import { useEffect, useState } from 'react'
 import { Minus } from 'lucide-react'
 import IntakeLayout from './IntakeLayout'
+import MinimizedBar from './MinimizedBar'
 import { getOrCreateSession, type SessionData } from '@/lib/session'
 
 type Props = {
   initialMessage: string
-  onMinimize: () => void
 }
 
-export default function IntakeOverlay({ initialMessage, onMinimize }: Props) {
+export default function IntakeOverlay({ initialMessage }: Props) {
   const [session, setSession] = useState<SessionData | null>(null)
   const [sessionError, setSessionError] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [minimized, setMinimized] = useState(false)
+  const [liveModuleCount, setLiveModuleCount] = useState(0)
+  const [liveConfidenceScore, setLiveConfidenceScore] = useState(0)
 
   useEffect(() => {
     setMounted(true)
@@ -27,16 +30,34 @@ export default function IntakeOverlay({ initialMessage, onMinimize }: Props) {
   }, [])
 
   useEffect(() => {
+    if (minimized) {
+      document.body.style.overflow = ''
+    } else {
+      document.body.style.overflow = 'hidden'
+    }
+  }, [minimized])
+
+  useEffect(() => {
     getOrCreateSession().then(setSession).catch(() => setSessionError(true))
   }, [])
+
+  if (minimized) {
+    return (
+      <MinimizedBar
+        moduleCount={liveModuleCount}
+        confidenceScore={liveConfidenceScore}
+        onExpand={() => setMinimized(false)}
+      />
+    )
+  }
 
   if (sessionError) {
     return (
       <div className={`fixed inset-0 z-50 bg-brand-dark flex items-center justify-center transition-opacity duration-300 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
         <div className="text-center space-y-3">
           <p className="text-brand-white">Couldn't start session. Please try again.</p>
-          <button onClick={onMinimize} className="text-brand-gray-mid text-sm hover:text-brand-white transition-colors">
-            Close
+          <button onClick={() => setMinimized(true)} className="text-brand-gray-mid text-sm hover:text-brand-white transition-colors">
+            Dismiss
           </button>
         </div>
       </div>
@@ -52,27 +73,24 @@ export default function IntakeOverlay({ initialMessage, onMinimize }: Props) {
   }
 
   return (
-    <div
-      className={`fixed inset-0 z-50 bg-brand-dark flex flex-col transition-opacity duration-300 ${mounted ? 'opacity-100' : 'opacity-0'}`}
-    >
+    <div className={`fixed inset-0 z-50 bg-brand-dark flex flex-col transition-opacity duration-300 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 flex-shrink-0">
         <span className="font-bebas text-xl tracking-widest text-brand-white">LAMBA LAB</span>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onMinimize}
-            className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-brand-gray-mid hover:text-brand-white transition-colors"
-            aria-label="Minimize"
-          >
-            <Minus className="w-4 h-4" />
-          </button>
-        </div>
+        <button
+          onClick={() => setMinimized(true)}
+          className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-brand-gray-mid hover:text-brand-white transition-colors"
+          aria-label="Minimize"
+        >
+          <Minus className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Main content */}
       <IntakeLayout
         proposalId={session.proposalId}
         initialMessage={initialMessage}
+        onStateChange={(m, c) => { setLiveModuleCount(m); setLiveConfidenceScore(c) }}
       />
     </div>
   )
