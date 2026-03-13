@@ -20,7 +20,6 @@ export default function HeroInput({ onFirstMessage }: Props) {
 
   function handleSubmit() {
     const trimmed = value.trim()
-    if (!trimmed) return
     onFirstMessage(trimmed)
   }
 
@@ -48,8 +47,7 @@ export default function HeroInput({ onFirstMessage }: Props) {
         />
         <button
           onClick={handleSubmit}
-          disabled={!value.trim()}
-          className="flex-shrink-0 w-10 h-10 bg-brand-yellow rounded-xl flex items-center justify-center disabled:opacity-30 hover:bg-brand-yellow/90 transition-all active:scale-95"
+          className="flex-shrink-0 w-10 h-10 bg-brand-yellow rounded-xl flex items-center justify-center hover:bg-brand-yellow/90 transition-all active:scale-95"
           aria-label="Send message"
         >
           <ArrowRight className="w-5 h-5 text-brand-dark" />

@@ -1,11 +1,14 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import ChatPanel from './ChatPanel'
 import ModulesPanel from './ModulesPanel'
 import MobileBottomDrawer from './MobileBottomDrawer'
+import OnboardingSteps from './OnboardingSteps'
 import { useIntakeChat } from '@/hooks/useIntakeChat'
 import { formatPriceRange, isPricingVisible } from '@/lib/pricing/engine'
+import { bundleOnboardingContext } from '@/lib/intake-utils'
+import type { OnboardingContext } from '@/lib/intake-types'
 
 type Props = {
   proposalId: string
@@ -14,6 +17,9 @@ type Props = {
 }
 
 export default function IntakeLayout({ proposalId, initialMessage, onStateChange }: Props) {
+  const [onboardingDone, setOnboardingDone] = useState(false)
+  const [bundledMessage, setBundledMessage] = useState('')
+
   const {
     messages,
     activeModules,
@@ -22,16 +28,42 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
     isStreaming,
     sendMessage,
     toggleModule,
-  } = useIntakeChat({ proposalId, initialMessage })
+  } = useIntakeChat({ proposalId, initialMessage: onboardingDone ? bundledMessage : '' })
 
   useEffect(() => {
     onStateChange?.(activeModules.length, confidenceScore)
   }, [activeModules.length, confidenceScore, onStateChange])
 
+  // Once onboarding completes, send the bundled message as the first AI message
+  useEffect(() => {
+    if (onboardingDone && bundledMessage) {
+      sendMessage(bundledMessage)
+    }
+    // Only run when onboarding transitions to done
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onboardingDone])
+
+  function handleOnboardingComplete(ctx: OnboardingContext) {
+    const msg = bundleOnboardingContext(ctx)
+    setBundledMessage(msg)
+    setOnboardingDone(true)
+  }
+
   const pricingVisible = isPricingVisible(confidenceScore)
   const summaryText = pricingVisible
     ? `${activeModules.length} modules · ${formatPriceRange(priceRange)}`
     : `${activeModules.length} modules detected`
+
+  if (!onboardingDone) {
+    return (
+      <div className="flex-1 overflow-hidden flex flex-col">
+        <OnboardingSteps
+          idea={initialMessage}
+          onComplete={handleOnboardingComplete}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="flex-1 overflow-hidden flex">
