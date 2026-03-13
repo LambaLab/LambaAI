@@ -11,10 +11,13 @@ type Props = {
   confidenceScore: number
   priceRange: PriceRange
   pricingVisible: boolean
+  productOverview: string
+  proposalId: string
+  aiStarted: boolean
   onToggle: (id: string) => void
 }
 
-export default function MobileBottomDrawer({ summary, activeModules, confidenceScore, priceRange, pricingVisible, onToggle }: Props) {
+export default function MobileBottomDrawer({ summary, activeModules, confidenceScore, priceRange, pricingVisible, productOverview, proposalId, aiStarted, onToggle }: Props) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -51,6 +54,9 @@ export default function MobileBottomDrawer({ summary, activeModules, confidenceS
               confidenceScore={confidenceScore}
               priceRange={priceRange}
               pricingVisible={pricingVisible}
+              productOverview={productOverview}
+              proposalId={proposalId}
+              aiStarted={aiStarted}
               onToggle={onToggle}
             />
           </div>

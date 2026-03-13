@@ -22,6 +22,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
     isStreaming,
     sendMessage,
     toggleModule,
+    productOverview,
   } = useIntakeChat({ proposalId, idea: initialMessage })
 
   useEffect(() => {
@@ -29,6 +30,10 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
   }, [activeModules.length, confidenceScore, onStateChange])
 
   const pricingVisible = isPricingVisible(confidenceScore)
+
+  // aiStarted = true once the AI has responded at least once (confidence > 0)
+  const aiStarted = confidenceScore > 0
+
   const summaryText = pricingVisible
     ? `${activeModules.length} modules · ${formatPriceRange(priceRange)}`
     : `${activeModules.length} modules detected`
@@ -41,11 +46,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
           <ChatPanel
             messages={messages}
             isStreaming={isStreaming}
-            confidenceScore={confidenceScore}
             onSend={sendMessage}
-            proposalId={proposalId}
-            pricingVisible={pricingVisible}
-            priceRange={priceRange}
           />
         </div>
         <div className="w-[45%] overflow-hidden">
@@ -54,7 +55,10 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             confidenceScore={confidenceScore}
             priceRange={priceRange}
             pricingVisible={pricingVisible}
+            productOverview={productOverview}
+            proposalId={proposalId}
             onToggle={toggleModule}
+            aiStarted={aiStarted}
           />
         </div>
       </div>
@@ -65,11 +69,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
           <ChatPanel
             messages={messages}
             isStreaming={isStreaming}
-            confidenceScore={confidenceScore}
             onSend={sendMessage}
-            proposalId={proposalId}
-            pricingVisible={pricingVisible}
-            priceRange={priceRange}
           />
         </div>
         <MobileBottomDrawer
@@ -78,6 +78,9 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
           confidenceScore={confidenceScore}
           priceRange={priceRange}
           pricingVisible={pricingVisible}
+          productOverview={productOverview}
+          proposalId={proposalId}
+          aiStarted={aiStarted}
           onToggle={toggleModule}
         />
       </div>

@@ -1,19 +1,66 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import ModuleCard from './ModuleCard'
+import ConfidenceBar from './ConfidenceBar'
+import AuthGateModal from './AuthGateModal'
 import { MODULE_CATALOG } from '@/lib/modules/catalog'
 import type { PriceRange } from '@/lib/pricing/engine'
-import { formatPriceRange } from '@/lib/pricing/engine'
 
 type Props = {
   activeModules: string[]
   confidenceScore: number
   priceRange: PriceRange
   pricingVisible: boolean
+  productOverview: string
+  proposalId: string
   onToggle: (id: string) => void
+  aiStarted: boolean
 }
 
-export default function ModulesPanel({ activeModules, confidenceScore: _confidenceScore, priceRange, pricingVisible, onToggle }: Props) {
+export default function ModulesPanel({
+  activeModules,
+  confidenceScore,
+  priceRange: _priceRange,
+  pricingVisible,
+  productOverview,
+  proposalId,
+  onToggle,
+  aiStarted,
+}: Props) {
+  const router = useRouter()
+  const [showAuthGate, setShowAuthGate] = useState(false)
+
+  function handleAuthSuccess() {
+    setShowAuthGate(false)
+    router.push(`/proposal/${proposalId}?status=pending`)
+  }
+
   return (
     <div className="flex flex-col h-full">
+      {/* 1. Product Overview */}
+      <div className="px-4 pt-4 pb-3 border-b border-white/5 flex-shrink-0">
+        <h2 className="font-bebas text-xs tracking-[0.15em] text-brand-gray-mid mb-2">
+          YOUR PRODUCT
+        </h2>
+        {productOverview ? (
+          <p className="text-sm text-brand-white leading-relaxed transition-all duration-500">
+            {productOverview}
+          </p>
+        ) : (
+          <p className="text-sm text-brand-gray-mid/50 leading-relaxed italic">
+            Your product overview will appear here as we learn more...
+          </p>
+        )}
+      </div>
+
+      {/* 2. Estimate Accuracy */}
+      <div className="px-4 py-3 border-b border-white/5 flex-shrink-0">
+        <ConfidenceBar score={confidenceScore} />
+      </div>
+
+      {/* 3. Technical Modules */}
       <div className="px-4 py-3 border-b border-white/5 flex-shrink-0">
         <h2 className="font-bebas text-2xl text-brand-white tracking-wide">
           TECHNICAL MODULES
@@ -22,13 +69,6 @@ export default function ModulesPanel({ activeModules, confidenceScore: _confiden
           {activeModules.length} selected · Toggle to customize
         </p>
       </div>
-
-      {pricingVisible && (
-        <div className="px-4 py-3 bg-brand-yellow/5 border-b border-brand-yellow/10">
-          <p className="text-xs text-brand-gray-mid mb-1">Total estimate</p>
-          <p className="font-bebas text-3xl text-brand-yellow">{formatPriceRange(priceRange)}</p>
-        </div>
-      )}
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
         {activeModules.length > 0 && (
@@ -39,8 +79,8 @@ export default function ModulesPanel({ activeModules, confidenceScore: _confiden
                 moduleId={id}
                 isActive={true}
                 activeModules={activeModules}
-                pricingVisible={pricingVisible}
                 onToggle={onToggle}
+                pricingVisible={pricingVisible}
               />
             ))}
           </div>
@@ -61,11 +101,31 @@ export default function ModulesPanel({ activeModules, confidenceScore: _confiden
               moduleId={m.id}
               isActive={false}
               activeModules={activeModules}
-              pricingVisible={pricingVisible}
               onToggle={onToggle}
+              pricingVisible={pricingVisible}
             />
           ))}
       </div>
+
+      {/* 4. Full Proposal CTA — appears after first AI response */}
+      {aiStarted && (
+        <div className="px-4 pb-4 pt-2 flex-shrink-0 border-t border-white/5">
+          <button
+            onClick={() => setShowAuthGate(true)}
+            className="w-full py-3 bg-brand-yellow text-brand-dark font-medium rounded-xl hover:bg-brand-yellow/90 transition-all active:scale-[0.98] text-sm"
+          >
+            View Full Proposal →
+          </button>
+        </div>
+      )}
+
+      {showAuthGate && (
+        <AuthGateModal
+          proposalId={proposalId}
+          onClose={() => setShowAuthGate(false)}
+          onSuccess={handleAuthSuccess}
+        />
+      )}
     </div>
   )
 }
