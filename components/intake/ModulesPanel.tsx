@@ -39,6 +39,7 @@ export default function ModulesPanel({ activeModules, confidenceScore: _confiden
                 moduleId={id}
                 isActive={true}
                 activeModules={activeModules}
+                pricingVisible={pricingVisible}
                 onToggle={onToggle}
               />
             ))}
@@ -60,6 +61,7 @@ export default function ModulesPanel({ activeModules, confidenceScore: _confiden
               moduleId={m.id}
               isActive={false}
               activeModules={activeModules}
+              pricingVisible={pricingVisible}
               onToggle={onToggle}
             />
           ))}

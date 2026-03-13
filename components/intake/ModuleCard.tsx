@@ -8,10 +8,11 @@ type Props = {
   moduleId: string
   isActive: boolean
   activeModules: string[]
+  pricingVisible: boolean
   onToggle: (id: string) => void
 }
 
-export default function ModuleCard({ moduleId, isActive, activeModules, onToggle }: Props) {
+export default function ModuleCard({ moduleId, isActive, activeModules, pricingVisible, onToggle }: Props) {
   const mod = getModuleById(moduleId)
   if (!mod) return null
 
@@ -41,7 +42,15 @@ export default function ModuleCard({ moduleId, isActive, activeModules, onToggle
             <p className={`text-sm font-medium truncate ${isActive ? 'text-brand-white' : 'text-brand-gray-mid'}`}>
               {mod.name}
             </p>
-            <p className="text-xs text-brand-gray-mid truncate">${mod.priceMin.toLocaleString()}–${mod.priceMax.toLocaleString()}</p>
+            {pricingVisible ? (
+              <p className="text-xs text-brand-gray-mid truncate">
+                ${mod.priceMin.toLocaleString()}–${mod.priceMax.toLocaleString()}
+              </p>
+            ) : (
+              <p className="text-xs text-brand-gray-mid/40 blur-[3px] select-none" aria-hidden="true">
+                $●,●●●–$●,●●●
+              </p>
+            )}
           </div>
         </div>
         <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${isActive ? 'bg-brand-yellow/20 text-brand-yellow' : 'bg-white/5 text-brand-gray-mid'}`}>
