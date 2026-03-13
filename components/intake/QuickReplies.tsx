@@ -49,6 +49,7 @@ export default function QuickReplies({ quickReplies, onSelect, disabled }: Props
     ? [...options, 'custom']
     : options
 
+  // icon-cards is always single-select (used for platform/product-type questions)
   if (style === 'icon-cards') {
     return (
       <div className="mt-3 grid grid-cols-2 gap-2">
@@ -85,7 +86,7 @@ export default function QuickReplies({ quickReplies, onSelect, disabled }: Props
             />
             <button
               onClick={handleCustomSubmit}
-              disabled={!customValue.trim()}
+              disabled={disabled || !customValue.trim()}
               className="px-3 py-2 bg-brand-yellow text-brand-dark rounded-xl text-sm font-medium disabled:opacity-40"
             >
               Send
@@ -138,7 +139,7 @@ export default function QuickReplies({ quickReplies, onSelect, disabled }: Props
             />
             <button
               onClick={handleCustomSubmit}
-              disabled={!customValue.trim()}
+              disabled={disabled || !customValue.trim()}
               className="px-3 py-2 bg-brand-yellow text-brand-dark rounded-xl text-sm font-medium disabled:opacity-40"
             >
               Send
@@ -182,7 +183,7 @@ export default function QuickReplies({ quickReplies, onSelect, disabled }: Props
                   />
                   <button
                     onClick={handleCustomSubmit}
-                    disabled={!customValue.trim()}
+                    disabled={disabled || !customValue.trim()}
                     className="px-3 py-2 bg-brand-yellow text-brand-dark rounded-lg text-sm font-medium disabled:opacity-40"
                   >
                     Send
@@ -209,7 +210,7 @@ export default function QuickReplies({ quickReplies, onSelect, disabled }: Props
             onClick={() => multiSelect ? toggleSelected(option.value) : handleSingleSelect(option.value)}
             disabled={disabled}
             className={`w-full flex items-start justify-between px-4 py-3 hover:bg-white/5 transition-colors text-left border-t border-white/10 first:border-t-0 disabled:opacity-50 ${
-              isChecked ? 'bg-white/8' : ''
+              isChecked ? 'bg-white/10' : ''
             }`}
           >
             <div className="flex items-start gap-3 flex-1 min-w-0">
