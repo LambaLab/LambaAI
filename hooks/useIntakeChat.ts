@@ -2,12 +2,14 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { calculatePriceRange, applyComplexityAdjustment, tightenPriceRange, type PriceRange } from '@/lib/pricing/engine'
+import type { QuickReplies } from '@/lib/intake-types'
 
 export type ChatMessage = {
   id: string
   role: 'user' | 'assistant'
   content: string
   capabilityCards?: string[]
+  quickReplies?: QuickReplies
 }
 
 type UpdateProposalInput = {
@@ -62,6 +64,13 @@ export function useIntakeChat({ proposalId: _proposalId, initialMessage }: Props
     }))
 
     setMessages((prev) => [...prev, userMessage])
+    // Clear quickReplies from the last assistant message when user replies
+    setMessages((prev) => {
+      const lastAssistantIdx = [...prev].reverse().findIndex((m) => m.role === 'assistant')
+      if (lastAssistantIdx === -1) return prev
+      const realIdx = prev.length - 1 - lastAssistantIdx
+      return prev.map((m, i) => i === realIdx ? { ...m, quickReplies: undefined } : m)
+    })
     setIsStreaming(true)
 
     const assistantMessage: ChatMessage = {
@@ -129,13 +138,17 @@ export function useIntakeChat({ proposalId: _proposalId, initialMessage }: Props
             setComplexityMultiplier(newMultiplier)
             setPriceRange(computePriceRange(newModules, newMultiplier, newScore))
 
-            if (input?.capability_cards?.length) {
-              setMessages((prev) => {
-                const last = prev[prev.length - 1]
-                if (last?.role !== 'assistant') return prev
-                return [...prev.slice(0, -1), { ...last, capabilityCards: input.capability_cards }]
-              })
-            }
+            // If Claude skipped streaming text and put its reply in follow_up_question, use it
+            setMessages((prev) => {
+              const last = prev[prev.length - 1]
+              if (last?.role !== 'assistant') return prev
+              const updatedContent = last.content || (typeof input?.follow_up_question === 'string' ? input.follow_up_question : '')
+              const updatedCards = input?.capability_cards?.length ? input.capability_cards : last.capabilityCards
+              // Parse quick_replies from tool input
+              const rawQR = (data.input as Record<string, unknown>)?.quick_replies
+              const updatedQR = rawQR && typeof rawQR === 'object' ? (rawQR as QuickReplies) : undefined
+              return [...prev.slice(0, -1), { ...last, content: updatedContent, capabilityCards: updatedCards, quickReplies: updatedQR }]
+            })
           }
         }
       }

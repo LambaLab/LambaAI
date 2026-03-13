@@ -83,6 +83,8 @@ export default function ChatPanel({
             key={msg.id}
             message={msg}
             isStreaming={isStreaming && i === messages.length - 1 && msg.role === 'assistant'}
+            onQuickReply={onSend}
+            isLastMessage={i === messages.length - 1}
           />
         ))}
         <div ref={bottomRef} />

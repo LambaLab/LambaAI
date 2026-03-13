@@ -1,11 +1,14 @@
 import type { ChatMessage } from '@/hooks/useIntakeChat'
+import QuickReplies from './QuickReplies'
 
 type Props = {
   message: ChatMessage
   isStreaming?: boolean
+  onQuickReply?: (value: string) => void
+  isLastMessage?: boolean
 }
 
-export default function MessageBubble({ message, isStreaming }: Props) {
+export default function MessageBubble({ message, isStreaming, onQuickReply, isLastMessage }: Props) {
   const isUser = message.role === 'user'
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
@@ -38,6 +41,14 @@ export default function MessageBubble({ message, isStreaming }: Props) {
               </span>
             ))}
           </div>
+        )}
+
+        {message.quickReplies && isLastMessage && onQuickReply && (
+          <QuickReplies
+            quickReplies={message.quickReplies}
+            onSelect={onQuickReply}
+            disabled={isStreaming}
+          />
         )}
       </div>
     </div>
