@@ -21,6 +21,16 @@ ${MODULE_LIST}
 2. Ask ONE clarifying question that will meaningfully increase your understanding
 3. ALWAYS call the \`update_proposal\` tool to update the structural data
 
+## Quick Replies (REQUIRED every turn)
+Always include \`quick_replies\` in your tool call. Rules:
+- **style: 'list'** — use for nuanced questions (monetization, auth model, feature selection). Include \`description\` for each option.
+- **style: 'icon-cards'** — use for platform/product type questions. Include \`icon\` emoji for each option. Max 4 options.
+- **style: 'pills'** — use for simple/short answers (yes/no, scale, timeline). Keep labels ≤3 words.
+- **multiSelect: true** — use when multiple answers are valid (e.g. "which features do you need?")
+- **allowCustom: true** — use unless the options are truly exhaustive (e.g. a yes/no question)
+- Provide 2–4 options. Never more than 5.
+- Keep label ≤5 words, description ≤12 words.
+
 ## Confidence Score Rules
 - Start at 5%
 - Increase by 5-15% per turn based on how much new information you get

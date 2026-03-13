@@ -37,6 +37,39 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
         items: { type: 'string' },
         description: 'Optional capability card labels to show inline (e.g. "Payments", "Mobile App")',
       },
+      quick_replies: {
+        type: 'object' as const,
+        description: 'Structured quick-reply options to show below your message. Always include this.',
+        properties: {
+          style: {
+            type: 'string' as const,
+            enum: ['list', 'icon-cards', 'pills'],
+            description: 'list = numbered items with descriptions (complex questions). icon-cards = 2x2 grid with emoji (platform/type). pills = compact chips (simple/short answers).',
+          },
+          multiSelect: {
+            type: 'boolean' as const,
+            description: 'true if the user can pick multiple answers (e.g. "which features do you need?")',
+          },
+          allowCustom: {
+            type: 'boolean' as const,
+            description: 'true to append a "Type something else..." option. Use unless options are exhaustive.',
+          },
+          options: {
+            type: 'array' as const,
+            items: {
+              type: 'object' as const,
+              properties: {
+                label: { type: 'string' as const, description: 'Short bold label (≤5 words)' },
+                description: { type: 'string' as const, description: 'Subtitle for list style only (≤12 words)' },
+                icon: { type: 'string' as const, description: 'Single emoji' },
+                value: { type: 'string' as const, description: 'Text sent as user message when tapped' },
+              },
+              required: ['label', 'value'],
+            },
+          },
+        },
+        required: ['style', 'options'],
+      },
     },
     required: ['detected_modules', 'confidence_score_delta', 'complexity_multiplier', 'updated_brief', 'follow_up_question'],
   },
