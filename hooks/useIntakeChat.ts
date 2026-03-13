@@ -279,6 +279,8 @@ export function useIntakeChat({ idea }: Props) {
 
     const msgIndex = messagesRef.current.findIndex((m) => m.id === messageId)
     if (msgIndex === -1) return
+    // Safety guard: never edit the very first message
+    if (msgIndex === 0) return
 
     // Determine which onboarding index this message corresponds to
     // Onboarding user messages are at positions 1, 3, 5 (after each Q)
@@ -329,14 +331,21 @@ export function useIntakeChat({ idea }: Props) {
   }, [onboardingStep, isStreaming]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const reset = useCallback(() => {
-    setMessages([
+    const initialMessages: ChatMessage[] = [
       {
         id: 'onboarding-0',
         role: 'assistant',
         content: ONBOARDING_QUESTIONS[0].content,
         quickReplies: ONBOARDING_QUESTIONS[0].quickReplies,
       },
-    ])
+    ]
+    // Reset refs synchronously
+    messagesRef.current = initialMessages
+    confidenceRef.current = 0
+    activeModulesRef.current = []
+    complexityRef.current = 1.0
+    // Reset state
+    setMessages(initialMessages)
     setOnboardingStep(0)
     setOnboardingAnswers([])
     setActiveModules([])

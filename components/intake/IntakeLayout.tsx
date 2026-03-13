@@ -24,7 +24,6 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
     sendMessage,
     toggleModule,
     productOverview,
-    onboardingStep: _onboardingStep,
     editMessage,
     reset,
   } = useIntakeChat({ proposalId, idea: initialMessage })

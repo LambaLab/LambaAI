@@ -48,14 +48,23 @@ export default function IntakeOverlay({ initialMessage }: Props) {
 
   const [resetConfirm, setResetConfirm] = useState(false)
   const resetRef = useRef<(() => void) | null>(null)
+  const resetConfirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (resetConfirmTimerRef.current) clearTimeout(resetConfirmTimerRef.current)
+    }
+  }, [])
 
   function handleResetClick() {
     if (!resetConfirm) {
       setResetConfirm(true)
-      setTimeout(() => setResetConfirm(false), 3000)
+      resetConfirmTimerRef.current = setTimeout(() => setResetConfirm(false), 3000)
       return
     }
-    // Confirmed: call reset + clear session
+    // Confirmed: clear timer first
+    if (resetConfirmTimerRef.current) clearTimeout(resetConfirmTimerRef.current)
+    // Call reset + clear session
     resetRef.current?.()
     setResetConfirm(false)
     sessionStorage.removeItem('lamba_session')

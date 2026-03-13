@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Pencil, Check, X } from 'lucide-react'
 import type { ChatMessage } from '@/hooks/useIntakeChat'
 import QuickReplies from './QuickReplies'
@@ -18,6 +18,12 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(message.content)
 
+  useEffect(() => {
+    if (!isEditing) {
+      setEditValue(message.content)
+    }
+  }, [message.content, isEditing])
+
   function handleEditSave() {
     if (!editValue.trim() || !onEdit) return
     onEdit(message.id, editValue.trim())
@@ -32,7 +38,7 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div className="max-w-[85%] space-y-3">
-        <div className={`relative group ${isUser ? '' : ''}`}>
+        <div className="relative group">
           {isEditing ? (
             <div className="space-y-2">
               <textarea
@@ -54,7 +60,7 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
                 </button>
                 <button
                   onClick={handleEditSave}
-                  disabled={!editValue.trim()}
+                  disabled={!editValue.trim() || isStreaming}
                   className="flex items-center gap-1 text-xs text-brand-dark bg-brand-yellow hover:bg-brand-yellow/90 transition-colors px-2 py-1 rounded-lg disabled:opacity-40"
                 >
                   <Check className="w-3 h-3" /> Save
