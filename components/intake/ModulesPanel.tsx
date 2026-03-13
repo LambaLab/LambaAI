@@ -30,32 +30,32 @@ export default function ModulesPanel({
   return (
     <div className="flex flex-col h-full">
       {/* 1. Product Overview */}
-      <div className="px-4 pt-4 pb-3 border-b border-white/5 flex-shrink-0">
-        <h2 className="font-bebas text-xs tracking-[0.15em] text-brand-gray-mid mb-2">
+      <div className="px-4 pt-4 pb-3 border-b border-[var(--ov-border,rgba(255,255,255,0.05))] flex-shrink-0">
+        <h2 className="font-bebas text-xs tracking-[0.15em] text-[var(--ov-text-muted,#727272)] mb-2">
           YOUR PRODUCT
         </h2>
         {productOverview ? (
-          <p className="text-sm text-brand-white leading-relaxed transition-all duration-500">
+          <p className="text-sm text-[var(--ov-text,#ffffff)] leading-relaxed transition-all duration-500">
             {productOverview}
           </p>
         ) : (
-          <p className="text-sm text-brand-gray-mid/50 leading-relaxed italic">
+          <p className="text-sm text-[var(--ov-text-muted,#727272)]/50 leading-relaxed italic">
             Your product overview will appear here as we learn more...
           </p>
         )}
       </div>
 
       {/* 2. Estimate Accuracy */}
-      <div className="px-4 py-3 border-b border-white/5 flex-shrink-0">
+      <div className="px-4 py-3 border-b border-[var(--ov-border,rgba(255,255,255,0.05))] flex-shrink-0">
         <ConfidenceBar score={confidenceScore} />
       </div>
 
       {/* 3. Technical Modules */}
-      <div className="px-4 py-3 border-b border-white/5 flex-shrink-0">
-        <h2 className="font-bebas text-2xl text-brand-white tracking-wide">
+      <div className="px-4 py-3 border-b border-[var(--ov-border,rgba(255,255,255,0.05))] flex-shrink-0">
+        <h2 className="font-bebas text-2xl text-[var(--ov-text,#ffffff)] tracking-wide">
           TECHNICAL MODULES
         </h2>
-        <p className="text-xs text-brand-gray-mid mt-0.5">
+        <p className="text-xs text-[var(--ov-text-muted,#727272)] mt-0.5">
           {activeModules.length} selected · Toggle to customize
         </p>
       </div>
@@ -74,8 +74,8 @@ export default function ModulesPanel({
 
         {activeModules.length > 0 && (
           <div className="py-2">
-            <div className="h-px bg-white/5" />
-            <p className="text-xs text-brand-gray-mid mt-2 mb-1">Add modules</p>
+            <div className="h-px bg-[var(--ov-border,rgba(255,255,255,0.05))]" />
+            <p className="text-xs text-[var(--ov-text-muted,#727272)] mt-2 mb-1">Add modules</p>
           </div>
         )}
 
@@ -95,7 +95,7 @@ export default function ModulesPanel({
 
       {/* 4. Full Proposal CTA — appears after first AI response */}
       {aiStarted && (
-        <div className="px-4 pb-4 pt-2 flex-shrink-0 border-t border-white/5">
+        <div className="px-4 pb-4 pt-2 flex-shrink-0 border-t border-[var(--ov-border,rgba(255,255,255,0.05))]">
           <button
             onClick={() => setShowAuthGate(true)}
             className="w-full py-3 bg-brand-yellow text-brand-dark font-medium rounded-xl hover:bg-brand-yellow/90 transition-all active:scale-[0.98] text-sm"

@@ -13,16 +13,16 @@ export default function MinimizedBar({ moduleCount, confidenceScore, onExpand }:
   return (
     <button
       onClick={onExpand}
-      className="fixed bottom-4 right-4 z-50 flex items-center gap-3 px-4 py-3 bg-[#1a1a1a] border border-white/10 rounded-2xl shadow-2xl hover:border-brand-yellow/30 transition-all w-72"
+      className="fixed bottom-4 right-4 z-50 flex items-center gap-3 px-4 py-3 bg-[var(--ov-surface,#1a1a1a)] border border-[var(--ov-border,rgba(255,255,255,0.10))] rounded-2xl shadow-2xl hover:border-brand-yellow/30 transition-all w-72"
     >
       <span className="text-base">🔨</span>
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-bebas tracking-widest text-brand-white">LAMBA LAB</p>
+        <p className="text-xs font-bebas tracking-widest text-[var(--ov-text,#ffffff)]">LAMBA LAB</p>
         <div className="flex items-center gap-2 mt-0.5">
-          <p className="text-[11px] text-brand-gray-mid whitespace-nowrap">
+          <p className="text-[11px] text-[var(--ov-text-muted,#727272)] whitespace-nowrap">
             {moduleCount} module{moduleCount !== 1 ? 's' : ''} · {pct}%
           </p>
-          <div className="flex-1 h-1 bg-white/10 rounded-full overflow-hidden">
+          <div className="flex-1 h-1 bg-[var(--ov-track,rgba(255,255,255,0.10))] rounded-full overflow-hidden">
             <div
               className="h-full bg-brand-yellow rounded-full transition-all duration-500"
               style={{ width: `${pct}%` }}
@@ -30,7 +30,7 @@ export default function MinimizedBar({ moduleCount, confidenceScore, onExpand }:
           </div>
         </div>
       </div>
-      <ChevronUp className="w-4 h-4 text-brand-gray-mid flex-shrink-0" />
+      <ChevronUp className="w-4 h-4 text-[var(--ov-text-muted,#727272)] flex-shrink-0" />
     </button>
   )
 }

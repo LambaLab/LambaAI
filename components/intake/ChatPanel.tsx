@@ -64,7 +64,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit }: Pro
 
       {/* Input area */}
       <div className="flex-shrink-0 px-4 pb-4">
-        <div className="flex items-end gap-2 bg-white/5 border border-white/10 rounded-xl p-3 focus-within:border-brand-yellow/30 transition-colors">
+        <div className="flex items-end gap-2 bg-[var(--ov-input-bg,rgba(255,255,255,0.05))] border border-[var(--ov-border,rgba(255,255,255,0.10))] rounded-xl p-3 focus-within:border-brand-yellow/30 transition-colors">
           <textarea
             ref={textareaRef}
             value={input}
@@ -74,7 +74,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit }: Pro
             rows={1}
             disabled={isStreaming}
             aria-label="Chat input"
-            className="flex-1 bg-transparent text-brand-white placeholder:text-brand-gray-mid resize-none outline-none text-sm leading-relaxed min-h-[20px] max-h-[120px] overflow-y-auto disabled:opacity-50"
+            className="flex-1 bg-transparent text-[var(--ov-text,#ffffff)] placeholder:text-[var(--ov-text-muted,#727272)] resize-none outline-none text-sm leading-relaxed min-h-[20px] max-h-[120px] overflow-y-auto disabled:opacity-50"
           />
           <button
             onClick={handleSubmit}

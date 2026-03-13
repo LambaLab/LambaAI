@@ -58,20 +58,20 @@ export default function QuickReplies({ quickReplies, onSelect, disabled }: Props
             key={opt.value}
             onClick={() => handleSingleSelect(opt.value)}
             disabled={disabled}
-            className="flex flex-col items-start gap-1.5 p-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-brand-yellow/40 transition-all text-left disabled:opacity-50"
+            className="flex flex-col items-start gap-1.5 p-3 rounded-xl border border-[var(--ov-border,rgba(255,255,255,0.10))] bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] hover:bg-[var(--ov-input-bg,rgba(255,255,255,0.10))] hover:border-brand-yellow/40 transition-all text-left disabled:opacity-50"
           >
             {opt.icon && <span className="text-xl">{opt.icon}</span>}
-            <span className="text-sm font-medium text-brand-white">{opt.label}</span>
+            <span className="text-sm font-medium text-[var(--ov-text,#ffffff)]">{opt.label}</span>
           </button>
         ))}
         {allowCustom && (
           <button
             onClick={() => setShowCustomInput(true)}
             disabled={disabled}
-            className="flex flex-col items-start gap-1.5 p-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-brand-yellow/40 transition-all text-left disabled:opacity-50"
+            className="flex flex-col items-start gap-1.5 p-3 rounded-xl border border-[var(--ov-border,rgba(255,255,255,0.10))] bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] hover:bg-[var(--ov-input-bg,rgba(255,255,255,0.10))] hover:border-brand-yellow/40 transition-all text-left disabled:opacity-50"
           >
             <span className="text-xl">✏️</span>
-            <span className="text-sm font-medium text-brand-white">Type something</span>
+            <span className="text-sm font-medium text-[var(--ov-text,#ffffff)]">Type something</span>
           </button>
         )}
         {showCustomInput && (
@@ -82,7 +82,7 @@ export default function QuickReplies({ quickReplies, onSelect, disabled }: Props
               onChange={(e) => setCustomValue(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCustomSubmit()}
               placeholder="Describe your idea..."
-              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-brand-white placeholder:text-brand-gray-mid outline-none focus:border-brand-yellow/50"
+              className="flex-1 bg-[var(--ov-input-bg,rgba(255,255,255,0.05))] border border-[var(--ov-border,rgba(255,255,255,0.10))] rounded-xl px-3 py-2 text-sm text-[var(--ov-text,#ffffff)] placeholder:text-[var(--ov-text-muted,#727272)] outline-none focus:border-brand-yellow/50"
             />
             <button
               onClick={handleCustomSubmit}
@@ -110,7 +110,7 @@ export default function QuickReplies({ quickReplies, onSelect, disabled }: Props
               className={`px-3 py-1.5 rounded-full border text-sm transition-all disabled:opacity-50 ${
                 isChecked
                   ? 'bg-brand-yellow text-brand-dark border-brand-yellow font-medium'
-                  : 'bg-white/5 text-brand-white border-white/10 hover:border-brand-yellow/40'
+                  : 'bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] text-[var(--ov-text,#ffffff)] border-[var(--ov-border,rgba(255,255,255,0.10))] hover:border-brand-yellow/40'
               }`}
             >
               {opt.icon && <span className="mr-1">{opt.icon}</span>}
@@ -122,7 +122,7 @@ export default function QuickReplies({ quickReplies, onSelect, disabled }: Props
           <button
             onClick={() => setShowCustomInput(true)}
             disabled={disabled}
-            className="px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-brand-gray-mid text-sm hover:border-brand-yellow/40 transition-all"
+            className="px-3 py-1.5 rounded-full border border-[var(--ov-border,rgba(255,255,255,0.10))] bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] text-[var(--ov-text-muted,#727272)] text-sm hover:border-brand-yellow/40 transition-all"
           >
             ✏️ Other...
           </button>
@@ -135,7 +135,7 @@ export default function QuickReplies({ quickReplies, onSelect, disabled }: Props
               onChange={(e) => setCustomValue(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCustomSubmit()}
               placeholder="Type your answer..."
-              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-brand-white placeholder:text-brand-gray-mid outline-none focus:border-brand-yellow/50"
+              className="flex-1 bg-[var(--ov-input-bg,rgba(255,255,255,0.05))] border border-[var(--ov-border,rgba(255,255,255,0.10))] rounded-xl px-3 py-2 text-sm text-[var(--ov-text,#ffffff)] placeholder:text-[var(--ov-text-muted,#727272)] outline-none focus:border-brand-yellow/50"
             />
             <button
               onClick={handleCustomSubmit}
@@ -161,7 +161,7 @@ export default function QuickReplies({ quickReplies, onSelect, disabled }: Props
 
   // style === 'list' (default) — AskUserQuestion clone
   return (
-    <div className="mt-3 space-y-0 rounded-xl border border-white/10 overflow-hidden">
+    <div className="mt-3 space-y-0 rounded-xl border border-[var(--ov-border,rgba(255,255,255,0.10))] overflow-hidden">
       {allOptions.map((opt, i) => {
         const isCustom = opt === 'custom'
         const value = isCustom ? '' : (opt as QuickReplyOption).value
@@ -170,7 +170,7 @@ export default function QuickReplies({ quickReplies, onSelect, disabled }: Props
 
         if (isCustom) {
           return (
-            <div key="custom" className="border-t border-white/10 first:border-t-0">
+            <div key="custom" className="border-t border-[var(--ov-border,rgba(255,255,255,0.10))] first:border-t-0">
               {showCustomInput ? (
                 <div className="flex gap-2 p-3">
                   <input
@@ -179,7 +179,7 @@ export default function QuickReplies({ quickReplies, onSelect, disabled }: Props
                     onChange={(e) => setCustomValue(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleCustomSubmit()}
                     placeholder="Type your answer..."
-                    className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-brand-white placeholder:text-brand-gray-mid outline-none focus:border-brand-yellow/50"
+                    className="flex-1 bg-[var(--ov-input-bg,rgba(255,255,255,0.05))] border border-[var(--ov-border,rgba(255,255,255,0.10))] rounded-lg px-3 py-2 text-sm text-[var(--ov-text,#ffffff)] placeholder:text-[var(--ov-text-muted,#727272)] outline-none focus:border-brand-yellow/50"
                   />
                   <button
                     onClick={handleCustomSubmit}
@@ -193,10 +193,10 @@ export default function QuickReplies({ quickReplies, onSelect, disabled }: Props
                 <button
                   onClick={() => setShowCustomInput(true)}
                   disabled={disabled}
-                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors text-left disabled:opacity-50"
+                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] transition-colors text-left disabled:opacity-50"
                 >
-                  <span className="text-sm text-brand-gray-mid">Type something else...</span>
-                  <span className="text-xs text-brand-gray-mid bg-white/10 rounded-md px-2 py-0.5 font-mono">{num}</span>
+                  <span className="text-sm text-[var(--ov-text-muted,#727272)]">Type something else...</span>
+                  <span className="text-xs text-[var(--ov-text-muted,#727272)] bg-[var(--ov-surface-subtle,rgba(255,255,255,0.10))] rounded-md px-2 py-0.5 font-mono">{num}</span>
                 </button>
               )}
             </div>
@@ -209,35 +209,35 @@ export default function QuickReplies({ quickReplies, onSelect, disabled }: Props
             key={option.value}
             onClick={() => multiSelect ? toggleSelected(option.value) : handleSingleSelect(option.value)}
             disabled={disabled}
-            className={`w-full flex items-start justify-between px-4 py-3 hover:bg-white/5 transition-colors text-left border-t border-white/10 first:border-t-0 disabled:opacity-50 ${
-              isChecked ? 'bg-white/10' : ''
+            className={`w-full flex items-start justify-between px-4 py-3 hover:bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] transition-colors text-left border-t border-[var(--ov-border,rgba(255,255,255,0.10))] first:border-t-0 disabled:opacity-50 ${
+              isChecked ? 'bg-[var(--ov-input-bg,rgba(255,255,255,0.10))]' : ''
             }`}
           >
             <div className="flex items-start gap-3 flex-1 min-w-0">
               {multiSelect && (
                 <div className={`mt-0.5 w-4 h-4 rounded flex-shrink-0 border flex items-center justify-center ${
-                  isChecked ? 'bg-brand-yellow border-brand-yellow' : 'border-white/30'
+                  isChecked ? 'bg-brand-yellow border-brand-yellow' : 'border-[var(--ov-border,rgba(255,255,255,0.30))]'
                 }`}>
                   {isChecked && <span className="text-brand-dark text-[10px] font-bold">✓</span>}
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-brand-white">
+                <p className="text-sm font-medium text-[var(--ov-text,#ffffff)]">
                   {option.icon && <span className="mr-1.5">{option.icon}</span>}
                   {option.label}
                 </p>
                 {option.description && (
-                  <p className="text-xs text-brand-gray-mid mt-0.5 leading-relaxed">{option.description}</p>
+                  <p className="text-xs text-[var(--ov-text-muted,#727272)] mt-0.5 leading-relaxed">{option.description}</p>
                 )}
               </div>
             </div>
-            <span className="text-xs text-brand-gray-mid bg-white/10 rounded-md px-2 py-0.5 font-mono ml-3 flex-shrink-0">{num}</span>
+            <span className="text-xs text-[var(--ov-text-muted,#727272)] bg-[var(--ov-surface-subtle,rgba(255,255,255,0.10))] rounded-md px-2 py-0.5 font-mono ml-3 flex-shrink-0">{num}</span>
           </button>
         )
       })}
 
       {multiSelect && selected.length > 0 && (
-        <div className="border-t border-white/10 p-3">
+        <div className="border-t border-[var(--ov-border,rgba(255,255,255,0.10))] p-3">
           <button
             onClick={handleMultiConfirm}
             disabled={disabled}

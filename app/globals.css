@@ -22,3 +22,19 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+/* Intake overlay light/dark theming */
+/* Default (no class) = dark mode, existing hardcoded dark classes apply */
+/* .intake-light on the overlay wrapper switches to light mode via CSS vars */
+.intake-light {
+  --ov-bg: #F5F4F0;
+  --ov-surface: #FFFFFF;
+  --ov-surface-subtle: rgba(0, 0, 0, 0.04);
+  --ov-border: rgba(0, 0, 0, 0.08);
+  --ov-text: #1A1A1A;
+  --ov-text-muted: #6B7280;
+  --ov-input-bg: rgba(0, 0, 0, 0.05);
+  --ov-bubble-ai-bg: #FFFFFF;
+  --ov-bubble-ai-border: rgba(0, 0, 0, 0.08);
+  --ov-track: rgba(0, 0, 0, 0.1);
+}

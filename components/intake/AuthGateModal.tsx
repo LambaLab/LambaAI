@@ -50,10 +50,10 @@ export default function AuthGateModal({ proposalId, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative bg-[#1d1d1d] border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+      <div className="relative bg-[var(--ov-surface,#1d1d1d)] border border-[var(--ov-border,rgba(255,255,255,0.10))] rounded-2xl p-6 w-full max-w-sm shadow-2xl">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-brand-gray-mid hover:text-brand-white transition-colors"
+          className="absolute top-4 right-4 text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors"
           aria-label="Close"
         >
           <X className="w-5 h-5" />
@@ -65,9 +65,9 @@ export default function AuthGateModal({ proposalId, onClose }: Props) {
               <CheckCircle className="w-6 h-6 text-brand-yellow" />
             </div>
             <div>
-              <h2 className="font-bold text-brand-white text-lg">Check your inbox</h2>
-              <p className="text-brand-gray-mid text-sm mt-1">
-                We sent a magic link to <span className="text-brand-white">{email}</span>.
+              <h2 className="font-bold text-[var(--ov-text,#ffffff)] text-lg">Check your inbox</h2>
+              <p className="text-[var(--ov-text-muted,#727272)] text-sm mt-1">
+                We sent a magic link to <span className="text-[var(--ov-text,#ffffff)]">{email}</span>.
                 Click it to view your full proposal.
               </p>
             </div>
@@ -87,8 +87,8 @@ export default function AuthGateModal({ proposalId, onClose }: Props) {
               <div className="w-10 h-10 bg-brand-yellow/10 rounded-xl flex items-center justify-center mb-4">
                 <Mail className="w-5 h-5 text-brand-yellow" />
               </div>
-              <h2 className="font-bold text-brand-white text-lg">View your proposal</h2>
-              <p className="text-brand-gray-mid text-sm mt-1">
+              <h2 className="font-bold text-[var(--ov-text,#ffffff)] text-lg">View your proposal</h2>
+              <p className="text-[var(--ov-text-muted,#727272)] text-sm mt-1">
                 Enter your email and we&apos;ll send you a link to access the full proposal.
               </p>
             </div>
@@ -104,7 +104,7 @@ export default function AuthGateModal({ proposalId, onClose }: Props) {
                 required
                 autoFocus
                 disabled={step === 'loading'}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-brand-white placeholder:text-brand-gray-mid outline-none focus:border-brand-yellow/50 transition-colors text-sm disabled:opacity-50"
+                className="w-full bg-[var(--ov-input-bg,rgba(255,255,255,0.05))] border border-[var(--ov-border,rgba(255,255,255,0.10))] rounded-xl px-4 py-3 text-[var(--ov-text,#ffffff)] placeholder:text-[var(--ov-text-muted,#727272)] outline-none focus:border-brand-yellow/50 transition-colors text-sm disabled:opacity-50"
               />
               <button
                 type="submit"

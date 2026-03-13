@@ -49,7 +49,7 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
                   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleEditSave() }
                   if (e.key === 'Escape') handleEditCancel()
                 }}
-                className="w-full px-4 py-3 rounded-2xl text-sm leading-relaxed bg-brand-yellow/20 text-brand-white border border-brand-yellow/40 outline-none resize-none min-h-[60px]"
+                className="w-full px-4 py-3 rounded-2xl text-sm leading-relaxed bg-brand-yellow/20 text-[var(--ov-text,#ffffff)] border border-brand-yellow/40 outline-none resize-none min-h-[60px]"
               />
               <div className="flex gap-2 justify-end">
                 <button
@@ -72,7 +72,7 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
               className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                 isUser
                   ? 'bg-brand-yellow text-brand-dark font-medium rounded-br-sm'
-                  : 'bg-white/5 text-brand-white rounded-bl-sm'
+                  : 'bg-[var(--ov-bubble-ai-bg,rgba(255,255,255,0.05))] text-[var(--ov-text,#ffffff)] border border-[var(--ov-bubble-ai-border,transparent)] rounded-bl-sm'
               }`}
             >
               {message.content}
