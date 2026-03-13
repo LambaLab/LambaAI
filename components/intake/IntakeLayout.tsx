@@ -28,18 +28,22 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
     isStreaming,
     sendMessage,
     toggleModule,
-  } = useIntakeChat({ proposalId, initialMessage: onboardingDone ? bundledMessage : '' })
+  } = useIntakeChat({ proposalId, initialMessage: '' })
 
   useEffect(() => {
     onStateChange?.(activeModules.length, confidenceScore)
   }, [activeModules.length, confidenceScore, onStateChange])
 
-  // Once onboarding completes, send the bundled message as the first AI message
+  // Send the bundled context to the AI after onboarding completes.
+  // We call sendMessage() explicitly here rather than relying on the
+  // hook's initialMessage prop, because the hook only reads initialMessage
+  // once on mount (before onboarding runs). React 18 batches the two
+  // setState calls in handleOnboardingComplete so bundledMessage is always
+  // populated when this effect fires.
   useEffect(() => {
     if (onboardingDone && bundledMessage) {
       sendMessage(bundledMessage)
     }
-    // Only run when onboarding transitions to done
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onboardingDone])
 
