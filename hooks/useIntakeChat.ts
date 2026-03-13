@@ -19,6 +19,7 @@ type UpdateProposalInput = {
   updated_brief: string
   follow_up_question: string
   capability_cards?: string[]
+  quick_replies?: QuickReplies
 }
 
 type Props = {
@@ -145,8 +146,7 @@ export function useIntakeChat({ proposalId: _proposalId, initialMessage }: Props
               const updatedContent = last.content || (typeof input?.follow_up_question === 'string' ? input.follow_up_question : '')
               const updatedCards = input?.capability_cards?.length ? input.capability_cards : last.capabilityCards
               // Parse quick_replies from tool input
-              const rawQR = (data.input as Record<string, unknown>)?.quick_replies
-              const updatedQR = rawQR && typeof rawQR === 'object' ? (rawQR as QuickReplies) : undefined
+              const updatedQR = input?.quick_replies
               return [...prev.slice(0, -1), { ...last, content: updatedContent, capabilityCards: updatedCards, quickReplies: updatedQR }]
             })
           }
