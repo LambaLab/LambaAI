@@ -7,12 +7,12 @@ describe('bundleOnboardingContext', () => {
       idea: 'sell stories',
       platform: 'Web App',
       productType: 'Marketplace',
-      scale: '<100 users',
+      goal: 'Launch a startup',
     })
     expect(result).toContain('sell stories')
     expect(result).toContain('Web App')
     expect(result).toContain('Marketplace')
-    expect(result).toContain('<100 users')
+    expect(result).toContain('Launch a startup')
   })
 
   it('formats output as newline-separated labelled fields', () => {
@@ -20,10 +20,10 @@ describe('bundleOnboardingContext', () => {
       idea: 'sell stories',
       platform: 'Web App',
       productType: 'Marketplace',
-      scale: '<100 users',
+      goal: 'Launch a startup',
     })
     expect(result).toBe(
-      'User idea: "sell stories"\nPlatform: Web App\nProduct type: Marketplace\nExpected scale: <100 users'
+      'User idea: "sell stories"\nPlatform: Web App\nProduct type: Marketplace\nGoal: Launch a startup'
     )
   })
 
@@ -32,10 +32,10 @@ describe('bundleOnboardingContext', () => {
       idea: '',
       platform: 'Web App',
       productType: 'Marketplace',
-      scale: '<100 users',
+      goal: 'Launch a startup',
     })
     expect(result).not.toContain('User idea')
-    expect(result).toBe('Platform: Web App\nProduct type: Marketplace\nExpected scale: <100 users')
+    expect(result).toBe('Platform: Web App\nProduct type: Marketplace\nGoal: Launch a startup')
   })
 })
 

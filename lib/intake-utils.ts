@@ -8,7 +8,7 @@ export function bundleOnboardingContext(ctx: OnboardingContext): string {
   lines.push(
     `Platform: ${ctx.platform}`,
     `Product type: ${ctx.productType}`,
-    `Expected scale: ${ctx.scale}`,
+    `Goal: ${ctx.goal}`,
   )
   return lines.join('\n')
 }

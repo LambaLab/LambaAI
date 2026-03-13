@@ -16,5 +16,5 @@ export type OnboardingContext = {
   idea: string
   platform: string
   productType: string
-  scale: string
+  goal: string   // was: scale
 }
