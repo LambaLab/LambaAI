@@ -19,6 +19,7 @@ type UpdateProposalInput = {
   complexity_multiplier: number
   updated_brief: string
   follow_up_question: string
+  product_overview?: string
   capability_cards?: string[]
   quick_replies?: QuickReplies
 }
@@ -34,36 +35,36 @@ const ONBOARDING_QUESTIONS = [
   {
     content: 'What platform are you building for?',
     quickReplies: {
-      style: 'icon-cards' as const,
+      style: 'list' as const,
       options: [
-        { label: 'Web App', icon: '🌐', value: 'Web App' },
-        { label: 'Mobile App', icon: '📱', value: 'Mobile App' },
-        { label: 'Both', icon: '🖥️', value: 'Web + Mobile' },
-        { label: 'Not sure yet', icon: '🤔', value: 'Platform TBD' },
+        { label: '🌐 Web App', description: 'A browser-based product users visit on any device', value: 'Web App' },
+        { label: '📱 Mobile App', description: 'A native iOS or Android app on phones and tablets', value: 'Mobile App' },
+        { label: '🖥️ Both', description: 'Needs to work well on web and as a mobile app', value: 'Web + Mobile' },
+        { label: '🤔 Not sure yet', description: "I'll help you figure out the right fit", value: 'Platform TBD' },
       ],
     },
   },
   {
     content: 'What type of product is this?',
     quickReplies: {
-      style: 'icon-cards' as const,
+      style: 'list' as const,
       options: [
-        { label: 'Marketplace', icon: '🛒', value: 'Marketplace' },
-        { label: 'Social / Community', icon: '💬', value: 'Social / Community' },
-        { label: 'SaaS / Internal Tool', icon: '🛠️', value: 'SaaS / Internal Tool' },
-        { label: 'Something else', icon: '🎯', value: 'Other' },
+        { label: '🛒 Marketplace', description: 'Connects buyers and sellers or service providers', value: 'Marketplace' },
+        { label: '💬 Social / Community', description: 'People connect, share, and engage with each other', value: 'Social / Community' },
+        { label: '🛠️ SaaS / Tool', description: 'A software tool for businesses or internal teams', value: 'SaaS / Internal Tool' },
+        { label: '🎯 Something else', description: "A different kind of product — I'll describe it", value: 'Other' },
       ],
     },
   },
   {
     content: "What's the goal for this product?",
     quickReplies: {
-      style: 'icon-cards' as const,
+      style: 'list' as const,
       options: [
-        { label: 'Launch a startup', icon: '🚀', value: 'Launch a startup' },
-        { label: 'Grow my business', icon: '🏢', value: 'Grow my existing business' },
-        { label: 'Build for my team', icon: '🛠️', value: 'Build a tool for my team' },
-        { label: 'Something else', icon: '🎯', value: 'Other' },
+        { label: '🚀 Launch a startup', description: 'Build a new business around this product', value: 'Launch a startup' },
+        { label: '🏢 Grow my business', description: 'Expand or improve an existing business with this', value: 'Grow my existing business' },
+        { label: '🛠️ Build for my team', description: 'An internal tool to help my team work better', value: 'Build a tool for my team' },
+        { label: '🎯 Something else', description: "A different goal — I'll explain", value: 'Other' },
       ],
     },
   },
@@ -85,6 +86,7 @@ export function useIntakeChat({ idea }: Props) {
   const [complexityMultiplier, setComplexityMultiplier] = useState(1.0)
   const [priceRange, setPriceRange] = useState<PriceRange>({ min: 0, max: 0 })
   const [isStreaming, setIsStreaming] = useState(false)
+  const [productOverview, setProductOverview] = useState('')
 
   const messagesRef = useRef<ChatMessage[]>([])
   const confidenceRef = useRef(0)
@@ -166,6 +168,9 @@ export function useIntakeChat({ idea }: Props) {
             setConfidenceScore(newScore)
             setComplexityMultiplier(newMultiplier)
             setPriceRange(computePriceRange(newModules, newMultiplier, newScore))
+            if (input?.product_overview && input.product_overview.trim()) {
+              setProductOverview(input.product_overview.trim())
+            }
 
             setMessages((prev) => {
               const last = prev[prev.length - 1]
@@ -266,5 +271,5 @@ export function useIntakeChat({ idea }: Props) {
     setPriceRange(computePriceRange(newModules, complexityMultiplier, confidenceScore))
   }
 
-  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule }
+  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview }
 }

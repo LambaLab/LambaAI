@@ -3,7 +3,7 @@ import type Anthropic from '@anthropic-ai/sdk'
 export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
   name: 'update_proposal',
   description:
-    'Called by the AI after every turn to update the detected modules, confidence score, price adjustment, and brief. Always call this tool alongside the conversational response.',
+    'Called by the AI after every turn to update the detected modules, confidence score, price adjustment, brief, and product overview. Always call this tool alongside the conversational response.',
   input_schema: {
     type: 'object' as const,
     properties: {
@@ -31,6 +31,10 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
       follow_up_question: {
         type: 'string',
         description: 'The single most important clarifying question to ask next (already embedded in conversational response).',
+      },
+      product_overview: {
+        type: 'string',
+        description: 'A plain-language 2–4 sentence paragraph describing the product for a non-technical audience. Written as if pitching to an investor. Start with 1 sentence after turn 1, grow to 3–4 sentences by turn 5. Never use technical jargon. Example: "A marketplace where independent designers sell custom home décor. Buyers browse by style and commission pieces directly from makers. The platform handles payments, messaging, and order tracking."',
       },
       capability_cards: {
         type: 'array',
@@ -71,6 +75,6 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
         required: ['style', 'options'],
       },
     },
-    required: ['detected_modules', 'confidence_score_delta', 'complexity_multiplier', 'updated_brief', 'follow_up_question'],
+    required: ['detected_modules', 'confidence_score_delta', 'complexity_multiplier', 'updated_brief', 'follow_up_question', 'product_overview'],
   },
 }
