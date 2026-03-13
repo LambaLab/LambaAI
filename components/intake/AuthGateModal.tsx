@@ -9,9 +9,10 @@ type Step = 'email' | 'loading' | 'sent'
 type Props = {
   proposalId: string
   onClose: () => void
+  theme?: 'dark' | 'light'
 }
 
-export default function AuthGateModal({ proposalId, onClose }: Props) {
+export default function AuthGateModal({ proposalId, onClose, theme }: Props) {
   const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
@@ -48,7 +49,7 @@ export default function AuthGateModal({ proposalId, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div className={`fixed inset-0 z-[60] flex items-center justify-center p-4 ${theme === 'light' ? 'intake-light' : ''}`}>
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
       <div className="relative bg-[var(--ov-surface,#1d1d1d)] border border-[var(--ov-border,rgba(255,255,255,0.10))] rounded-2xl p-6 w-full max-w-sm shadow-2xl">
         <button

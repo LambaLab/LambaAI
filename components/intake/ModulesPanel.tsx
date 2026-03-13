@@ -14,6 +14,7 @@ type Props = {
   proposalId: string
   onToggle: (id: string) => void
   aiStarted: boolean
+  theme?: 'dark' | 'light'
 }
 
 export default function ModulesPanel({
@@ -24,6 +25,7 @@ export default function ModulesPanel({
   proposalId,
   onToggle,
   aiStarted,
+  theme,
 }: Props) {
   const [showAuthGate, setShowAuthGate] = useState(false)
 
@@ -109,6 +111,7 @@ export default function ModulesPanel({
         <AuthGateModal
           proposalId={proposalId}
           onClose={() => setShowAuthGate(false)}
+          theme={theme}
         />
       )}
     </div>

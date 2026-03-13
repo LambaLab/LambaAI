@@ -12,9 +12,10 @@ type Props = {
   initialMessage: string
   onStateChange?: (moduleCount: number, confidenceScore: number) => void
   onResetRef?: React.MutableRefObject<(() => void) | null>
+  theme?: 'dark' | 'light'
 }
 
-export default function IntakeLayout({ proposalId, initialMessage, onStateChange, onResetRef }: Props) {
+export default function IntakeLayout({ proposalId, initialMessage, onStateChange, onResetRef, theme }: Props) {
   const {
     messages,
     activeModules,
@@ -69,6 +70,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             proposalId={proposalId}
             onToggle={toggleModule}
             aiStarted={aiStarted}
+            theme={theme}
           />
         </div>
       </div>

@@ -1,22 +1,30 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 type Theme = 'dark' | 'light'
 const STORAGE_KEY = 'lamba-theme'
 
-export function useTheme(): { theme: Theme; toggleTheme: () => void } {
-  const [theme, setTheme] = useState<Theme>('dark')
+function readStoredTheme(): Theme {
+  if (typeof window === 'undefined') return 'dark'
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored === 'light' || stored === 'dark') return stored
+  } catch {
+    // localStorage unavailable
+  }
+  return 'dark'
+}
 
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as Theme | null
-    if (stored === 'light' || stored === 'dark') {
-      setTheme(stored)
-    }
-  }, [])
+export function useTheme(): { theme: Theme; toggleTheme: () => void } {
+  const [theme, setTheme] = useState<Theme>(readStoredTheme)
 
   function toggleTheme() {
     const next: Theme = theme === 'dark' ? 'light' : 'dark'
     setTheme(next)
-    localStorage.setItem(STORAGE_KEY, next)
+    try {
+      localStorage.setItem(STORAGE_KEY, next)
+    } catch {
+      // localStorage unavailable — preference not persisted, visual toggle still works
+    }
   }
 
   return { theme, toggleTheme }
