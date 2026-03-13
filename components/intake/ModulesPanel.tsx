@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import ModuleCard from './ModuleCard'
 import ConfidenceBar from './ConfidenceBar'
 import AuthGateModal from './AuthGateModal'
@@ -26,13 +25,7 @@ export default function ModulesPanel({
   onToggle,
   aiStarted,
 }: Props) {
-  const router = useRouter()
   const [showAuthGate, setShowAuthGate] = useState(false)
-
-  function handleAuthSuccess() {
-    setShowAuthGate(false)
-    router.push(`/proposal/${proposalId}?status=pending`)
-  }
 
   return (
     <div className="flex flex-col h-full">
@@ -116,7 +109,6 @@ export default function ModulesPanel({
         <AuthGateModal
           proposalId={proposalId}
           onClose={() => setShowAuthGate(false)}
-          onSuccess={handleAuthSuccess}
         />
       )}
     </div>

@@ -9,10 +9,9 @@ type Step = 'email' | 'loading' | 'sent'
 type Props = {
   proposalId: string
   onClose: () => void
-  onSuccess: () => void
 }
 
-export default function AuthGateModal({ proposalId, onClose, onSuccess: _onSuccess }: Props) {
+export default function AuthGateModal({ proposalId, onClose }: Props) {
   const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
@@ -24,6 +23,11 @@ export default function AuthGateModal({ proposalId, onClose, onSuccess: _onSucce
     setError('')
 
     const session = getStoredSession()
+    if (!session?.sessionId) {
+      setStep('email')
+      setError('Session expired. Please refresh the page and try again.')
+      return
+    }
 
     const res = await fetch('/api/auth/send-otp', {
       method: 'POST',
@@ -31,7 +35,7 @@ export default function AuthGateModal({ proposalId, onClose, onSuccess: _onSucce
       body: JSON.stringify({
         email: email.trim(),
         proposalId,
-        sessionId: session?.sessionId ?? '',
+        sessionId: session.sessionId,
       }),
     })
 

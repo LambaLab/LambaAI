@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Validate proposal belongs to this session and link to user
-  const serviceClient = await createServiceClient()
+  const serviceClient = createServiceClient()
 
   const { data: proposal } = await serviceClient
     .from('proposals')
@@ -37,15 +37,21 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/?error=proposal_not_found', requestUrl.origin))
   }
 
-  const { error: updateError } = await serviceClient
+  const { error: updateError, count } = await serviceClient
     .from('proposals')
-    .update({ user_id: data.user.id, status: 'pending_review' })
+    .update({ user_id: data.user.id, status: 'pending_review' }, { count: 'exact' })
     .eq('id', proposalId)
     .eq('session_id', sessionId)
+    .is('user_id', null)
 
   if (updateError) {
     console.error('Auth callback: proposal update failed', updateError)
     return NextResponse.redirect(new URL('/?error=update_failed', requestUrl.origin))
+  }
+
+  if (count === 0) {
+    // Proposal already claimed
+    return NextResponse.redirect(new URL(`/proposal/${proposalId}?status=pending`, requestUrl.origin))
   }
 
   return NextResponse.redirect(new URL(`/proposal/${proposalId}?status=pending`, requestUrl.origin))

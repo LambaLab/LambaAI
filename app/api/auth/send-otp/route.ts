@@ -9,14 +9,17 @@ export async function POST(req: NextRequest) {
 
   const supabase = await createServerSupabaseClient()
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? `https://${req.headers.get('host')}`
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL
+  if (!appUrl) {
+    console.error('NEXT_PUBLIC_APP_URL is not set')
+    return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 })
+  }
   const emailRedirectTo = `${appUrl}/auth/callback?proposalId=${proposalId}&sessionId=${sessionId}`
 
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
       shouldCreateUser: true,
-      data: { proposal_id: proposalId },
       emailRedirectTo,
     },
   })
