@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import ChatPanel from './ChatPanel'
 import ModulesPanel from './ModulesPanel'
 import MobileBottomDrawer from './MobileBottomDrawer'
@@ -22,6 +23,10 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
     sendMessage,
     toggleModule,
   } = useIntakeChat({ proposalId, initialMessage })
+
+  useEffect(() => {
+    onStateChange?.(activeModules.length, confidenceScore)
+  }, [activeModules.length, confidenceScore, onStateChange])
 
   const pricingVisible = isPricingVisible(confidenceScore)
   const summaryText = pricingVisible
