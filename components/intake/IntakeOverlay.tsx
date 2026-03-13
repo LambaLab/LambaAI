@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Minus } from 'lucide-react'
 import IntakeLayout from './IntakeLayout'
 import MinimizedBar from './MinimizedBar'
@@ -39,6 +39,11 @@ export default function IntakeOverlay({ initialMessage }: Props) {
 
   useEffect(() => {
     getOrCreateSession().then(setSession).catch(() => setSessionError(true))
+  }, [])
+
+  const handleStateChange = useCallback((m: number, c: number) => {
+    setLiveModuleCount(m)
+    setLiveConfidenceScore(c)
   }, [])
 
   if (minimized) {
@@ -90,7 +95,7 @@ export default function IntakeOverlay({ initialMessage }: Props) {
       <IntakeLayout
         proposalId={session.proposalId}
         initialMessage={initialMessage}
-        onStateChange={(m, c) => { setLiveModuleCount(m); setLiveConfidenceScore(c) }}
+        onStateChange={handleStateChange}
       />
     </div>
   )
