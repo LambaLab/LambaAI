@@ -3,13 +3,11 @@
 import { useState } from 'react'
 import { ChevronUp, ChevronDown } from 'lucide-react'
 import ModulesPanel from './ModulesPanel'
-import type { PriceRange } from '@/lib/pricing/engine'
 
 type Props = {
   summary: string
   activeModules: string[]
   confidenceScore: number
-  priceRange: PriceRange
   pricingVisible: boolean
   productOverview: string
   proposalId: string
@@ -17,7 +15,16 @@ type Props = {
   onToggle: (id: string) => void
 }
 
-export default function MobileBottomDrawer({ summary, activeModules, confidenceScore, priceRange, pricingVisible, productOverview, proposalId, aiStarted, onToggle }: Props) {
+export default function MobileBottomDrawer({
+  summary,
+  activeModules,
+  confidenceScore,
+  pricingVisible,
+  productOverview,
+  proposalId,
+  aiStarted,
+  onToggle,
+}: Props) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -52,7 +59,6 @@ export default function MobileBottomDrawer({ summary, activeModules, confidenceS
             <ModulesPanel
               activeModules={activeModules}
               confidenceScore={confidenceScore}
-              priceRange={priceRange}
               pricingVisible={pricingVisible}
               productOverview={productOverview}
               proposalId={proposalId}

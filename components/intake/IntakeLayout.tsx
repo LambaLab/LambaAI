@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import ChatPanel from './ChatPanel'
 import ModulesPanel from './ModulesPanel'
 import MobileBottomDrawer from './MobileBottomDrawer'
@@ -25,9 +25,12 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
     productOverview,
   } = useIntakeChat({ proposalId, idea: initialMessage })
 
+  const onStateChangeRef = useRef(onStateChange)
+  useEffect(() => { onStateChangeRef.current = onStateChange })
+
   useEffect(() => {
-    onStateChange?.(activeModules.length, confidenceScore)
-  }, [activeModules.length, confidenceScore, onStateChange])
+    onStateChangeRef.current?.(activeModules.length, confidenceScore)
+  }, [activeModules.length, confidenceScore])
 
   const pricingVisible = isPricingVisible(confidenceScore)
 
@@ -53,7 +56,6 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
           <ModulesPanel
             activeModules={activeModules}
             confidenceScore={confidenceScore}
-            priceRange={priceRange}
             pricingVisible={pricingVisible}
             productOverview={productOverview}
             proposalId={proposalId}
@@ -76,7 +78,6 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
           summary={summaryText}
           activeModules={activeModules}
           confidenceScore={confidenceScore}
-          priceRange={priceRange}
           pricingVisible={pricingVisible}
           productOverview={productOverview}
           proposalId={proposalId}

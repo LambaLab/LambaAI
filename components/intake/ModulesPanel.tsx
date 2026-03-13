@@ -6,12 +6,10 @@ import ModuleCard from './ModuleCard'
 import ConfidenceBar from './ConfidenceBar'
 import AuthGateModal from './AuthGateModal'
 import { MODULE_CATALOG } from '@/lib/modules/catalog'
-import type { PriceRange } from '@/lib/pricing/engine'
 
 type Props = {
   activeModules: string[]
   confidenceScore: number
-  priceRange: PriceRange
   pricingVisible: boolean
   productOverview: string
   proposalId: string
@@ -22,7 +20,6 @@ type Props = {
 export default function ModulesPanel({
   activeModules,
   confidenceScore,
-  priceRange: _priceRange,
   pricingVisible,
   productOverview,
   proposalId,
@@ -71,20 +68,16 @@ export default function ModulesPanel({
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
-        {activeModules.length > 0 && (
-          <div className="space-y-2">
-            {activeModules.map((id) => (
-              <ModuleCard
-                key={id}
-                moduleId={id}
-                isActive={true}
-                activeModules={activeModules}
-                onToggle={onToggle}
-                pricingVisible={pricingVisible}
-              />
-            ))}
-          </div>
-        )}
+        {activeModules.length > 0 && activeModules.map((id) => (
+          <ModuleCard
+            key={id}
+            moduleId={id}
+            isActive={true}
+            activeModules={activeModules}
+            onToggle={onToggle}
+            pricingVisible={pricingVisible}
+          />
+        ))}
 
         {activeModules.length > 0 && (
           <div className="py-2">
