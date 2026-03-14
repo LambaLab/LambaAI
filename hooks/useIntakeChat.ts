@@ -53,11 +53,15 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   const confidenceRef = useRef(0)
   const activeModulesRef = useRef<string[]>([])
   const complexityRef = useRef(1.0)
+  const productOverviewRef = useRef('')
+  const moduleSummariesRef = useRef<{ [moduleId: string]: string }>({})
 
   useEffect(() => { messagesRef.current = messages }, [messages])
   useEffect(() => { confidenceRef.current = confidenceScore }, [confidenceScore])
   useEffect(() => { activeModulesRef.current = activeModules }, [activeModules])
   useEffect(() => { complexityRef.current = complexityMultiplier }, [complexityMultiplier])
+  useEffect(() => { productOverviewRef.current = productOverview }, [productOverview])
+  useEffect(() => { moduleSummariesRef.current = moduleSummaries }, [moduleSummaries])
 
   // Persist messages to localStorage after every update
   useEffect(() => {
@@ -66,12 +70,9 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     }
   }, [messages, proposalId])
 
-  // Persist proposal state to localStorage after every update
-  useEffect(() => {
-    if (!proposalId) return
-    const state = { activeModules, confidenceScore, complexityMultiplier, productOverview, moduleSummaries }
-    localStorage.setItem(PROPOSAL_KEY(proposalId), JSON.stringify(state))
-  }, [activeModules, confidenceScore, complexityMultiplier, productOverview, moduleSummaries, proposalId])
+  // NOTE: Proposal state is saved inline (not via a reactive effect) to avoid a
+  // mount-order bug: a reactive effect would fire before the restore effect and
+  // overwrite the stored data with empty defaults before it could be read back.
 
   // Auto-send the idea on mount (fires once) — or restore stored messages
   useEffect(() => {
@@ -224,6 +225,27 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                 quickReplies: updatedQR,
               }]
             })
+
+            // Save proposal state inline so it survives page reload.
+            // Must be inline (not a reactive effect) to avoid the mount-order bug
+            // where the persistence effect fires before the restore effect.
+            if (proposalId) {
+              try {
+                const savedOverview = (input?.product_overview && input.product_overview.trim())
+                  ? input.product_overview.trim()
+                  : productOverviewRef.current
+                const savedSummaries = (input?.module_summaries && typeof input.module_summaries === 'object')
+                  ? { ...moduleSummariesRef.current, ...input.module_summaries }
+                  : moduleSummariesRef.current
+                localStorage.setItem(PROPOSAL_KEY(proposalId), JSON.stringify({
+                  activeModules: newModules,
+                  confidenceScore: newScore,
+                  complexityMultiplier: newMultiplier,
+                  productOverview: savedOverview,
+                  moduleSummaries: savedSummaries,
+                }))
+              } catch { /* Ignore QuotaExceededError */ }
+            }
           }
         }
       }
@@ -273,6 +295,19 @@ export function useIntakeChat({ proposalId, idea }: Props) {
       : [...activeModules, moduleId]
     setActiveModules(newModules)
     setPriceRange(computePriceRange(newModules, complexityMultiplier, confidenceScore))
+
+    // Save inline so module toggles survive page reload
+    if (proposalId) {
+      try {
+        localStorage.setItem(PROPOSAL_KEY(proposalId), JSON.stringify({
+          activeModules: newModules,
+          confidenceScore,
+          complexityMultiplier,
+          productOverview,
+          moduleSummaries,
+        }))
+      } catch { /* Ignore */ }
+    }
   }
 
   const editMessage = useCallback(async (messageId: string, newContent: string, displayContent?: string) => {
