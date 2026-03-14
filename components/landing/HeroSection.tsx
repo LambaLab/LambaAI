@@ -7,10 +7,22 @@ import IntakeOverlay from '@/components/intake/IntakeOverlay'
 export default function HeroSection() {
   const [intakeOpen, setIntakeOpen] = useState(false)
   const [initialMessage, setInitialMessage] = useState('')
+  const [heroInputResetKey, setHeroInputResetKey] = useState(0)
 
   function handleFirstMessage(message: string) {
     setInitialMessage(message)
     setIntakeOpen(true)
+  }
+
+  function handleReset() {
+    setInitialMessage('')
+    setHeroInputResetKey((k) => k + 1)
+  }
+
+  function handleClose() {
+    setIntakeOpen(false)
+    setInitialMessage('')
+    setHeroInputResetKey((k) => k + 1)
   }
 
   return (
@@ -36,13 +48,15 @@ export default function HeroSection() {
             estimates the cost, and delivers a real proposal — in minutes.
           </p>
 
-          <HeroInput onFirstMessage={handleFirstMessage} />
+          <HeroInput key={heroInputResetKey} onFirstMessage={handleFirstMessage} />
         </div>
       </section>
 
       {intakeOpen && (
         <IntakeOverlay
           initialMessage={initialMessage}
+          onReset={handleReset}
+          onClose={handleClose}
         />
       )}
     </>
