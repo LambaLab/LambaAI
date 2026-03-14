@@ -12,6 +12,8 @@ export type ChatMessage = {
   question?: string        // The question for this turn (shown as rows card header)
   capabilityCards?: string[]
   quickReplies?: QuickReplies
+  sourceQuickReplies?: QuickReplies  // For user messages created by row selection: the original QR offered
+  sourceQuestion?: string            // The question text that was shown when this row was selected
 }
 
 type UpdateProposalInput = {
@@ -203,7 +205,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     }
   }
 
-  const sendMessage = useCallback(async (content: string, displayContent?: string) => {
+  const sendMessage = useCallback(async (content: string, displayContent?: string, sourceQuickReplies?: QuickReplies, sourceQuestion?: string) => {
     if (isStreaming) return
 
     const userMessage: ChatMessage = {
@@ -211,6 +213,8 @@ export function useIntakeChat({ proposalId, idea }: Props) {
       role: 'user',
       content,
       displayContent: displayContent && displayContent !== content ? displayContent : undefined,
+      sourceQuickReplies,
+      sourceQuestion,
     }
 
     const apiMessages: ApiMessage[] = [
@@ -237,7 +241,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     setPriceRange(computePriceRange(newModules, complexityMultiplier, confidenceScore))
   }
 
-  const editMessage = useCallback(async (messageId: string, newContent: string) => {
+  const editMessage = useCallback(async (messageId: string, newContent: string, displayContent?: string) => {
     if (isStreaming) return
 
     const msgIndex = messagesRef.current.findIndex((m) => m.id === messageId)
@@ -248,6 +252,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
       id: crypto.randomUUID(),
       role: 'user',
       content: `Actually, let me clarify my earlier answer: ${newContent}`,
+      displayContent,  // Clean display (question + new answer) for row re-selections
     }
 
     const kept = messagesRef.current.slice(0, msgIndex)

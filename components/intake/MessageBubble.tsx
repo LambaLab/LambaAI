@@ -10,10 +10,12 @@ type Props = {
   isStreaming?: boolean
   onQuickReply?: (value: string, label?: string) => void
   isLastMessage?: boolean
-  onEdit?: (messageId: string, newContent: string) => void
+  onEdit?: (messageId: string, newContent: string, displayContent?: string) => void
+  onStartRowEdit?: (messageId: string) => void  // For row-selection messages: show rows at bottom instead of textarea
+  isBeingReEdited?: boolean                      // Visual indicator that this message's rows are active at bottom
 }
 
-export default function MessageBubble({ message, isStreaming, onQuickReply, isLastMessage, onEdit }: Props) {
+export default function MessageBubble({ message, isStreaming, onQuickReply, isLastMessage, onEdit, onStartRowEdit, isBeingReEdited }: Props) {
   const isUser = message.role === 'user'
 
   // User bubbles show displayContent when available (e.g. quick reply label instead of raw value)
@@ -86,7 +88,7 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
             <div
               className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                 isUser
-                  ? 'bg-brand-yellow text-brand-dark font-medium rounded-br-sm'
+                  ? `bg-brand-yellow text-brand-dark font-medium rounded-br-sm ${isBeingReEdited ? 'ring-2 ring-brand-yellow/60 ring-offset-2 ring-offset-[var(--ov-input-bg,#1a1a1a)]' : ''}`
                   : 'bg-[var(--ov-bubble-ai-bg,rgba(255,255,255,0.05))] text-[var(--ov-text,#ffffff)] border border-[var(--ov-bubble-ai-border,transparent)] rounded-bl-sm'
               }`}
             >
@@ -112,9 +114,18 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
           )}
 
           {/* Edit button — only for user messages, only when onEdit is provided, not while editing */}
-          {isUser && onEdit && !isEditing && (
+          {isUser && !isEditing && (onEdit || onStartRowEdit) && (
             <button
-              onClick={() => { setEditValue(message.displayContent ?? message.content); setIsEditing(true) }}
+              onClick={() => {
+                if (message.sourceQuickReplies && onStartRowEdit) {
+                  // Row-selection message: show the original rows at bottom for re-selection
+                  onStartRowEdit(message.id)
+                } else {
+                  // Free-text message: open textarea edit
+                  setEditValue(message.displayContent ?? message.content)
+                  setIsEditing(true)
+                }
+              }}
               className="absolute -top-2 -left-8 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center cursor-pointer"
               aria-label="Edit message"
             >

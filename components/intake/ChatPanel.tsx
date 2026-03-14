@@ -5,16 +5,18 @@ import { ArrowRight } from 'lucide-react'
 import MessageBubble from './MessageBubble'
 import QuickReplies from './QuickReplies'
 import type { ChatMessage } from '@/hooks/useIntakeChat'
+import type { QuickReplies as QuickRepliesType } from '@/lib/intake-types'
 
 type Props = {
   messages: ChatMessage[]
   isStreaming: boolean
-  onSend: (message: string, displayContent?: string) => void
-  onEdit?: (messageId: string, newContent: string) => void
+  onSend: (message: string, displayContent?: string, sourceQR?: QuickRepliesType, sourceQuestion?: string) => void
+  onEdit?: (messageId: string, newContent: string, displayContent?: string) => void
 }
 
 export default function ChatPanel({ messages, isStreaming, onSend, onEdit }: Props) {
   const [input, setInput] = useState('')
+  const [reEditingMessageId, setReEditingMessageId] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -22,9 +24,15 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit }: Pro
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Clear re-edit mode when AI starts streaming (edit was confirmed)
+  useEffect(() => {
+    if (isStreaming) setReEditingMessageId(null)
+  }, [isStreaming])
+
   function handleSubmit() {
     const trimmed = input.trim()
     if (!trimmed || isStreaming) return
+    setReEditingMessageId(null)
     onSend(trimmed)
     setInput('')
     if (textareaRef.current) {
@@ -53,9 +61,16 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit }: Pro
     !isStreaming && lastMsg?.role === 'assistant' && lastMsg.quickReplies?.style === 'list'
       ? lastMsg.quickReplies
       : null
-
-  // Use the dedicated question field as the rows card header
   const questionText = listQR ? (lastMsg?.question ?? undefined) : undefined
+
+  // Re-editing: user tapped edit on a past row-selection bubble
+  const reEditingMsg = reEditingMessageId ? messages.find(m => m.id === reEditingMessageId) : null
+  const reEditingQR = reEditingMsg?.sourceQuickReplies ?? null
+  const reEditingQuestion = reEditingMsg?.sourceQuestion
+
+  // Active QR at bottom: re-edit takes priority over new question QR
+  const activeQR = reEditingQR ?? listQR
+  const activeQuestion = reEditingQR ? reEditingQuestion : questionText
 
   return (
     <div className="flex flex-col h-full">
@@ -69,25 +84,46 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit }: Pro
             onQuickReply={(value, label) => onSend(value, label)}
             isLastMessage={i === messages.length - 1}
             onEdit={onEdit}
+            onStartRowEdit={setReEditingMessageId}
+            isBeingReEdited={msg.id === reEditingMessageId}
           />
         ))}
         <div ref={bottomRef} />
       </div>
 
-      {/* Bottom area: list rows card OR regular textarea */}
+      {/* Bottom area: list rows card (new question OR re-edit) OR regular textarea */}
       <div className="flex-shrink-0 px-4 pb-4">
-        {listQR ? (
-          <QuickReplies
-            quickReplies={listQR}
-            onSelect={(value, label) => {
-              // Prepend the question to the display bubble so context is visible after selection
-              const answerDisplay = label || value
-              const display = questionText ? `${questionText}\n\n${answerDisplay}` : answerDisplay
-              onSend(value, display)
-            }}
-            disabled={isStreaming}
-            question={questionText}
-          />
+        {activeQR ? (
+          <>
+            {reEditingQR && (
+              <div className="mb-2 flex items-center justify-between px-1">
+                <span className="text-xs text-[var(--ov-text-muted,#727272)]">Changing your answer...</span>
+                <button
+                  onClick={() => setReEditingMessageId(null)}
+                  className="text-xs text-brand-gray-mid hover:text-brand-white transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+            <QuickReplies
+              quickReplies={activeQR}
+              onSelect={(value, label) => {
+                const answerDisplay = label || value
+                const display = activeQuestion ? `${activeQuestion}\n\n${answerDisplay}` : answerDisplay
+                if (reEditingQR && reEditingMessageId) {
+                  // Re-edit: replace the old message and re-run AI
+                  onEdit?.(reEditingMessageId, value, display)
+                  setReEditingMessageId(null)
+                } else {
+                  // Normal selection: new user message
+                  onSend(value, display, activeQR, activeQuestion || undefined)
+                }
+              }}
+              disabled={isStreaming}
+              question={activeQuestion}
+            />
+          </>
         ) : (
           <div className="flex items-end gap-2 bg-[var(--ov-input-bg,rgba(255,255,255,0.05))] border border-[var(--ov-border,rgba(255,255,255,0.10))] rounded-xl p-3 focus-within:border-brand-yellow/30 transition-colors">
             <textarea
