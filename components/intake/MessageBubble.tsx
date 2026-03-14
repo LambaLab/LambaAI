@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { Pencil, Check, X } from 'lucide-react'
+import Image from 'next/image'
 import type { ChatMessage } from '@/hooks/useIntakeChat'
 import QuickReplies from './QuickReplies'
+import TypingIndicator from './TypingIndicator'
 
 type Props = {
   message: ChatMessage
@@ -53,8 +55,17 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
   }
 
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div className="max-w-[85%] space-y-3">
+    <div className={`flex ${isUser ? 'justify-end' : 'items-start gap-2'}`}>
+      {!isUser && (
+        <Image
+          src="/lamba-icon.png"
+          alt="Lamba Lab"
+          width={24}
+          height={24}
+          className="rounded-full flex-shrink-0 mt-1 select-none"
+        />
+      )}
+      <div className={`space-y-3 ${isUser ? 'max-w-[85%]' : 'max-w-[80%]'}`}>
         {/* Question context: shown above row-selection answer bubbles so the answer has clear context */}
         {isUser && message.sourceQuestion && !isEditing && (
           <p className="text-[11px] text-[var(--ov-text-muted,#727272)] text-right leading-relaxed px-1 mb-1">
@@ -101,11 +112,7 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
             >
               {/* Loading indicator while streaming (before content arrives) */}
               {isStreaming && !rawContent ? (
-                <span className="inline-flex gap-1">
-                  <span className="w-1.5 h-1.5 bg-brand-gray-mid rounded-full animate-bounce [animation-delay:0ms]" />
-                  <span className="w-1.5 h-1.5 bg-brand-gray-mid rounded-full animate-bounce [animation-delay:150ms]" />
-                  <span className="w-1.5 h-1.5 bg-brand-gray-mid rounded-full animate-bounce [animation-delay:300ms]" />
-                </span>
+                <TypingIndicator />
               ) : displayParagraphs.length > 1 ? (
                 // Multi-paragraph: render each paragraph separately for readability
                 <div className="space-y-2">
