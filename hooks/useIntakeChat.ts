@@ -37,6 +37,7 @@ type Props = {
 }
 
 const MSGS_KEY = (pid: string) => `lamba_msgs_${pid}`
+const PROPOSAL_KEY = (pid: string) => `lamba_proposal_${pid}`
 
 export function useIntakeChat({ proposalId, idea }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -65,6 +66,13 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     }
   }, [messages, proposalId])
 
+  // Persist proposal state to localStorage after every update
+  useEffect(() => {
+    if (!proposalId) return
+    const state = { activeModules, confidenceScore, complexityMultiplier, productOverview, moduleSummaries }
+    localStorage.setItem(PROPOSAL_KEY(proposalId), JSON.stringify(state))
+  }, [activeModules, confidenceScore, complexityMultiplier, productOverview, moduleSummaries, proposalId])
+
   // Auto-send the idea on mount (fires once) — or restore stored messages
   useEffect(() => {
     if (!proposalId) return
@@ -77,6 +85,29 @@ export function useIntakeChat({ proposalId, idea }: Props) {
         if (parsed.length > 0) {
           messagesRef.current = parsed
           setMessages(parsed)
+
+          // Also restore proposal state so the panel isn't blank on reload
+          const storedProposal = localStorage.getItem(PROPOSAL_KEY(proposalId))
+          if (storedProposal) {
+            try {
+              const p = JSON.parse(storedProposal)
+              const modules: string[] = Array.isArray(p.activeModules) ? p.activeModules : []
+              const score: number = typeof p.confidenceScore === 'number' ? p.confidenceScore : 0
+              const multiplier: number = typeof p.complexityMultiplier === 'number' ? p.complexityMultiplier : 1.0
+              activeModulesRef.current = modules
+              confidenceRef.current = score
+              complexityRef.current = multiplier
+              setActiveModules(modules)
+              setConfidenceScore(score)
+              setComplexityMultiplier(multiplier)
+              setPriceRange(computePriceRange(modules, multiplier, score))
+              if (typeof p.productOverview === 'string' && p.productOverview) setProductOverview(p.productOverview)
+              if (p.moduleSummaries && typeof p.moduleSummaries === 'object') setModuleSummaries(p.moduleSummaries)
+            } catch {
+              // Ignore — non-critical, proposal panel will just be empty
+            }
+          }
+
           return // Skip auto-send — conversation already exists
         }
       } catch {
@@ -269,9 +300,10 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   }, [isStreaming]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const reset = useCallback(() => {
-    // Clear stored messages for this proposal
+    // Clear stored messages and proposal state for this proposal
     if (proposalId) {
       localStorage.removeItem(MSGS_KEY(proposalId))
+      localStorage.removeItem(PROPOSAL_KEY(proposalId))
     }
     // Reset refs synchronously
     messagesRef.current = []

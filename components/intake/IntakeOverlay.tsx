@@ -66,6 +66,7 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
     if (session) {
       localStorage.removeItem(`lamba_idea_${session.proposalId}`)
       localStorage.removeItem(`lamba_msgs_${session.proposalId}`)
+      localStorage.removeItem(`lamba_proposal_${session.proposalId}`)
     }
     localStorage.removeItem('lamba_session')
     window.location.href = '/'
