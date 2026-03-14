@@ -79,7 +79,12 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit }: Pro
         {listQR ? (
           <QuickReplies
             quickReplies={listQR}
-            onSelect={(value, label) => onSend(value, label)}
+            onSelect={(value, label) => {
+              // Prepend the question to the display bubble so context is visible after selection
+              const answerDisplay = label || value
+              const display = questionText ? `${questionText}\n\n${answerDisplay}` : answerDisplay
+              onSend(value, display)
+            }}
             disabled={isStreaming}
             question={questionText}
           />
