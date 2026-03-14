@@ -1,15 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { QuickReplies as QuickRepliesType, QuickReplyOption } from '@/lib/intake-types'
 
 type Props = {
   quickReplies: QuickRepliesType
-  onSelect: (value: string) => void
+  onSelect: (value: string, label?: string) => void
   disabled?: boolean
+  question?: string  // Shown as a header at the top of the list card
 }
 
-export default function QuickReplies({ quickReplies, onSelect, disabled }: Props) {
+export default function QuickReplies({ quickReplies, onSelect, disabled, question }: Props) {
   const { style, multiSelect, allowCustom, options } = quickReplies
   const [selected, setSelected] = useState<string[]>([])
   const [showCustomInput, setShowCustomInput] = useState(false)
@@ -21,9 +22,9 @@ export default function QuickReplies({ quickReplies, onSelect, disabled }: Props
     )
   }
 
-  function handleSingleSelect(value: string) {
+  function handleSingleSelect(opt: QuickReplyOption) {
     if (disabled) return
-    onSelect(value)
+    onSelect(opt.value, opt.label)
   }
 
   function handleMultiConfirm() {
@@ -49,6 +50,30 @@ export default function QuickReplies({ quickReplies, onSelect, disabled }: Props
     ? [...options, 'custom']
     : options
 
+  // Number key shortcuts: press 1-4 to select corresponding row (list style only)
+  useEffect(() => {
+    if (style !== 'list' || disabled) return
+
+    function handleKeyDown(e: KeyboardEvent) {
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
+
+      const num = parseInt(e.key)
+      if (!isNaN(num) && num >= 1 && num <= allOptions.length) {
+        e.preventDefault()
+        const opt = allOptions[num - 1]
+        if (opt === 'custom') {
+          setShowCustomInput(true)
+        } else if (!multiSelect) {
+          handleSingleSelect(opt as QuickReplyOption)
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [style, disabled, allOptions, multiSelect]) // eslint-disable-line react-hooks/exhaustive-deps
+
   if (style === 'pills') {
     return (
       <div className="mt-3 flex flex-wrap gap-2">
@@ -57,7 +82,7 @@ export default function QuickReplies({ quickReplies, onSelect, disabled }: Props
           return (
             <button
               key={opt.value}
-              onClick={() => multiSelect ? toggleSelected(opt.value) : handleSingleSelect(opt.value)}
+              onClick={() => multiSelect ? toggleSelected(opt.value) : handleSingleSelect(opt)}
               disabled={disabled}
               className={`px-3 py-1.5 rounded-full border text-sm transition-all disabled:opacity-50 ${
                 isChecked
@@ -111,9 +136,16 @@ export default function QuickReplies({ quickReplies, onSelect, disabled }: Props
     )
   }
 
-  // style === 'list' (default) — AskUserQuestion clone
+  // style === 'list' — rendered at the bottom of ChatPanel
   return (
-    <div className="mt-3 space-y-0 rounded-xl border border-[var(--ov-border,rgba(255,255,255,0.10))] overflow-hidden">
+    <div className="rounded-xl border border-[var(--ov-border,rgba(255,255,255,0.10))] overflow-hidden">
+      {/* Question header */}
+      {question && (
+        <div className="px-4 py-3 border-b border-[var(--ov-border,rgba(255,255,255,0.10))]">
+          <p className="text-sm text-[var(--ov-text,#ffffff)] leading-relaxed">{question}</p>
+        </div>
+      )}
+
       {allOptions.map((opt, i) => {
         const isCustom = opt === 'custom'
         const value = isCustom ? '' : (opt as QuickReplyOption).value
@@ -159,7 +191,7 @@ export default function QuickReplies({ quickReplies, onSelect, disabled }: Props
         return (
           <button
             key={option.value}
-            onClick={() => multiSelect ? toggleSelected(option.value) : handleSingleSelect(option.value)}
+            onClick={() => multiSelect ? toggleSelected(option.value) : handleSingleSelect(option)}
             disabled={disabled}
             className={`w-full flex items-start justify-between px-4 py-3 hover:bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] transition-colors text-left border-t border-[var(--ov-border,rgba(255,255,255,0.10))] first:border-t-0 disabled:opacity-50 ${
               isChecked ? 'bg-[var(--ov-input-bg,rgba(255,255,255,0.10))]' : ''

@@ -8,6 +8,7 @@ export type ChatMessage = {
   id: string
   role: 'user' | 'assistant'
   content: string
+  displayContent?: string  // For user bubbles: shown text may differ from content sent to the API
   capabilityCards?: string[]
   quickReplies?: QuickReplies
 }
@@ -157,10 +158,15 @@ export function useIntakeChat({ idea }: Props) {
     }
   }
 
-  const sendMessage = useCallback(async (content: string) => {
+  const sendMessage = useCallback(async (content: string, displayContent?: string) => {
     if (isStreaming) return
 
-    const userMessage: ChatMessage = { id: crypto.randomUUID(), role: 'user', content }
+    const userMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content,
+      displayContent: displayContent && displayContent !== content ? displayContent : undefined,
+    }
 
     const apiMessages: ApiMessage[] = [
       ...messagesRef.current.map((m): ApiMessage => ({ role: m.role, content: m.content })),

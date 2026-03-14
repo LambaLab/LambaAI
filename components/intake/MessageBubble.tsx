@@ -8,21 +8,39 @@ import QuickReplies from './QuickReplies'
 type Props = {
   message: ChatMessage
   isStreaming?: boolean
-  onQuickReply?: (value: string) => void
+  onQuickReply?: (value: string, label?: string) => void
   isLastMessage?: boolean
   onEdit?: (messageId: string, newContent: string) => void
 }
 
 export default function MessageBubble({ message, isStreaming, onQuickReply, isLastMessage, onEdit }: Props) {
   const isUser = message.role === 'user'
+
+  // User bubbles show displayContent when available (e.g. quick reply label instead of raw value)
+  const rawContent = isUser
+    ? (message.displayContent ?? message.content)
+    : message.content
+
+  // For AI messages with list QR (shown at bottom of ChatPanel), strip the last paragraph
+  // from the bubble so it appears as the question header inside the rows card instead
+  const isListQR = !isUser && message.quickReplies?.style === 'list' && isLastMessage
+  const paragraphs = rawContent.split('\n\n').filter(Boolean)
+  const displayParagraphs = isListQR && paragraphs.length > 1
+    ? paragraphs.slice(0, -1)
+    : paragraphs
+
+  // Don't render list QR inline — ChatPanel renders it at the bottom
+  const showInlineQR = message.quickReplies && isLastMessage && onQuickReply && !isListQR
+
+  // Edit state uses displayContent for the initial value so user sees human-readable text
   const [isEditing, setIsEditing] = useState(false)
-  const [editValue, setEditValue] = useState(message.content)
+  const [editValue, setEditValue] = useState(message.displayContent ?? message.content)
 
   useEffect(() => {
     if (!isEditing) {
-      setEditValue(message.content)
+      setEditValue(message.displayContent ?? message.content)
     }
-  }, [message.content, isEditing])
+  }, [message.content, message.displayContent, isEditing])
 
   function handleEditSave() {
     if (!editValue.trim() || !onEdit) return
@@ -31,7 +49,7 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
   }
 
   function handleEditCancel() {
-    setEditValue(message.content)
+    setEditValue(message.displayContent ?? message.content)
     setIsEditing(false)
   }
 
@@ -75,13 +93,23 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
                   : 'bg-[var(--ov-bubble-ai-bg,rgba(255,255,255,0.05))] text-[var(--ov-text,#ffffff)] border border-[var(--ov-bubble-ai-border,transparent)] rounded-bl-sm'
               }`}
             >
-              {message.content}
-              {isStreaming && !message.content && (
+              {/* Loading indicator while streaming (before content arrives) */}
+              {isStreaming && !rawContent ? (
                 <span className="inline-flex gap-1">
                   <span className="w-1.5 h-1.5 bg-brand-gray-mid rounded-full animate-bounce [animation-delay:0ms]" />
                   <span className="w-1.5 h-1.5 bg-brand-gray-mid rounded-full animate-bounce [animation-delay:150ms]" />
                   <span className="w-1.5 h-1.5 bg-brand-gray-mid rounded-full animate-bounce [animation-delay:300ms]" />
                 </span>
+              ) : displayParagraphs.length > 1 ? (
+                // Multi-paragraph: render each paragraph separately for readability
+                <div className="space-y-2">
+                  {displayParagraphs.map((para, idx) => (
+                    <p key={idx}>{para}</p>
+                  ))}
+                </div>
+              ) : (
+                // Single paragraph or user message
+                rawContent
               )}
             </div>
           )}
@@ -89,7 +117,7 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
           {/* Edit button — only for user messages, only when onEdit is provided, not while editing */}
           {isUser && onEdit && !isEditing && (
             <button
-              onClick={() => { setEditValue(message.content); setIsEditing(true) }}
+              onClick={() => { setEditValue(message.displayContent ?? message.content); setIsEditing(true) }}
               className="absolute -top-2 -left-8 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
               aria-label="Edit message"
             >
@@ -111,10 +139,11 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
           </div>
         )}
 
-        {message.quickReplies && isLastMessage && onQuickReply && (
+        {/* Inline quick replies — pills only; list style is handled at ChatPanel bottom */}
+        {showInlineQR && (
           <QuickReplies
-            quickReplies={message.quickReplies}
-            onSelect={onQuickReply}
+            quickReplies={message.quickReplies!}
+            onSelect={onQuickReply!}
             disabled={isStreaming}
           />
         )}

@@ -3,12 +3,13 @@
 import { useRef, useEffect, useState } from 'react'
 import { ArrowRight } from 'lucide-react'
 import MessageBubble from './MessageBubble'
+import QuickReplies from './QuickReplies'
 import type { ChatMessage } from '@/hooks/useIntakeChat'
 
 type Props = {
   messages: ChatMessage[]
   isStreaming: boolean
-  onSend: (message: string) => void
+  onSend: (message: string, displayContent?: string) => void
   onEdit?: (messageId: string, newContent: string) => void
 }
 
@@ -45,6 +46,21 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit }: Pro
     el.style.height = `${el.scrollHeight}px`
   }
 
+  // Detect if the last assistant message has list-style quick replies
+  // (only show when not streaming, so the rows don't flash during response)
+  const lastMsg = messages[messages.length - 1]
+  const listQR =
+    !isStreaming && lastMsg?.role === 'assistant' && lastMsg.quickReplies?.style === 'list'
+      ? lastMsg.quickReplies
+      : null
+
+  // Extract the question from the last AI message (last \n\n-separated paragraph)
+  // This goes into the rows card header, not the bubble
+  const questionText =
+    listQR && lastMsg?.content
+      ? lastMsg.content.split('\n\n').filter(Boolean).pop()?.trim() || undefined
+      : undefined
+
   return (
     <div className="flex flex-col h-full">
       {/* Messages */}
@@ -54,7 +70,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit }: Pro
             key={msg.id}
             message={msg}
             isStreaming={isStreaming && i === messages.length - 1 && msg.role === 'assistant'}
-            onQuickReply={onSend}
+            onQuickReply={(value, label) => onSend(value, label)}
             isLastMessage={i === messages.length - 1}
             onEdit={onEdit}
           />
@@ -62,29 +78,38 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit }: Pro
         <div ref={bottomRef} />
       </div>
 
-      {/* Input area */}
+      {/* Bottom area: list rows card OR regular textarea */}
       <div className="flex-shrink-0 px-4 pb-4">
-        <div className="flex items-end gap-2 bg-[var(--ov-input-bg,rgba(255,255,255,0.05))] border border-[var(--ov-border,rgba(255,255,255,0.10))] rounded-xl p-3 focus-within:border-brand-yellow/30 transition-colors">
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={handleTextareaChange}
-            onKeyDown={handleKeyDown}
-            placeholder={messages.length === 0 ? "Describe the idea you want to build..." : "Tell me more..."}
-            rows={1}
+        {listQR ? (
+          <QuickReplies
+            quickReplies={listQR}
+            onSelect={(value, label) => onSend(value, label)}
             disabled={isStreaming}
-            aria-label="Chat input"
-            className="flex-1 bg-transparent text-[var(--ov-text,#ffffff)] placeholder:text-[var(--ov-text-muted,#727272)] resize-none outline-none text-sm leading-relaxed min-h-[20px] max-h-[120px] overflow-y-auto disabled:opacity-50"
+            question={questionText}
           />
-          <button
-            onClick={handleSubmit}
-            disabled={!input.trim() || isStreaming}
-            className="w-8 h-8 bg-brand-yellow rounded-lg flex items-center justify-center disabled:opacity-30 hover:bg-brand-yellow/90 transition-all active:scale-95 flex-shrink-0"
-            aria-label="Send message"
-          >
-            <ArrowRight className="w-4 h-4 text-brand-dark" />
-          </button>
-        </div>
+        ) : (
+          <div className="flex items-end gap-2 bg-[var(--ov-input-bg,rgba(255,255,255,0.05))] border border-[var(--ov-border,rgba(255,255,255,0.10))] rounded-xl p-3 focus-within:border-brand-yellow/30 transition-colors">
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={handleTextareaChange}
+              onKeyDown={handleKeyDown}
+              placeholder={messages.length === 0 ? "Describe the idea you want to build..." : "Tell me more..."}
+              rows={1}
+              disabled={isStreaming}
+              aria-label="Chat input"
+              className="flex-1 bg-transparent text-[var(--ov-text,#ffffff)] placeholder:text-[var(--ov-text-muted,#727272)] resize-none outline-none text-sm leading-relaxed min-h-[20px] max-h-[120px] overflow-y-auto disabled:opacity-50"
+            />
+            <button
+              onClick={handleSubmit}
+              disabled={!input.trim() || isStreaming}
+              className="w-8 h-8 bg-brand-yellow rounded-lg flex items-center justify-center disabled:opacity-30 hover:bg-brand-yellow/90 transition-all active:scale-95 flex-shrink-0"
+              aria-label="Send message"
+            >
+              <ArrowRight className="w-4 h-4 text-brand-dark" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
