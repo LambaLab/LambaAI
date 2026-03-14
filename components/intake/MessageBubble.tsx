@@ -55,6 +55,13 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div className="max-w-[85%] space-y-3">
+        {/* Question context: shown above row-selection answer bubbles so the answer has clear context */}
+        {isUser && message.sourceQuestion && !isEditing && (
+          <p className="text-[11px] text-[var(--ov-text-muted,#727272)] text-right leading-relaxed px-1 mb-1">
+            {message.sourceQuestion}
+          </p>
+        )}
+
         <div className="relative group">
           {isEditing ? (
             <div className="space-y-2">
@@ -133,19 +140,6 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
             </button>
           )}
         </div>
-
-        {message.capabilityCards && message.capabilityCards.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {message.capabilityCards.map((card) => (
-              <span
-                key={card}
-                className="px-3 py-1.5 text-xs font-medium border border-brand-yellow/30 text-brand-yellow rounded-lg"
-              >
-                {card}
-              </span>
-            ))}
-          </div>
-        )}
 
         {/* Inline quick replies — pills only; list style is handled at ChatPanel bottom */}
         {showInlineQR && (

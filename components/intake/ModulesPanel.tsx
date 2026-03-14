@@ -17,6 +17,36 @@ type Props = {
   theme?: 'dark' | 'light'
 }
 
+// Renders product overview text — supports labeled sections (e.g. "What it is: ...")
+// and plain paragraphs separated by \n\n
+function ProductOverview({ text }: { text: string }) {
+  const paragraphs = text.split('\n\n').filter(Boolean)
+  return (
+    <div className="space-y-3 transition-all duration-500">
+      {paragraphs.map((para, i) => {
+        const labelMatch = para.match(/^([^:\n]{1,30}):\s+(.+)$/s)
+        if (labelMatch) {
+          return (
+            <div key={i}>
+              <p className="text-[10px] font-semibold text-[var(--ov-text-muted,#727272)] uppercase tracking-widest mb-1">
+                {labelMatch[1]}
+              </p>
+              <p className="text-sm text-[var(--ov-text,#ffffff)] leading-relaxed">
+                {labelMatch[2]}
+              </p>
+            </div>
+          )
+        }
+        return (
+          <p key={i} className="text-sm text-[var(--ov-text,#ffffff)] leading-relaxed">
+            {para}
+          </p>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function ModulesPanel({
   activeModules,
   confidenceScore,
@@ -37,9 +67,7 @@ export default function ModulesPanel({
           YOUR PRODUCT
         </h2>
         {productOverview ? (
-          <p className="text-sm text-[var(--ov-text,#ffffff)] leading-relaxed transition-all duration-500">
-            {productOverview}
-          </p>
+          <ProductOverview text={productOverview} />
         ) : (
           <p className="text-sm text-[var(--ov-text-muted,#727272)]/50 leading-relaxed italic">
             Your product overview will appear here as we learn more...

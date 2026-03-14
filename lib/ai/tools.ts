@@ -38,12 +38,7 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
       },
       product_overview: {
         type: 'string',
-        description: 'A plain-language 2–4 sentence paragraph describing the product for a non-technical audience. Written as if pitching to an investor. Start with 1 sentence after turn 1, grow to 3–4 sentences by turn 5. Never use technical jargon. Example: "A marketplace where independent designers sell custom home décor. Buyers browse by style and commission pieces directly from makers. The platform handles payments, messaging, and order tracking."',
-      },
-      capability_cards: {
-        type: 'array',
-        items: { type: 'string' },
-        description: 'Optional capability card labels to show inline (e.g. "Payments", "Mobile App")',
+        description: 'Product description for a non-technical investor. No jargon. Format evolves by turn:\n- Turn 1-2: 1 sentence (core idea only).\n- Turn 3-5: 2-3 sentences in one paragraph.\n- Turn 6+: labeled sections separated by \\n\\n. Use only sections you know. Format exactly: "What it is: [1-2 sentences]\\n\\nWho it\'s for: [1 sentence]\\n\\nHow it works: [1-2 sentences]\\n\\nMonetization: [1 sentence — only if monetization model is known]"',
       },
       quick_replies: {
         type: 'object' as const,

@@ -181,12 +181,10 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                 ? (base ? `${base}\n\n${questionText}` : questionText)
                 : base
 
-              const updatedCards = input?.capability_cards?.length ? input.capability_cards : last.capabilityCards
               return [...prev.slice(0, -1), {
                 ...last,
                 content: bubbleContent,
                 question: isListQR ? (questionText || undefined) : undefined,
-                capabilityCards: updatedCards,
                 quickReplies: updatedQR,
               }]
             })

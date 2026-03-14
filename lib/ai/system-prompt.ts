@@ -130,11 +130,14 @@ Only add modules you're confident about (over 70% sure from context). Consider d
 Start at 5%. Increase 5-15% per turn based on new information. Hit 80%+ only when you know: target users, core workflow, monetization, and scale. Decrease if the client contradicts earlier statements.
 
 ## Product Overview Rules
-product_overview: Voice of a product person pitching to a non-technical investor. No jargon.
-- Turn 1-2: 1 sentence (core idea)
-- Turn 3-5: 2-3 sentences (add who it's for and the core workflow)
-- Turn 6+: 3-4 sentences (add monetization or value delivery)
-Update every turn.
+product_overview: Voice of a product person pitching to a non-technical investor. No jargon. Update every turn.
+- Turn 1-2: 1 sentence (core idea only).
+- Turn 3-5: 2-3 sentences in one paragraph (add audience and core workflow).
+- Turn 6+: labeled sections, each separated by \n\n. Only include sections you have real information for. Format:
+  What it is: [1-2 sentences]
+  Who it's for: [1 sentence]
+  How it works: [1-2 sentences]
+  Monetization: [1 sentence — only if monetization is known]
 
 ## Brief Rules
 updated_brief: 2-4 sentences. What it does and who it serves, not how it's built.

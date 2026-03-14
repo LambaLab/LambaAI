@@ -109,15 +109,15 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit }: Pro
             <QuickReplies
               quickReplies={activeQR}
               onSelect={(value, label) => {
+                // displayContent is just the answer label — question is shown separately above the bubble
                 const answerDisplay = label || value
-                const display = activeQuestion ? `${activeQuestion}\n\n${answerDisplay}` : answerDisplay
                 if (reEditingQR && reEditingMessageId) {
                   // Re-edit: replace the old message and re-run AI
-                  onEdit?.(reEditingMessageId, value, display)
+                  onEdit?.(reEditingMessageId, value, answerDisplay)
                   setReEditingMessageId(null)
                 } else {
                   // Normal selection: new user message
-                  onSend(value, display, activeQR, activeQuestion || undefined)
+                  onSend(value, answerDisplay, activeQR, activeQuestion || undefined)
                 }
               }}
               disabled={isStreaming}
