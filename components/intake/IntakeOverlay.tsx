@@ -13,7 +13,7 @@ type Props = {
   onClose?: () => void
 }
 
-export default function IntakeOverlay({ initialMessage, onReset, onClose }: Props) {
+export default function IntakeOverlay({ initialMessage, onClose }: Props) {
   const { theme, toggleTheme } = useTheme()
   const [session, setSession] = useState<SessionData | null>(null)
   const [sessionError, setSessionError] = useState(false)
@@ -60,34 +60,14 @@ export default function IntakeOverlay({ initialMessage, onReset, onClose }: Prop
     setLiveConfidenceScore(c)
   }, [])
 
-  const [resetConfirm, setResetConfirm] = useState(false)
   const resetRef = useRef<(() => void) | null>(null)
-  const resetConfirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  useEffect(() => {
-    return () => {
-      if (resetConfirmTimerRef.current) clearTimeout(resetConfirmTimerRef.current)
-    }
-  }, [])
-
-  function handleResetClick() {
-    if (!resetConfirm) {
-      setResetConfirm(true)
-      resetConfirmTimerRef.current = setTimeout(() => setResetConfirm(false), 3000)
-      return
-    }
-    // Confirmed: clear timer first
-    if (resetConfirmTimerRef.current) clearTimeout(resetConfirmTimerRef.current)
-    // Clear all stored data for this conversation
+  function doReset() {
     if (session) {
       localStorage.removeItem(`lamba_idea_${session.proposalId}`)
       localStorage.removeItem(`lamba_msgs_${session.proposalId}`)
     }
     localStorage.removeItem('lamba_session')
-    // Hard redirect to root — guarantees a clean Supabase auth state and fresh session.
-    // Avoids the "Couldn't start session" error that occurs when signInAnonymously() is
-    // called while an existing auth cookie is still present.
-    onReset?.()
     window.location.href = '/'
   }
 
@@ -152,31 +132,6 @@ export default function IntakeOverlay({ initialMessage, onReset, onClose }: Prop
               >
                 Proposal <span className={proposalOpen ? 'text-brand-dark/60' : 'text-brand-yellow'}>{liveConfidenceScore}%</span>
               </button>
-              {resetConfirm ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-brand-gray-mid">Start over?</span>
-                  <button
-                    onClick={handleResetClick}
-                    className="text-xs text-red-400 hover:text-red-300 transition-colors px-2 py-1 rounded-lg hover:bg-white/5 cursor-pointer"
-                  >
-                    Yes
-                  </button>
-                  <button
-                    onClick={() => setResetConfirm(false)}
-                    className="text-xs text-brand-gray-mid hover:text-brand-white transition-colors px-2 py-1 rounded-lg hover:bg-white/5 cursor-pointer"
-                  >
-                    No
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={handleResetClick}
-                  className="text-xs text-brand-gray-mid hover:text-brand-white transition-colors px-2 py-1 rounded-lg hover:bg-white/5 cursor-pointer"
-                  aria-label="Reset conversation"
-                >
-                  ↺ Reset
-                </button>
-              )}
               <button
                 onClick={toggleTheme}
                 className="w-8 h-8 rounded-lg bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] hover:bg-[var(--ov-input-bg,rgba(255,255,255,0.10))] flex items-center justify-center text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors cursor-pointer"
@@ -200,6 +155,7 @@ export default function IntakeOverlay({ initialMessage, onReset, onClose }: Prop
             initialMessage={currentIdea}
             onStateChange={handleStateChange}
             onResetRef={resetRef}
+            onReset={doReset}
             theme={theme}
             proposalOpen={proposalOpen}
             onProposalToggle={() => setProposalOpen(p => !p)}
