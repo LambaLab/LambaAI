@@ -8,7 +8,6 @@ type Props = {
   summary: string
   activeModules: string[]
   confidenceScore: number
-  pricingVisible: boolean
   productOverview: string
   proposalId: string
   aiStarted: boolean
@@ -21,7 +20,6 @@ export default function MobileBottomDrawer({
   summary,
   activeModules,
   confidenceScore,
-  pricingVisible,
   productOverview,
   proposalId,
   aiStarted,
@@ -63,7 +61,6 @@ export default function MobileBottomDrawer({
             <ModulesPanel
               activeModules={activeModules}
               confidenceScore={confidenceScore}
-              pricingVisible={pricingVisible}
               productOverview={productOverview}
               proposalId={proposalId}
               aiStarted={aiStarted}

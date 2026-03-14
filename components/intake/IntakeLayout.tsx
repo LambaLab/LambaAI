@@ -141,7 +141,6 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
           <ModulesPanel
             activeModules={activeModules}
             confidenceScore={confidenceScore}
-            pricingVisible={pricingVisible}
             productOverview={productOverview}
             proposalId={proposalId}
             onToggle={toggleModule}
@@ -167,7 +166,6 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
           summary={summaryText}
           activeModules={activeModules}
           confidenceScore={confidenceScore}
-          pricingVisible={pricingVisible}
           productOverview={productOverview}
           proposalId={proposalId}
           aiStarted={aiStarted}
