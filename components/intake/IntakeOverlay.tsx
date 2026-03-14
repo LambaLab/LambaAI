@@ -19,6 +19,7 @@ export default function IntakeOverlay({ initialMessage, onReset, onClose }: Prop
   const [sessionError, setSessionError] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [minimized, setMinimized] = useState(false)
+  const [proposalOpen, setProposalOpen] = useState(false)
   const [liveModuleCount, setLiveModuleCount] = useState(0)
   const [liveConfidenceScore, setLiveConfidenceScore] = useState(0)
   const [currentIdea, setCurrentIdea] = useState(initialMessage)
@@ -146,6 +147,16 @@ export default function IntakeOverlay({ initialMessage, onReset, onClose }: Prop
           <div className={`flex items-center justify-between px-4 py-3 border-b flex-shrink-0 ${theme === 'light' ? 'border-[rgba(0,0,0,0.08)]' : 'border-white/5'}`}>
             <span className="font-bebas text-xl tracking-widest text-[var(--ov-text,#ffffff)]">LAMBA LAB</span>
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => setProposalOpen(p => !p)}
+                className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
+                  proposalOpen
+                    ? 'bg-brand-yellow text-brand-dark border-brand-yellow'
+                    : 'bg-transparent text-[var(--ov-text,#ffffff)] border-white/10 hover:border-white/20'
+                }`}
+              >
+                Proposal <span className={proposalOpen ? 'text-brand-dark/60' : 'text-brand-yellow'}>{liveConfidenceScore}%</span>
+              </button>
               {resetConfirm ? (
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-brand-gray-mid">Start over?</span>
@@ -195,6 +206,8 @@ export default function IntakeOverlay({ initialMessage, onReset, onClose }: Prop
             onStateChange={handleStateChange}
             onResetRef={resetRef}
             theme={theme}
+            proposalOpen={proposalOpen}
+            onProposalToggle={() => setProposalOpen(p => !p)}
           />
         </div>
       )}

@@ -24,7 +24,7 @@ function ProductOverview({ text }: { text: string }) {
   return (
     <div className="space-y-3 transition-all duration-500">
       {paragraphs.map((para, i) => {
-        const labelMatch = para.match(/^([^:\n]{1,30}):\s+(.+)$/s)
+        const labelMatch = para.match(/^([^:\n]{1,30}):\s+([\s\S]+)$/)
         if (labelMatch) {
           return (
             <div key={i}>

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import ChatPanel from './ChatPanel'
 import ModulesPanel from './ModulesPanel'
 import MobileBottomDrawer from './MobileBottomDrawer'
@@ -13,9 +13,11 @@ type Props = {
   onStateChange?: (moduleCount: number, confidenceScore: number) => void
   onResetRef?: React.MutableRefObject<(() => void) | null>
   theme?: 'dark' | 'light'
+  proposalOpen: boolean
+  onProposalToggle: () => void
 }
 
-export default function IntakeLayout({ proposalId, initialMessage, onStateChange, onResetRef, theme }: Props) {
+export default function IntakeLayout({ proposalId, initialMessage, onStateChange, onResetRef, theme, proposalOpen, onProposalToggle }: Props) {
   const {
     messages,
     activeModules,
@@ -28,6 +30,33 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
     editMessage,
     reset,
   } = useIntakeChat({ proposalId, idea: initialMessage })
+
+  const [chatWidthPct, setChatWidthPct] = useState(55)
+  const isDragging = useRef(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const handleDividerMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    isDragging.current = true
+    document.body.style.userSelect = 'none'
+
+    function onMouseMove(e: MouseEvent) {
+      if (!isDragging.current || !containerRef.current) return
+      const rect = containerRef.current.getBoundingClientRect()
+      const pct = ((e.clientX - rect.left) / rect.width) * 100
+      setChatWidthPct(Math.min(70, Math.max(30, Math.round(pct))))
+    }
+
+    function onMouseUp() {
+      isDragging.current = false
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
+    }
+
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+  }, [])
 
   const onStateChangeRef = useRef(onStateChange)
   useEffect(() => { onStateChangeRef.current = onStateChange })
@@ -51,17 +80,43 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
 
   return (
     <div className="flex-1 overflow-hidden flex">
-      {/* Desktop: side by side */}
-      <div className="hidden md:flex flex-1 overflow-hidden">
-        <div className="w-[55%] border-r border-white/5 overflow-hidden">
-          <ChatPanel
-            messages={messages}
-            isStreaming={isStreaming}
-            onSend={sendMessage}
-            onEdit={editMessage}
-          />
+      {/* Desktop: animated split layout */}
+      <div ref={containerRef} className="hidden md:flex flex-1 overflow-hidden">
+
+        {/* Chat panel — centered when proposal closed, left side when open */}
+        <div
+          className="flex justify-center overflow-hidden transition-[width] duration-300 ease-in-out"
+          style={{ width: proposalOpen ? `${chatWidthPct}%` : '100%' }}
+        >
+          <div
+            className="h-full w-full overflow-hidden transition-[max-width] duration-300 ease-in-out"
+            style={{ maxWidth: proposalOpen ? '9999px' : '650px' }}
+          >
+            <ChatPanel
+              messages={messages}
+              isStreaming={isStreaming}
+              onSend={sendMessage}
+              onEdit={editMessage}
+            />
+          </div>
         </div>
-        <div className="w-[45%] overflow-hidden">
+
+        {/* Draggable divider — only rendered when proposal is open */}
+        {proposalOpen && (
+          <div
+            className="w-1 cursor-col-resize flex-shrink-0 bg-white/5 hover:bg-brand-yellow/30 active:bg-brand-yellow/50 transition-colors"
+            onMouseDown={handleDividerMouseDown}
+          />
+        )}
+
+        {/* Proposal panel — slides in/out */}
+        <div
+          className="overflow-hidden transition-[width,opacity] duration-300 ease-in-out flex-shrink-0"
+          style={{
+            width: proposalOpen ? `${100 - chatWidthPct}%` : '0%',
+            opacity: proposalOpen ? 1 : 0,
+          }}
+        >
           <ModulesPanel
             activeModules={activeModules}
             confidenceScore={confidenceScore}
