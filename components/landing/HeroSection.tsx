@@ -17,19 +17,22 @@ export default function HeroSection() {
     const c = params.get('c')
     if (c) {
       const storedSession = getStoredSession()
-      if (storedSession && storedSession.proposalId === c) {
-        const idea = getIdeaForSession(c) || ''
+      const idea = storedSession?.proposalId === c ? getIdeaForSession(c) : null
+      if (idea) {
+        // Only restore if there's a real idea (not a blank post-reset session)
         setInitialMessage(idea)
         setIntakeOpen(true)
         return
       }
     }
-    // No URL param — check localStorage for any active session
+    // No URL param — check localStorage for any active session with a real idea
     const storedSession = getStoredSession()
     if (storedSession) {
-      const idea = getIdeaForSession(storedSession.proposalId) || ''
-      setInitialMessage(idea)
-      setIntakeOpen(true)
+      const idea = getIdeaForSession(storedSession.proposalId)
+      if (idea) {
+        setInitialMessage(idea)
+        setIntakeOpen(true)
+      }
     }
   }, [])
 

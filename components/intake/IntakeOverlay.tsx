@@ -92,7 +92,7 @@ export default function IntakeOverlay({ initialMessage, onReset, onClose }: Prop
     setSession(null)
     getOrCreateSession().then((data) => {
       setSession(data)
-      window.history.replaceState(null, '', `?c=${data.proposalId}`)
+      // Don't push URL for blank post-reset session — URL pushed when user submits a real idea
     }).catch(() => setSessionError(true))
     // Notify parent synchronously
     onReset?.()
