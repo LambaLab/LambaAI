@@ -44,9 +44,14 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
   useEffect(() => {
     if (constrainTimerRef.current) clearTimeout(constrainTimerRef.current)
     if (proposalOpen) {
-      setChatConstrained(false)
+      // Opening: keep 650px constraint during the slide so content doesn't expand.
+      // Release only after the animation completes — at 55% width the container is
+      // wider than 650px on all typical desktops so the snap is barely visible.
+      constrainTimerRef.current = setTimeout(() => setChatConstrained(false), 310)
     } else {
-      constrainTimerRef.current = setTimeout(() => setChatConstrained(true), 310)
+      // Closing: re-constrain immediately so content stays 650px while the
+      // container expands back to 100% around it. No content expansion visible.
+      setChatConstrained(true)
     }
     return () => {
       if (constrainTimerRef.current) clearTimeout(constrainTimerRef.current)
