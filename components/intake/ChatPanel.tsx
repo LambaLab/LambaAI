@@ -12,9 +12,10 @@ type Props = {
   isStreaming: boolean
   onSend: (message: string, displayContent?: string, sourceQR?: QuickRepliesType, sourceQuestion?: string) => void
   onEdit?: (messageId: string, newContent: string, displayContent?: string) => void
+  constrained?: boolean
 }
 
-export default function ChatPanel({ messages, isStreaming, onSend, onEdit }: Props) {
+export default function ChatPanel({ messages, isStreaming, onSend, onEdit, constrained = false }: Props) {
   const [input, setInput] = useState('')
   const [reEditingMessageId, setReEditingMessageId] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -23,6 +24,15 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit }: Pro
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // After the panel open/close animation completes, snap to bottom so
+  // the latest message is always in view regardless of reflow from width change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      bottomRef.current?.scrollIntoView({ behavior: 'instant' })
+    }, 320) // just after the 300ms CSS transition
+    return () => clearTimeout(timer)
+  }, [constrained])
 
   // Clear re-edit mode when AI starts streaming (edit was confirmed)
   useEffect(() => {
@@ -74,25 +84,34 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit }: Pro
 
   return (
     <div className="flex flex-col h-full">
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {messages.map((msg, i) => (
-          <MessageBubble
-            key={msg.id}
-            message={msg}
-            isStreaming={isStreaming && i === messages.length - 1 && msg.role === 'assistant'}
-            onQuickReply={(value, label) => onSend(value, label)}
-            isLastMessage={i === messages.length - 1}
-            onEdit={onEdit}
-            onStartRowEdit={setReEditingMessageId}
-            isBeingReEdited={msg.id === reEditingMessageId}
-          />
-        ))}
-        <div ref={bottomRef} />
+      {/* Messages — scroll container stays full-width always; content div handles centering */}
+      <div className="flex-1 overflow-y-auto py-4">
+        <div
+          className="px-4 space-y-4 mx-auto transition-[max-width] duration-300 ease-in-out"
+          style={{ maxWidth: constrained ? '650px' : '9999px' }}
+        >
+          {messages.map((msg, i) => (
+            <MessageBubble
+              key={msg.id}
+              message={msg}
+              isStreaming={isStreaming && i === messages.length - 1 && msg.role === 'assistant'}
+              onQuickReply={(value, label) => onSend(value, label)}
+              isLastMessage={i === messages.length - 1}
+              onEdit={onEdit}
+              onStartRowEdit={setReEditingMessageId}
+              isBeingReEdited={msg.id === reEditingMessageId}
+            />
+          ))}
+          <div ref={bottomRef} />
+        </div>
       </div>
 
       {/* Bottom area: list rows card (new question OR re-edit) OR regular textarea */}
       <div className="flex-shrink-0 px-4 pb-4">
+        <div
+          className="mx-auto transition-[max-width] duration-300 ease-in-out"
+          style={{ maxWidth: constrained ? '650px' : '9999px' }}
+        >
         {activeQR ? (
           <>
             {reEditingQR && (
@@ -147,6 +166,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit }: Pro
             </button>
           </div>
         )}
+        </div>
       </div>
     </div>
   )

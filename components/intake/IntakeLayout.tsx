@@ -85,20 +85,16 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
 
         {/* Chat panel — centered when proposal closed, left side when open */}
         <div
-          className="flex justify-center overflow-hidden transition-[width] duration-300 ease-in-out"
+          className="overflow-hidden transition-[width] duration-300 ease-in-out"
           style={{ width: proposalOpen ? `${chatWidthPct}%` : '100%' }}
         >
-          <div
-            className="h-full w-full overflow-hidden transition-[max-width] duration-300 ease-in-out"
-            style={{ maxWidth: proposalOpen ? '9999px' : '650px' }}
-          >
-            <ChatPanel
-              messages={messages}
-              isStreaming={isStreaming}
-              onSend={sendMessage}
-              onEdit={editMessage}
-            />
-          </div>
+          <ChatPanel
+            messages={messages}
+            isStreaming={isStreaming}
+            onSend={sendMessage}
+            onEdit={editMessage}
+            constrained={!proposalOpen}
+          />
         </div>
 
         {/* Draggable divider — only rendered when proposal is open */}
