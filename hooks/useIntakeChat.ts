@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { calculatePriceRange, applyComplexityAdjustment, tightenPriceRange, type PriceRange } from '@/lib/pricing/engine'
+import { expandWithDependencies } from '@/lib/modules/dependencies'
 import type { QuickReplies } from '@/lib/intake-types'
 
 export type ChatMessage = {
@@ -187,10 +188,13 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             })
           } else if (event === 'tool_result') {
             const input = data.input as UpdateProposalInput
-            const newModules = Array.isArray(input?.detected_modules) ? input.detected_modules : []
+            // Auto-expand to include required dependencies (e.g. payments → auth + database)
+            const newModules = expandWithDependencies(
+              Array.isArray(input?.detected_modules) ? input.detected_modules : []
+            )
             const newMultiplier = typeof input?.complexity_multiplier === 'number' ? input.complexity_multiplier : 1.0
             const delta = typeof input?.confidence_score_delta === 'number' ? input.confidence_score_delta : 0
-            const newScore = Math.max(0, Math.min(100, confidenceRef.current + delta))
+            const newScore = Math.max(0, Math.min(85, confidenceRef.current + delta))
 
             setActiveModules(newModules)
             setConfidenceScore(newScore)

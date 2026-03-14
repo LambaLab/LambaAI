@@ -14,9 +14,9 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
       },
       confidence_score_delta: {
         type: 'number',
-        minimum: -30,
-        maximum: 30,
-        description: 'Change to confidence score this turn (positive or negative, integer, range -30 to 30)',
+        minimum: -20,
+        maximum: 10,
+        description: 'Change to confidence score this turn (positive or negative, integer). Maximum +10 per turn — do not exceed this even if a lot was learned. Range -20 to 10.',
       },
       complexity_multiplier: {
         type: 'number',
@@ -42,7 +42,7 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
       },
       quick_replies: {
         type: 'object' as const,
-        description: 'Optional. Include only when the question has 3-4 genuinely discrete options. Skip for open-ended questions.',
+        description: 'Include on almost every turn (see system prompt). For open-ended or numeric questions, provide 2-3 example options with allowCustom: true so users have a starting point.',
         properties: {
           style: {
             type: 'string' as const,

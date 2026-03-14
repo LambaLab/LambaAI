@@ -50,3 +50,22 @@ export function getModuleById(moduleId: string): Module | null {
 export function getRequiredModulesForSelection(moduleId: string): string[] {
   return getModuleDependencies(moduleId)
 }
+
+// Expand a module list to include all required dependencies (recursive).
+// Example: ["payments"] → ["payments", "auth", "database"]
+export function expandWithDependencies(modules: string[]): string[] {
+  const result = new Set(modules)
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const id of Array.from(result)) {
+      for (const dep of DEPENDENCY_GRAPH[id] ?? []) {
+        if (!result.has(dep)) {
+          result.add(dep)
+          changed = true
+        }
+      }
+    }
+  }
+  return Array.from(result)
+}
