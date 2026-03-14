@@ -35,6 +35,24 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
   const isDragging = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
+  // `chatConstrained` controls the 650px centered layout inside ChatPanel.
+  // On open: drop constraint immediately so content fills the sliding container cleanly.
+  // On close: restore constraint only AFTER the 300ms slide animation finishes,
+  //           so the re-centering never fights the panel transition.
+  const [chatConstrained, setChatConstrained] = useState(true)
+  const constrainTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    if (constrainTimerRef.current) clearTimeout(constrainTimerRef.current)
+    if (proposalOpen) {
+      setChatConstrained(false)
+    } else {
+      constrainTimerRef.current = setTimeout(() => setChatConstrained(true), 310)
+    }
+    return () => {
+      if (constrainTimerRef.current) clearTimeout(constrainTimerRef.current)
+    }
+  }, [proposalOpen])
+
   const handleDividerMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
     isDragging.current = true
@@ -93,7 +111,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             isStreaming={isStreaming}
             onSend={sendMessage}
             onEdit={editMessage}
-            constrained={!proposalOpen}
+            constrained={chatConstrained}
           />
         </div>
 

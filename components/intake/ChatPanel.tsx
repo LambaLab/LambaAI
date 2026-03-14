@@ -87,7 +87,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, const
       {/* Messages — scroll container stays full-width always; content div handles centering */}
       <div className="flex-1 overflow-y-auto py-4">
         <div
-          className="px-4 space-y-4 mx-auto transition-[max-width] duration-300 ease-in-out"
+          className="px-4 space-y-4 mx-auto"
           style={{ maxWidth: constrained ? '650px' : '9999px' }}
         >
           {messages.map((msg, i) => (
@@ -109,7 +109,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, const
       {/* Bottom area: list rows card (new question OR re-edit) OR regular textarea */}
       <div className="flex-shrink-0 px-4 pb-4">
         <div
-          className="mx-auto transition-[max-width] duration-300 ease-in-out"
+          className="mx-auto"
           style={{ maxWidth: constrained ? '650px' : '9999px' }}
         >
         {activeQR ? (
