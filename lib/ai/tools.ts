@@ -34,7 +34,7 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
       },
       question: {
         type: 'string',
-        description: 'The single question for this turn. One crisp sentence ending with ?. This is shown as the rows card header when quick replies are present, and appended to the message when there are no quick replies.',
+        description: 'REQUIRED every turn. Never empty. The single question for this turn — one crisp sentence ending with ?. This is the user\'s call to action: what they read last and respond to. When quick replies are present it appears as the card header; otherwise it is appended to the message. If the idea is vague, ask what the product does. If the idea is clear, ask the most important architectural unknown.',
       },
       product_overview: {
         type: 'string',
