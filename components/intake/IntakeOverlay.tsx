@@ -19,6 +19,7 @@ export default function IntakeOverlay({ initialMessage }: Props) {
   const [minimized, setMinimized] = useState(false)
   const [liveModuleCount, setLiveModuleCount] = useState(0)
   const [liveConfidenceScore, setLiveConfidenceScore] = useState(0)
+  const [currentIdea, setCurrentIdea] = useState(initialMessage)
 
   useEffect(() => {
     setMounted(true)
@@ -68,6 +69,7 @@ export default function IntakeOverlay({ initialMessage }: Props) {
     if (resetConfirmTimerRef.current) clearTimeout(resetConfirmTimerRef.current)
     // Call reset + clear session
     resetRef.current?.()
+    setCurrentIdea('')
     setResetConfirm(false)
     sessionStorage.removeItem('lamba_session')
     setSession(null)
@@ -155,7 +157,7 @@ export default function IntakeOverlay({ initialMessage }: Props) {
           {/* Main content — stays mounted, preserving all chat state */}
           <IntakeLayout
             proposalId={session.proposalId}
-            initialMessage={initialMessage}
+            initialMessage={currentIdea}
             onStateChange={handleStateChange}
             onResetRef={resetRef}
             theme={theme}
