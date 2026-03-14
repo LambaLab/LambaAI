@@ -11,10 +11,3 @@ export type QuickReplies = {
   allowCustom?: boolean
   options: QuickReplyOption[]
 }
-
-export type OnboardingContext = {
-  idea: string
-  platform: string
-  productType: string
-  goal: string   // was: scale
-}
