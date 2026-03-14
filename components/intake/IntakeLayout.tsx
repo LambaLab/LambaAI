@@ -15,9 +15,10 @@ type Props = {
   theme?: 'dark' | 'light'
   proposalOpen: boolean
   onProposalToggle: () => void
+  onReset?: () => void
 }
 
-export default function IntakeLayout({ proposalId, initialMessage, onStateChange, onResetRef, theme, proposalOpen, onProposalToggle }: Props) {
+export default function IntakeLayout({ proposalId, initialMessage, onStateChange, onResetRef, theme, proposalOpen, onProposalToggle, onReset }: Props) {
   const {
     messages,
     activeModules,
@@ -147,6 +148,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             aiStarted={aiStarted}
             theme={theme}
             moduleSummaries={moduleSummaries}
+            onReset={onReset}
           />
         </div>
       </div>
@@ -171,6 +173,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
           aiStarted={aiStarted}
           onToggle={toggleModule}
           moduleSummaries={moduleSummaries}
+          onReset={onReset}
         />
       </div>
     </div>
