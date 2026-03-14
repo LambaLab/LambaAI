@@ -14,6 +14,7 @@ type Props = {
   aiStarted: boolean
   onToggle: (id: string) => void
   moduleSummaries?: { [id: string]: string }
+  onReset?: () => void
 }
 
 export default function MobileBottomDrawer({
@@ -26,6 +27,7 @@ export default function MobileBottomDrawer({
   aiStarted,
   onToggle,
   moduleSummaries = {},
+  onReset,
 }: Props) {
   const [open, setOpen] = useState(false)
 
@@ -67,6 +69,7 @@ export default function MobileBottomDrawer({
               aiStarted={aiStarted}
               onToggle={onToggle}
               moduleSummaries={moduleSummaries}
+              onReset={onReset}
             />
           </div>
         )}
