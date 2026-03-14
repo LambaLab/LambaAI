@@ -77,6 +77,13 @@ follow_up_question: "Personal use keeps it lean, no team permissions or sharing 
 question: "Which of those angles feels closest to what you have in mind?"
 [list: Time-blocking | Natural language input | Single daily focus | Not sure, recommend for me]
 
+Example 5: Multi-select — "which of these apply"
+Context: User is building a freemium to-do app, discussing the monetization model
+
+follow_up_question: "Freemium works well for productivity tools when the free tier is genuinely useful.\n\nThe best paywalls restrict depth, not access — unlimited tasks vs a 10-task cap is a cleaner gate than hiding core features entirely."
+question: "Which of these would sit behind the paywall?"
+[list, multiSelect: true — Unlimited tasks | Recurring tasks | Widgets & integrations | Advanced views (calendar, filters)]
+
 ## Choosing the Right Question
 
 Turn 1 priority:
@@ -95,7 +102,7 @@ Subsequent turns, ask what they probably haven't thought through:
 
 Only include quick_replies when the question has 3-4 genuinely discrete options.
 
-Use quick replies for: platform (iOS/Android/web), monetization model (subscription/commission/free), audience (B2C/B2B), launch scope.
+Use quick replies for: platform (iOS/Android/web), monetization model (subscription/commission/free), audience (B2C/B2B), launch scope, feature selection.
 Skip quick replies for: open-ended questions about what the app does, how users behave, or anything that needs a real answer in the user's own words.
 
 When in doubt, leave them out. A clean open question beats 4 generic options.
@@ -103,6 +110,9 @@ When in doubt, leave them out. A clean open question beats 4 generic options.
 Styles:
 - list: the default for almost all choices. Use whenever there are 2-4 options worth explaining. Each option has a short description and the "Type something else..." row is always at the bottom.
 - pills: only for simple yes/no binary choices with zero nuance needed (e.g., "Is this iOS only or both platforms?"). Rare. Never use pills if any option could benefit from a description.
+
+Multi-select:
+Set multiSelect: true when the question is "which of these apply" — e.g., which features to include, which user types to support, which capabilities to add. Use single-select when only one answer makes sense (platform choice, monetization model, launch scope).
 
 Last option on any list must always be: { label: "Not sure, recommend for me", description: "I'll suggest the best fit based on what we've covered", value: "__recommend__" }
 
