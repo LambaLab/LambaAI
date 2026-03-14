@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Minus, Sun, Moon } from 'lucide-react'
+import { Minus, Sun, Moon, X } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import IntakeLayout from './IntakeLayout'
 import MinimizedBar from './MinimizedBar'
@@ -9,9 +9,11 @@ import { getOrCreateSession, type SessionData } from '@/lib/session'
 
 type Props = {
   initialMessage: string
+  onReset?: () => void
+  onClose?: () => void
 }
 
-export default function IntakeOverlay({ initialMessage }: Props) {
+export default function IntakeOverlay({ initialMessage, onReset, onClose }: Props) {
   const { theme, toggleTheme } = useTheme()
   const [session, setSession] = useState<SessionData | null>(null)
   const [sessionError, setSessionError] = useState(false)
@@ -74,6 +76,7 @@ export default function IntakeOverlay({ initialMessage }: Props) {
     sessionStorage.removeItem('lamba_session')
     setSession(null)
     getOrCreateSession().then(setSession).catch(() => setSessionError(true))
+    onReset?.()
   }
 
   return (
@@ -145,11 +148,11 @@ export default function IntakeOverlay({ initialMessage }: Props) {
                 {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
               <button
-                onClick={() => setMinimized(true)}
+                onClick={currentIdea === '' ? onClose : () => setMinimized(true)}
                 className="w-8 h-8 rounded-lg bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] hover:bg-[var(--ov-input-bg,rgba(255,255,255,0.10))] flex items-center justify-center text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors"
-                aria-label="Minimize"
+                aria-label={currentIdea === '' ? 'Close' : 'Minimize'}
               >
-                <Minus className="w-4 h-4" />
+                {currentIdea === '' ? <X className="w-4 h-4" /> : <Minus className="w-4 h-4" />}
               </button>
             </div>
           </div>
