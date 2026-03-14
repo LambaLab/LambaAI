@@ -29,6 +29,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
     productOverview,
     editMessage,
     reset,
+    moduleSummaries,
   } = useIntakeChat({ proposalId, idea: initialMessage })
 
   const [chatWidthPct, setChatWidthPct] = useState(55)
@@ -145,6 +146,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             onToggle={toggleModule}
             aiStarted={aiStarted}
             theme={theme}
+            moduleSummaries={moduleSummaries}
           />
         </div>
       </div>
@@ -168,6 +170,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
           proposalId={proposalId}
           aiStarted={aiStarted}
           onToggle={toggleModule}
+          moduleSummaries={moduleSummaries}
         />
       </div>
     </div>

@@ -15,6 +15,7 @@ type Props = {
   onToggle: (id: string) => void
   aiStarted: boolean
   theme?: 'dark' | 'light'
+  moduleSummaries?: { [id: string]: string }
 }
 
 // Renders product overview text — supports labeled sections (e.g. "What it is: ...")
@@ -56,6 +57,7 @@ export default function ModulesPanel({
   onToggle,
   aiStarted,
   theme,
+  moduleSummaries = {},
 }: Props) {
   const [showAuthGate, setShowAuthGate] = useState(false)
 
@@ -99,6 +101,7 @@ export default function ModulesPanel({
             activeModules={activeModules}
             onToggle={onToggle}
             pricingVisible={pricingVisible}
+            summary={moduleSummaries[id]}
           />
         ))}
 

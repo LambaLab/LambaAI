@@ -13,6 +13,7 @@ type Props = {
   proposalId: string
   aiStarted: boolean
   onToggle: (id: string) => void
+  moduleSummaries?: { [id: string]: string }
 }
 
 export default function MobileBottomDrawer({
@@ -24,6 +25,7 @@ export default function MobileBottomDrawer({
   proposalId,
   aiStarted,
   onToggle,
+  moduleSummaries = {},
 }: Props) {
   const [open, setOpen] = useState(false)
 
@@ -64,6 +66,7 @@ export default function MobileBottomDrawer({
               proposalId={proposalId}
               aiStarted={aiStarted}
               onToggle={onToggle}
+              moduleSummaries={moduleSummaries}
             />
           </div>
         )}
