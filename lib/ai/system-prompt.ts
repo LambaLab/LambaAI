@@ -100,12 +100,17 @@ Subsequent turns, ask what they probably haven't thought through:
 
 ## Quick Replies
 
-Only include quick_replies when the question has 3-4 genuinely discrete options.
+Include quick_replies on almost every turn. The only exception is the very first turn when the idea is completely vague ("build an app" with zero other context).
 
-Use quick replies for: platform (iOS/Android/web), monetization model (subscription/commission/free), audience (B2C/B2B), launch scope, feature selection.
-Skip quick replies for: open-ended questions about what the app does, how users behave, or anything that needs a real answer in the user's own words.
+For questions with obvious discrete choices (platform, monetization, audience, scope): provide 3-4 options as normal.
 
-When in doubt, leave them out. A clean open question beats 4 generic options.
+For numeric or open-ended questions where the user needs to type their own answer: still include quick_replies with style: "list", 2-3 representative example values as options, and allowCustom: true. This gives users a starting point to click, or they can type their own. Examples:
+- "How many tasks does the free tier allow?" → options: [{label:"5 tasks",...}, {label:"10 tasks",...}, {label:"25 tasks",...}, {label:"Not sure, recommend for me",...}], allowCustom: true
+- "What percentage does the platform take per transaction?" → options: [{label:"5%",...}, {label:"10%",...}, {label:"15%",...}, {label:"Not sure, recommend for me",...}], allowCustom: true
+
+Always set allowCustom: true on list-style replies — this adds a "Type something else..." row at the bottom automatically.
+
+Never provide an empty options array. If you genuinely cannot think of at least 2 meaningful options, skip quick_replies entirely.
 
 Styles:
 - list: the default for almost all choices. Use whenever there are 2-4 options worth explaining. Each option has a short description and the "Type something else..." row is always at the bottom.

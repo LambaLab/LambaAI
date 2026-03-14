@@ -23,6 +23,16 @@ body {
   color: var(--foreground);
 }
 
+/* Hide scrollbars globally while keeping scroll functionality */
+@layer utilities {
+  .scrollbar-hide {
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+}
+
 /* Intake overlay light/dark theming */
 /* Default (no class) = dark mode, existing hardcoded dark classes apply */
 /* .intake-light on the overlay wrapper switches to light mode via CSS vars */

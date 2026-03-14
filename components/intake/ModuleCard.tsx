@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { getModuleById, validateModuleRemoval } from '@/lib/modules/dependencies'
 import * as Icons from 'lucide-react'
-import { Plus, X, ChevronDown } from 'lucide-react'
+import { X, ChevronDown } from 'lucide-react'
 
 type Props = {
   moduleId: string
@@ -24,10 +24,8 @@ export default function ModuleCard({ moduleId, isActive, activeModules, onToggle
     if (isActive) {
       // Active modules: only expand/collapse, never add/remove on header click
       if (summary) setIsExpanded(e => !e)
-    } else {
-      // Inactive modules: clicking adds to proposal
-      onToggle(moduleId)
     }
+    // Inactive modules: read-only in the proposal panel — do nothing on click
   }
 
   return (
@@ -48,7 +46,7 @@ export default function ModuleCard({ moduleId, isActive, activeModules, onToggle
             ? summary
               ? 'cursor-pointer hover:bg-white/[0.03]'
               : 'cursor-default'
-            : 'cursor-pointer hover:bg-white/[0.03]'
+            : 'cursor-default'
         }`}
       >
         <div className="flex items-center justify-between gap-2">
@@ -74,10 +72,6 @@ export default function ModuleCard({ moduleId, isActive, activeModules, onToggle
                 isExpanded ? 'rotate-180' : ''
               }`}
             />
-          ) : !isActive ? (
-            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] text-[var(--ov-text-muted,#727272)] flex items-center justify-center">
-              <Plus className="w-3 h-3" />
-            </span>
           ) : null}
         </div>
       </button>

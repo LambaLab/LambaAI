@@ -98,7 +98,7 @@ export default function ModulesPanel({
       </div>
 
       {/* Scrollable middle */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto scrollbar-hide">
 
         {/* 2. Product Overview accordion */}
         <div className="border-b border-[var(--ov-border,rgba(255,255,255,0.05))]">

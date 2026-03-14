@@ -58,7 +58,7 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
     <div className={`flex ${isUser ? 'justify-end' : 'items-start gap-2'}`}>
       {!isUser && (
         <Image
-          src="/lamba-icon.png"
+          src="/lamba-icon1.png"
           alt="Lamba Lab"
           width={24}
           height={24}

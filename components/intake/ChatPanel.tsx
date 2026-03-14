@@ -85,7 +85,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, const
   return (
     <div className="flex flex-col h-full">
       {/* Messages — scroll container stays full-width always; content div handles centering */}
-      <div className="flex-1 overflow-y-auto py-4">
+      <div className="flex-1 overflow-y-auto py-4 scrollbar-hide">
         <div
           className="px-4 space-y-4 mx-auto"
           style={{ maxWidth: constrained ? '650px' : '9999px' }}

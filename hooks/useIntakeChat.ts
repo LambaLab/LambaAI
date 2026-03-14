@@ -208,8 +208,13 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               if (last?.role !== 'assistant') return prev
               const followUp = typeof input?.follow_up_question === 'string' ? input.follow_up_question : ''
               const questionText = typeof input?.question === 'string' ? input.question.trim() : ''
-              const updatedQR = input?.quick_replies
-              const isListQR = updatedQR?.style === 'list'
+              // Validate quick_replies — empty options array is as bad as no quick_replies
+            // (QuickReplies component would render only "Type something", which is confusing)
+            const rawQR = input?.quick_replies
+            const updatedQR = rawQR && Array.isArray(rawQR.options) && rawQR.options.length > 0
+              ? rawQR
+              : undefined
+            const isListQR = updatedQR?.style === 'list'
 
               // For list QR: question goes in the rows card header (message.question), not in the bubble
               // For no QR or pills QR: question is appended to bubble content so it's visible
