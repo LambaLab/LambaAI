@@ -12,6 +12,8 @@ type Props = {
 
 export default function QuickReplies({ quickReplies, onSelect, disabled, question }: Props) {
   const { style, multiSelect, allowCustom, options } = quickReplies
+  // Always show "Type something else..." for list style
+  const effectiveAllowCustom = style === 'list' ? true : (allowCustom ?? false)
   const [selected, setSelected] = useState<string[]>([])
   const [showCustomInput, setShowCustomInput] = useState(false)
   const [customValue, setCustomValue] = useState('')
@@ -46,7 +48,7 @@ export default function QuickReplies({ quickReplies, onSelect, disabled, questio
     }
   }
 
-  const allOptions: (QuickReplyOption | 'custom')[] = allowCustom
+  const allOptions: (QuickReplyOption | 'custom')[] = effectiveAllowCustom
     ? [...options, 'custom']
     : options
 
@@ -84,7 +86,7 @@ export default function QuickReplies({ quickReplies, onSelect, disabled, questio
               key={opt.value}
               onClick={() => multiSelect ? toggleSelected(opt.value) : handleSingleSelect(opt)}
               disabled={disabled}
-              className={`px-3 py-1.5 rounded-full border text-sm transition-all disabled:opacity-50 ${
+              className={`px-3 py-1.5 rounded-full border text-sm transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                 isChecked
                   ? 'bg-brand-yellow text-brand-dark border-brand-yellow font-medium'
                   : 'bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] text-[var(--ov-text,#ffffff)] border-[var(--ov-border,rgba(255,255,255,0.10))] hover:border-brand-yellow/40'
@@ -95,11 +97,11 @@ export default function QuickReplies({ quickReplies, onSelect, disabled, questio
             </button>
           )
         })}
-        {allowCustom && !showCustomInput && (
+        {effectiveAllowCustom && !showCustomInput && (
           <button
             onClick={() => setShowCustomInput(true)}
             disabled={disabled}
-            className="px-3 py-1.5 rounded-full border border-[var(--ov-border,rgba(255,255,255,0.10))] bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] text-[var(--ov-text-muted,#727272)] text-sm hover:border-brand-yellow/40 transition-all"
+            className="px-3 py-1.5 rounded-full border border-[var(--ov-border,rgba(255,255,255,0.10))] bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] text-[var(--ov-text-muted,#727272)] text-sm hover:border-brand-yellow/40 transition-all cursor-pointer disabled:cursor-not-allowed"
           >
             ✏️ Other...
           </button>
@@ -117,7 +119,7 @@ export default function QuickReplies({ quickReplies, onSelect, disabled, questio
             <button
               onClick={handleCustomSubmit}
               disabled={disabled || !customValue.trim()}
-              className="px-3 py-2 bg-brand-yellow text-brand-dark rounded-xl text-sm font-medium disabled:opacity-40"
+              className="px-3 py-2 bg-brand-yellow text-brand-dark rounded-xl text-sm font-medium disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
             >
               Send
             </button>
@@ -127,7 +129,7 @@ export default function QuickReplies({ quickReplies, onSelect, disabled, questio
           <button
             onClick={handleMultiConfirm}
             disabled={disabled}
-            className="w-full mt-2 py-2 bg-brand-yellow text-brand-dark font-medium rounded-xl text-sm transition-all hover:bg-brand-yellow/90 disabled:opacity-50"
+            className="w-full mt-2 py-2 bg-brand-yellow text-brand-dark font-medium rounded-xl text-sm transition-all hover:bg-brand-yellow/90 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
             Continue →
           </button>
@@ -168,7 +170,7 @@ export default function QuickReplies({ quickReplies, onSelect, disabled, questio
                   <button
                     onClick={handleCustomSubmit}
                     disabled={disabled || !customValue.trim()}
-                    className="px-3 py-2 bg-brand-yellow text-brand-dark rounded-lg text-sm font-medium disabled:opacity-40"
+                    className="px-3 py-2 bg-brand-yellow text-brand-dark rounded-lg text-sm font-medium disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
                   >
                     Send
                   </button>
@@ -177,7 +179,7 @@ export default function QuickReplies({ quickReplies, onSelect, disabled, questio
                 <button
                   onClick={() => setShowCustomInput(true)}
                   disabled={disabled}
-                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] transition-colors text-left disabled:opacity-50"
+                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] transition-colors text-left disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                 >
                   <span className="text-sm text-[var(--ov-text-muted,#727272)]">Type something else...</span>
                   <span className="text-xs text-[var(--ov-text-muted,#727272)] bg-[var(--ov-surface-subtle,rgba(255,255,255,0.10))] rounded-md px-2 py-0.5 font-mono">{num}</span>
@@ -193,7 +195,7 @@ export default function QuickReplies({ quickReplies, onSelect, disabled, questio
             key={option.value}
             onClick={() => multiSelect ? toggleSelected(option.value) : handleSingleSelect(option)}
             disabled={disabled}
-            className={`w-full flex items-start justify-between px-4 py-3 hover:bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] transition-colors text-left border-t border-[var(--ov-border,rgba(255,255,255,0.10))] first:border-t-0 disabled:opacity-50 ${
+            className={`w-full flex items-start justify-between px-4 py-3 hover:bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] transition-colors text-left border-t border-[var(--ov-border,rgba(255,255,255,0.10))] first:border-t-0 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed ${
               isChecked ? 'bg-[var(--ov-input-bg,rgba(255,255,255,0.10))]' : ''
             }`}
           >
@@ -225,7 +227,7 @@ export default function QuickReplies({ quickReplies, onSelect, disabled, questio
           <button
             onClick={handleMultiConfirm}
             disabled={disabled}
-            className="w-full py-2 bg-brand-yellow text-brand-dark font-medium rounded-xl text-sm transition-all hover:bg-brand-yellow/90 disabled:opacity-50"
+            className="w-full py-2 bg-brand-yellow text-brand-dark font-medium rounded-xl text-sm transition-all hover:bg-brand-yellow/90 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
             Continue →
           </button>

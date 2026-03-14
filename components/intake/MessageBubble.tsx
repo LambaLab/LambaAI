@@ -21,15 +21,12 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
     ? (message.displayContent ?? message.content)
     : message.content
 
-  // For AI messages with list QR (shown at bottom of ChatPanel), strip the last paragraph
-  // from the bubble so it appears as the question header inside the rows card instead
-  const isListQR = !isUser && message.quickReplies?.style === 'list' && isLastMessage
+  // Render all paragraphs — the question is now its own field, not embedded in content
   const paragraphs = rawContent.split('\n\n').filter(Boolean)
-  const displayParagraphs = isListQR && paragraphs.length > 1
-    ? paragraphs.slice(0, -1)
-    : paragraphs
+  const displayParagraphs = paragraphs
 
   // Don't render list QR inline — ChatPanel renders it at the bottom
+  const isListQR = !isUser && message.quickReplies?.style === 'list' && isLastMessage
   const showInlineQR = message.quickReplies && isLastMessage && onQuickReply && !isListQR
 
   // Edit state uses displayContent for the initial value so user sees human-readable text
@@ -72,14 +69,14 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
               <div className="flex gap-2 justify-end">
                 <button
                   onClick={handleEditCancel}
-                  className="flex items-center gap-1 text-xs text-brand-gray-mid hover:text-brand-white transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
+                  className="flex items-center gap-1 text-xs text-brand-gray-mid hover:text-brand-white transition-colors px-2 py-1 rounded-lg hover:bg-white/5 cursor-pointer"
                 >
                   <X className="w-3 h-3" /> Cancel
                 </button>
                 <button
                   onClick={handleEditSave}
                   disabled={!editValue.trim() || isStreaming}
-                  className="flex items-center gap-1 text-xs text-brand-dark bg-brand-yellow hover:bg-brand-yellow/90 transition-colors px-2 py-1 rounded-lg disabled:opacity-40"
+                  className="flex items-center gap-1 text-xs text-brand-dark bg-brand-yellow hover:bg-brand-yellow/90 transition-colors px-2 py-1 rounded-lg disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
                 >
                   <Check className="w-3 h-3" /> Save
                 </button>
@@ -118,7 +115,7 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
           {isUser && onEdit && !isEditing && (
             <button
               onClick={() => { setEditValue(message.displayContent ?? message.content); setIsEditing(true) }}
-              className="absolute -top-2 -left-8 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+              className="absolute -top-2 -left-8 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center cursor-pointer"
               aria-label="Edit message"
             >
               <Pencil className="w-3 h-3 text-brand-gray-mid" />

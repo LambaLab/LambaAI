@@ -19,7 +19,7 @@ function isValidSession(data: unknown): data is SessionData {
 export function getStoredSession(): SessionData | null {
   if (typeof window === 'undefined') return null
   try {
-    const raw = sessionStorage.getItem(SESSION_KEY)
+    const raw = localStorage.getItem(SESSION_KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw)
     return isValidSession(parsed) ? parsed : null
@@ -30,7 +30,17 @@ export function getStoredSession(): SessionData | null {
 
 export function storeSession(data: SessionData) {
   if (typeof window === 'undefined') return
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify(data))
+  localStorage.setItem(SESSION_KEY, JSON.stringify(data))
+}
+
+export function storeIdeaForSession(proposalId: string, idea: string): void {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(`lamba_idea_${proposalId}`, idea)
+}
+
+export function getIdeaForSession(proposalId: string): string | null {
+  if (typeof window === 'undefined') return null
+  return localStorage.getItem(`lamba_idea_${proposalId}`)
 }
 
 export async function getOrCreateSession(): Promise<SessionData> {

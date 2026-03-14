@@ -5,7 +5,7 @@ import { Minus, Sun, Moon, X } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import IntakeLayout from './IntakeLayout'
 import MinimizedBar from './MinimizedBar'
-import { getOrCreateSession, type SessionData } from '@/lib/session'
+import { getOrCreateSession, storeIdeaForSession, type SessionData } from '@/lib/session'
 
 type Props = {
   initialMessage: string
@@ -43,8 +43,16 @@ export default function IntakeOverlay({ initialMessage, onReset, onClose }: Prop
   }, [minimized])
 
   useEffect(() => {
-    getOrCreateSession().then(setSession).catch(() => setSessionError(true))
-  }, [])
+    getOrCreateSession().then((data) => {
+      setSession(data)
+      // Store the idea so we can restore it on refresh
+      if (initialMessage) {
+        storeIdeaForSession(data.proposalId, initialMessage)
+      }
+      // Push unique conversation URL
+      window.history.replaceState(null, '', `?c=${data.proposalId}`)
+    }).catch(() => setSessionError(true))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleStateChange = useCallback((m: number, c: number) => {
     setLiveModuleCount(m)
@@ -69,14 +77,24 @@ export default function IntakeOverlay({ initialMessage, onReset, onClose }: Prop
     }
     // Confirmed: clear timer first
     if (resetConfirmTimerRef.current) clearTimeout(resetConfirmTimerRef.current)
+    // Clear all stored data for this conversation
+    if (session) {
+      localStorage.removeItem(`lamba_idea_${session.proposalId}`)
+      localStorage.removeItem(`lamba_msgs_${session.proposalId}`)
+    }
+    localStorage.removeItem('lamba_session')
+    // Clear the conversation URL
+    window.history.replaceState(null, '', '/')
     // Call reset + clear session
     resetRef.current?.()
     setCurrentIdea('')
     setResetConfirm(false)
-    sessionStorage.removeItem('lamba_session')
     setSession(null)
-    getOrCreateSession().then(setSession).catch(() => setSessionError(true))
-    // Notify parent synchronously — parent only manages UI state, no need to await session
+    getOrCreateSession().then((data) => {
+      setSession(data)
+      window.history.replaceState(null, '', `?c=${data.proposalId}`)
+    }).catch(() => setSessionError(true))
+    // Notify parent synchronously
     onReset?.()
   }
 
@@ -84,6 +102,8 @@ export default function IntakeOverlay({ initialMessage, onReset, onClose }: Prop
 
   function handleCloseOrMinimize() {
     if (isBlank) {
+      // Clear URL when closing a blank overlay
+      window.history.replaceState(null, '', '/')
       onClose?.()
     } else {
       setMinimized(true)
@@ -106,7 +126,7 @@ export default function IntakeOverlay({ initialMessage, onReset, onClose }: Prop
         <div className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${theme === 'light' ? 'bg-[#F5F4F0] intake-light' : 'bg-brand-dark'} ${mounted ? 'opacity-100' : 'opacity-0'}`}>
           <div className="text-center space-y-3">
             <p className="text-[var(--ov-text,#ffffff)]">Couldn't start session. Please try again.</p>
-            <button onClick={() => setMinimized(true)} className="text-[var(--ov-text-muted,#727272)] text-sm hover:text-[var(--ov-text,#ffffff)] transition-colors">
+            <button onClick={() => setMinimized(true)} className="text-[var(--ov-text-muted,#727272)] text-sm hover:text-[var(--ov-text,#ffffff)] transition-colors cursor-pointer">
               Dismiss
             </button>
           </div>
@@ -131,13 +151,13 @@ export default function IntakeOverlay({ initialMessage, onReset, onClose }: Prop
                   <span className="text-xs text-brand-gray-mid">Start over?</span>
                   <button
                     onClick={handleResetClick}
-                    className="text-xs text-red-400 hover:text-red-300 transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
+                    className="text-xs text-red-400 hover:text-red-300 transition-colors px-2 py-1 rounded-lg hover:bg-white/5 cursor-pointer"
                   >
                     Yes
                   </button>
                   <button
                     onClick={() => setResetConfirm(false)}
-                    className="text-xs text-brand-gray-mid hover:text-brand-white transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
+                    className="text-xs text-brand-gray-mid hover:text-brand-white transition-colors px-2 py-1 rounded-lg hover:bg-white/5 cursor-pointer"
                   >
                     No
                   </button>
@@ -145,7 +165,7 @@ export default function IntakeOverlay({ initialMessage, onReset, onClose }: Prop
               ) : (
                 <button
                   onClick={handleResetClick}
-                  className="text-xs text-brand-gray-mid hover:text-brand-white transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
+                  className="text-xs text-brand-gray-mid hover:text-brand-white transition-colors px-2 py-1 rounded-lg hover:bg-white/5 cursor-pointer"
                   aria-label="Reset conversation"
                 >
                   ↺ Reset
@@ -153,14 +173,14 @@ export default function IntakeOverlay({ initialMessage, onReset, onClose }: Prop
               )}
               <button
                 onClick={toggleTheme}
-                className="w-8 h-8 rounded-lg bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] hover:bg-[var(--ov-input-bg,rgba(255,255,255,0.10))] flex items-center justify-center text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors"
+                className="w-8 h-8 rounded-lg bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] hover:bg-[var(--ov-input-bg,rgba(255,255,255,0.10))] flex items-center justify-center text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors cursor-pointer"
                 aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
               >
                 {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
               <button
                 onClick={handleCloseOrMinimize}
-                className="w-8 h-8 rounded-lg bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] hover:bg-[var(--ov-input-bg,rgba(255,255,255,0.10))] flex items-center justify-center text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors"
+                className="w-8 h-8 rounded-lg bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] hover:bg-[var(--ov-input-bg,rgba(255,255,255,0.10))] flex items-center justify-center text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors cursor-pointer"
                 aria-label={isBlank ? 'Close' : 'Minimize'}
               >
                 {isBlank ? <X className="w-4 h-4" /> : <Minus className="w-4 h-4" />}

@@ -1,13 +1,37 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import HeroInput from './HeroInput'
 import IntakeOverlay from '@/components/intake/IntakeOverlay'
+import { getStoredSession, getIdeaForSession } from '@/lib/session'
 
 export default function HeroSection() {
   const [intakeOpen, setIntakeOpen] = useState(false)
   const [initialMessage, setInitialMessage] = useState('')
   const [heroInputResetKey, setHeroInputResetKey] = useState(0)
+
+  // Restore conversation from localStorage/URL on mount
+  useEffect(() => {
+    // Check URL for a conversation ID first
+    const params = new URLSearchParams(window.location.search)
+    const c = params.get('c')
+    if (c) {
+      const storedSession = getStoredSession()
+      if (storedSession && storedSession.proposalId === c) {
+        const idea = getIdeaForSession(c) || ''
+        setInitialMessage(idea)
+        setIntakeOpen(true)
+        return
+      }
+    }
+    // No URL param — check localStorage for any active session
+    const storedSession = getStoredSession()
+    if (storedSession) {
+      const idea = getIdeaForSession(storedSession.proposalId) || ''
+      setInitialMessage(idea)
+      setIntakeOpen(true)
+    }
+  }, [])
 
   function handleFirstMessage(message: string) {
     setInitialMessage(message)

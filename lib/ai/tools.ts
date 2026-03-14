@@ -30,7 +30,11 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
       },
       follow_up_question: {
         type: 'string',
-        description: 'Your complete message to display to the user this turn. Write all 3 parts as a single flowing response: (1) your 1-sentence reaction naming what you heard, (2) your 1-2 sentence insight or observation, (3) your one question. This entire field is what gets shown in the chat — do not put just the question here.',
+        description: 'Reaction and insight for this turn — NOT the question. Two sentences max. Write each as its own paragraph separated by \\n\\n. Example: "Nice, personal task management.\\n\\nThe to-do space is crowded (Todoist, Things 3, Notion) but people keep building new ones because none feel quite right." Do NOT include the question here — put it in the question field.',
+      },
+      question: {
+        type: 'string',
+        description: 'The single question for this turn. One crisp sentence ending with ?. This is shown as the rows card header when quick replies are present, and appended to the message when there are no quick replies.',
       },
       product_overview: {
         type: 'string',
@@ -56,7 +60,7 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
           },
           allowCustom: {
             type: 'boolean' as const,
-            description: 'true to append a "Type something else..." option. Use unless options are exhaustive.',
+            description: 'For list style, always set to true unless options are truly exhaustive. Adds a "Type something else..." row at the bottom.',
           },
           options: {
             type: 'array' as const,
@@ -75,6 +79,6 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
         required: ['style', 'options'],
       },
     },
-    required: ['detected_modules', 'confidence_score_delta', 'complexity_multiplier', 'updated_brief', 'follow_up_question', 'product_overview'],
+    required: ['detected_modules', 'confidence_score_delta', 'complexity_multiplier', 'updated_brief', 'follow_up_question', 'question', 'product_overview'],
   },
 }

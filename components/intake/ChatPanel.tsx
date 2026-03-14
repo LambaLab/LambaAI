@@ -54,12 +54,8 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit }: Pro
       ? lastMsg.quickReplies
       : null
 
-  // Extract the question from the last AI message (last \n\n-separated paragraph)
-  // This goes into the rows card header, not the bubble
-  const questionText =
-    listQR && lastMsg?.content
-      ? lastMsg.content.split('\n\n').filter(Boolean).pop()?.trim() || undefined
-      : undefined
+  // Use the dedicated question field as the rows card header
+  const questionText = listQR ? (lastMsg?.question ?? undefined) : undefined
 
   return (
     <div className="flex flex-col h-full">
@@ -103,7 +99,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit }: Pro
             <button
               onClick={handleSubmit}
               disabled={!input.trim() || isStreaming}
-              className="w-8 h-8 bg-brand-yellow rounded-lg flex items-center justify-center disabled:opacity-30 hover:bg-brand-yellow/90 transition-all active:scale-95 flex-shrink-0"
+              className="w-8 h-8 bg-brand-yellow rounded-lg flex items-center justify-center disabled:opacity-30 hover:bg-brand-yellow/90 transition-all active:scale-95 flex-shrink-0 cursor-pointer disabled:cursor-not-allowed"
               aria-label="Send message"
             >
               <ArrowRight className="w-4 h-4 text-brand-dark" />

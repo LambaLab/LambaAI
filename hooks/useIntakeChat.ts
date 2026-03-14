@@ -9,6 +9,7 @@ export type ChatMessage = {
   role: 'user' | 'assistant'
   content: string
   displayContent?: string  // For user bubbles: shown text may differ from content sent to the API
+  question?: string        // The question for this turn (shown as rows card header)
   capabilityCards?: string[]
   quickReplies?: QuickReplies
 }
@@ -19,6 +20,7 @@ type UpdateProposalInput = {
   complexity_multiplier: number
   updated_brief: string
   follow_up_question: string
+  question?: string
   product_overview?: string
   capability_cards?: string[]
   quick_replies?: QuickReplies
@@ -31,7 +33,9 @@ type Props = {
   idea: string
 }
 
-export function useIntakeChat({ idea }: Props) {
+const MSGS_KEY = (pid: string) => `lamba_msgs_${pid}`
+
+export function useIntakeChat({ proposalId, idea }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [activeModules, setActiveModules] = useState<string[]>([])
   const [confidenceScore, setConfidenceScore] = useState(0)
@@ -50,8 +54,33 @@ export function useIntakeChat({ idea }: Props) {
   useEffect(() => { activeModulesRef.current = activeModules }, [activeModules])
   useEffect(() => { complexityRef.current = complexityMultiplier }, [complexityMultiplier])
 
-  // Auto-send the idea on mount (fires once)
+  // Persist messages to localStorage after every update
   useEffect(() => {
+    if (messages.length > 0 && proposalId) {
+      localStorage.setItem(MSGS_KEY(proposalId), JSON.stringify(messages))
+    }
+  }, [messages, proposalId])
+
+  // Auto-send the idea on mount (fires once) — or restore stored messages
+  useEffect(() => {
+    if (!proposalId) return
+
+    // Check for stored messages first
+    const stored = localStorage.getItem(MSGS_KEY(proposalId))
+    if (stored) {
+      try {
+        const parsed: ChatMessage[] = JSON.parse(stored)
+        if (parsed.length > 0) {
+          messagesRef.current = parsed
+          setMessages(parsed)
+          return // Skip auto-send — conversation already exists
+        }
+      } catch {
+        // Ignore parse errors, fall through to auto-send
+      }
+    }
+
+    // No stored messages — auto-send the idea
     if (!idea.trim()) return
 
     const userMessage: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: idea }
@@ -138,10 +167,19 @@ export function useIntakeChat({ idea }: Props) {
             setMessages((prev) => {
               const last = prev[prev.length - 1]
               if (last?.role !== 'assistant') return prev
-              const updatedContent = last.content || (typeof input?.follow_up_question === 'string' ? input.follow_up_question : '')
+              // Build content: use streamed text if available, otherwise fall back to follow_up_question
+              const followUp = typeof input?.follow_up_question === 'string' ? input.follow_up_question : ''
+              const questionText = typeof input?.question === 'string' ? input.question.trim() : ''
+              const updatedContent = last.content || followUp
               const updatedCards = input?.capability_cards?.length ? input.capability_cards : last.capabilityCards
               const updatedQR = input?.quick_replies
-              return [...prev.slice(0, -1), { ...last, content: updatedContent, capabilityCards: updatedCards, quickReplies: updatedQR }]
+              return [...prev.slice(0, -1), {
+                ...last,
+                content: updatedContent,
+                question: questionText || undefined,
+                capabilityCards: updatedCards,
+                quickReplies: updatedQR,
+              }]
             })
           }
         }
@@ -174,9 +212,9 @@ export function useIntakeChat({ idea }: Props) {
     ]
 
     setMessages((prev) => {
-      // Clear quickReplies from last assistant message
+      // Clear quickReplies and question from last assistant message
       const cleared = prev.map((m, i) =>
-        i === prev.length - 1 && m.role === 'assistant' ? { ...m, quickReplies: undefined } : m
+        i === prev.length - 1 && m.role === 'assistant' ? { ...m, quickReplies: undefined, question: undefined } : m
       )
       return [...cleared, userMessage]
     })
@@ -216,6 +254,10 @@ export function useIntakeChat({ idea }: Props) {
   }, [isStreaming]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const reset = useCallback(() => {
+    // Clear stored messages for this proposal
+    if (proposalId) {
+      localStorage.removeItem(MSGS_KEY(proposalId))
+    }
     // Reset refs synchronously
     messagesRef.current = []
     confidenceRef.current = 0
@@ -229,7 +271,7 @@ export function useIntakeChat({ idea }: Props) {
     setPriceRange({ min: 0, max: 0 })
     setIsStreaming(false)
     setProductOverview('')
-  }, [])
+  }, [proposalId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, editMessage, reset }
 }
