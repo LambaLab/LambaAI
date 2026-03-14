@@ -18,8 +18,6 @@ export default function ModuleCard({ moduleId, isActive, activeModules, onToggle
   const mod = getModuleById(moduleId)
   if (!mod) return null
 
-  const { canRemove, blockedBy } = validateModuleRemoval(moduleId, activeModules)
-
   const IconComponent = (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[mod.icon] ?? Icons.Box
 
   function handleHeaderClick() {
@@ -44,7 +42,7 @@ export default function ModuleCard({ moduleId, isActive, activeModules, onToggle
       <button
         type="button"
         onClick={handleHeaderClick}
-        disabled={isActive && !summary}
+        aria-expanded={isActive && summary ? isExpanded : undefined}
         className={`w-full p-3 text-left ${
           isActive
             ? summary
@@ -95,20 +93,23 @@ export default function ModuleCard({ moduleId, isActive, activeModules, onToggle
             <p className="text-xs text-[var(--ov-text-muted,#727272)] leading-relaxed">
               {summary}
             </p>
-            {canRemove ? (
-              <button
-                type="button"
-                onClick={() => onToggle(moduleId)}
-                className="mt-2 flex items-center gap-1 text-[10px] text-[var(--ov-text-muted,#727272)]/50 hover:text-[var(--ov-text-muted,#727272)] transition-colors cursor-pointer"
-              >
-                <X className="w-2.5 h-2.5" />
-                Remove module
-              </button>
-            ) : (
-              <p className="mt-2 text-[10px] text-[var(--ov-text-muted,#727272)]/40">
-                Required by: {blockedBy.join(', ')}
-              </p>
-            )}
+            {(() => {
+              const { canRemove, blockedBy } = validateModuleRemoval(moduleId, activeModules)
+              return canRemove ? (
+                <button
+                  type="button"
+                  onClick={() => onToggle(moduleId)}
+                  className="mt-2 flex items-center gap-1 text-[10px] text-[var(--ov-text-muted,#727272)]/50 hover:text-[var(--ov-text-muted,#727272)] transition-colors cursor-pointer"
+                >
+                  <X className="w-2.5 h-2.5" />
+                  Remove module
+                </button>
+              ) : (
+                <p className="mt-2 text-[10px] text-[var(--ov-text-muted,#727272)]/40">
+                  Required by: {blockedBy.map(id => getModuleById(id)?.name ?? id).join(', ')}
+                </p>
+              )
+            })()}
           </div>
         </div>
       </div>
