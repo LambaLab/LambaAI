@@ -167,16 +167,23 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             setMessages((prev) => {
               const last = prev[prev.length - 1]
               if (last?.role !== 'assistant') return prev
-              // Build content: use streamed text if available, otherwise fall back to follow_up_question
               const followUp = typeof input?.follow_up_question === 'string' ? input.follow_up_question : ''
               const questionText = typeof input?.question === 'string' ? input.question.trim() : ''
-              const updatedContent = last.content || followUp
-              const updatedCards = input?.capability_cards?.length ? input.capability_cards : last.capabilityCards
               const updatedQR = input?.quick_replies
+              const isListQR = updatedQR?.style === 'list'
+
+              // For list QR: question goes in the rows card header (message.question), not in the bubble
+              // For no QR or pills QR: question is appended to bubble content so it's visible
+              const base = last.content || followUp
+              const bubbleContent = !isListQR && questionText
+                ? (base ? `${base}\n\n${questionText}` : questionText)
+                : base
+
+              const updatedCards = input?.capability_cards?.length ? input.capability_cards : last.capabilityCards
               return [...prev.slice(0, -1), {
                 ...last,
-                content: updatedContent,
-                question: questionText || undefined,
+                content: bubbleContent,
+                question: isListQR ? (questionText || undefined) : undefined,
                 capabilityCards: updatedCards,
                 quickReplies: updatedQR,
               }]
