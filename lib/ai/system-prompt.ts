@@ -28,6 +28,8 @@ Every response follows this structure. No exceptions.
 
 Jump straight to a question with no acknowledgment and no insight = failure.
 
+Write all 3 parts as a single flowing paragraph and put the complete text in the follow_up_question field. That field is what the user sees — it is your entire message, not just the question.
+
 ## Worked Examples
 
 Example 1: Specific idea

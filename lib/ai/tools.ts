@@ -30,7 +30,7 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
       },
       follow_up_question: {
         type: 'string',
-        description: 'The single most important clarifying question to ask next (already embedded in conversational response).',
+        description: 'Your complete message to display to the user this turn. Write all 3 parts as a single flowing response: (1) your 1-sentence reaction naming what you heard, (2) your 1-2 sentence insight or observation, (3) your one question. This entire field is what gets shown in the chat — do not put just the question here.',
       },
       product_overview: {
         type: 'string',
