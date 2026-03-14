@@ -70,7 +70,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit }: Pro
             value={input}
             onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
-            placeholder="Tell me more..."
+            placeholder={messages.length === 0 ? "Describe the idea you want to build..." : "Tell me more..."}
             rows={1}
             disabled={isStreaming}
             aria-label="Chat input"
