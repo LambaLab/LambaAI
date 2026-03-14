@@ -1,26 +1,36 @@
 'use client'
 
+import { useState } from 'react'
 import { getModuleById, validateModuleRemoval } from '@/lib/modules/dependencies'
 import * as Icons from 'lucide-react'
-import { Plus, X } from 'lucide-react'
+import { Plus, X, ChevronDown } from 'lucide-react'
 
 type Props = {
   moduleId: string
   isActive: boolean
   activeModules: string[]
-  pricingVisible: boolean
   onToggle: (id: string) => void
   summary?: string
 }
 
-export default function ModuleCard({ moduleId, isActive, activeModules, pricingVisible, onToggle, summary }: Props) {
+export default function ModuleCard({ moduleId, isActive, activeModules, onToggle, summary }: Props) {
+  const [isExpanded, setIsExpanded] = useState(false)
   const mod = getModuleById(moduleId)
   if (!mod) return null
 
   const { canRemove, blockedBy } = validateModuleRemoval(moduleId, activeModules)
-  const canToggle = isActive ? canRemove : true
 
   const IconComponent = (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[mod.icon] ?? Icons.Box
+
+  function handleHeaderClick() {
+    if (isActive) {
+      // Active modules: only expand/collapse, never add/remove on header click
+      if (summary) setIsExpanded(e => !e)
+    } else {
+      // Inactive modules: clicking adds to proposal
+      onToggle(moduleId)
+    }
+  }
 
   return (
     <div
@@ -30,48 +40,54 @@ export default function ModuleCard({ moduleId, isActive, activeModules, pricingV
           : 'bg-[var(--ov-surface-subtle,rgba(255,255,255,0.02))] border-[var(--ov-border,rgba(255,255,255,0.05))] opacity-50'
       }`}
     >
-      {/* Header row — always visible, clicking toggles the module */}
+      {/* Header row */}
       <button
         type="button"
-        onClick={() => canToggle && onToggle(moduleId)}
-        disabled={!canToggle && isActive}
-        title={!canToggle ? `Required by: ${blockedBy.join(', ')}` : undefined}
-        className={`w-full p-3 text-left ${canToggle ? 'hover:bg-white/[0.03] cursor-pointer' : 'cursor-not-allowed'}`}
+        onClick={handleHeaderClick}
+        disabled={isActive && !summary}
+        className={`w-full p-3 text-left ${
+          isActive
+            ? summary
+              ? 'cursor-pointer hover:bg-white/[0.03]'
+              : 'cursor-default'
+            : 'cursor-pointer hover:bg-white/[0.03]'
+        }`}
       >
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isActive ? 'bg-brand-yellow/15' : 'bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))]'}`}>
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+              isActive
+                ? 'bg-brand-yellow/15'
+                : 'bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))]'
+            }`}>
               <IconComponent className={`w-4 h-4 ${isActive ? 'text-brand-yellow' : 'text-brand-gray-mid'}`} />
             </div>
-            <div className="min-w-0">
-              <p className={`text-sm font-medium truncate ${isActive ? 'text-[var(--ov-text,#ffffff)]' : 'text-[var(--ov-text-muted,#727272)]'}`}>
-                {mod.name}
-              </p>
-              {pricingVisible ? (
-                <p className="text-xs text-[var(--ov-text-muted,#727272)] truncate">
-                  ${mod.priceMin.toLocaleString()}–${mod.priceMax.toLocaleString()}
-                </p>
-              ) : (
-                <p className="text-xs text-[var(--ov-text-muted,#727272)]/40 blur-[3px] select-none" aria-hidden="true">
-                  $●,●●●–$●,●●●
-                </p>
-              )}
-            </div>
+            <p className={`text-sm font-medium truncate ${
+              isActive ? 'text-[var(--ov-text,#ffffff)]' : 'text-[var(--ov-text-muted,#727272)]'
+            }`}>
+              {mod.name}
+            </p>
           </div>
 
-          {/* Inactive modules show + badge; active modules show nothing in the header */}
-          {!isActive && (
+          {/* Right icon */}
+          {isActive && summary ? (
+            <ChevronDown
+              className={`w-4 h-4 text-[var(--ov-text-muted,#727272)] flex-shrink-0 transition-transform duration-200 ${
+                isExpanded ? 'rotate-180' : ''
+              }`}
+            />
+          ) : !isActive ? (
             <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] text-[var(--ov-text-muted,#727272)] flex items-center justify-center">
               <Plus className="w-3 h-3" />
             </span>
-          )}
+          ) : null}
         </div>
       </button>
 
-      {/* Expandable body — smooth accordion using grid-template-rows */}
+      {/* Expandable body — only for active modules with a summary */}
       <div
         className="grid transition-[grid-template-rows] duration-300 ease-in-out"
-        style={{ gridTemplateRows: isActive && summary ? '1fr' : '0fr' }}
+        style={{ gridTemplateRows: isExpanded && summary ? '1fr' : '0fr' }}
       >
         <div className="overflow-hidden">
           <div className="px-3 pb-3">
