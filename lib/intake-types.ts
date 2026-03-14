@@ -6,7 +6,7 @@ export type QuickReplyOption = {
 }
 
 export type QuickReplies = {
-  style: 'list' | 'icon-cards' | 'pills'
+  style: 'list' | 'pills'
   multiSelect?: boolean
   allowCustom?: boolean
   options: QuickReplyOption[]

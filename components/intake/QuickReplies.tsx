@@ -49,54 +49,6 @@ export default function QuickReplies({ quickReplies, onSelect, disabled }: Props
     ? [...options, 'custom']
     : options
 
-  // icon-cards is always single-select (used for platform/product-type questions)
-  if (style === 'icon-cards') {
-    return (
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        {options.map((opt) => (
-          <button
-            key={opt.value}
-            onClick={() => handleSingleSelect(opt.value)}
-            disabled={disabled}
-            className="flex flex-col items-start gap-1.5 p-3 rounded-xl border border-[var(--ov-border,rgba(255,255,255,0.10))] bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] hover:bg-[var(--ov-input-bg,rgba(255,255,255,0.10))] hover:border-brand-yellow/40 transition-all text-left disabled:opacity-50"
-          >
-            {opt.icon && <span className="text-xl">{opt.icon}</span>}
-            <span className="text-sm font-medium text-[var(--ov-text,#ffffff)]">{opt.label}</span>
-          </button>
-        ))}
-        {allowCustom && (
-          <button
-            onClick={() => setShowCustomInput(true)}
-            disabled={disabled}
-            className="flex flex-col items-start gap-1.5 p-3 rounded-xl border border-[var(--ov-border,rgba(255,255,255,0.10))] bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] hover:bg-[var(--ov-input-bg,rgba(255,255,255,0.10))] hover:border-brand-yellow/40 transition-all text-left disabled:opacity-50"
-          >
-            <span className="text-xl">✏️</span>
-            <span className="text-sm font-medium text-[var(--ov-text,#ffffff)]">Type something</span>
-          </button>
-        )}
-        {showCustomInput && (
-          <div className="col-span-2 flex gap-2 mt-1">
-            <input
-              autoFocus
-              value={customValue}
-              onChange={(e) => setCustomValue(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleCustomSubmit()}
-              placeholder="Describe your idea..."
-              className="flex-1 bg-[var(--ov-input-bg,rgba(255,255,255,0.05))] border border-[var(--ov-border,rgba(255,255,255,0.10))] rounded-xl px-3 py-2 text-sm text-[var(--ov-text,#ffffff)] placeholder:text-[var(--ov-text-muted,#727272)] outline-none focus:border-brand-yellow/50"
-            />
-            <button
-              onClick={handleCustomSubmit}
-              disabled={disabled || !customValue.trim()}
-              className="px-3 py-2 bg-brand-yellow text-brand-dark rounded-xl text-sm font-medium disabled:opacity-40"
-            >
-              Send
-            </button>
-          </div>
-        )}
-      </div>
-    )
-  }
-
   if (style === 'pills') {
     return (
       <div className="mt-3 flex flex-wrap gap-2">

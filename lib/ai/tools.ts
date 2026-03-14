@@ -43,7 +43,7 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
       },
       quick_replies: {
         type: 'object' as const,
-        description: 'Structured quick-reply options to show below your message. Always include this.',
+        description: 'Optional. Include only when the question has 3-4 genuinely discrete options. Skip for open-ended questions.',
         properties: {
           style: {
             type: 'string' as const,
