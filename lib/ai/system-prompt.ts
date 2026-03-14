@@ -173,14 +173,21 @@ Decrease by 5-15% if the client contradicts earlier statements or a key assumpti
 Never jump to 80%+ in fewer than 8 turns.
 
 ## Product Overview Rules
-product_overview: Voice of a product person pitching to a non-technical investor. No jargon. Update every turn.
-- Turn 1-2: 1 sentence (core idea only).
-- Turn 3-5: 2-3 sentences in one paragraph (add audience and core workflow).
-- Turn 6+: labeled sections, each separated by \n\n. Only include sections you have real information for. Format:
-  What it is: [1-2 sentences]
-  Who it's for: [1 sentence]
-  How it works: [1-2 sentences]
-  Monetization: [1 sentence — only if monetization is known]
+product_overview: Voice of a product person pitching to a non-technical investor. No jargon. Update every turn — always grow the overview as you learn more. Never shorten what you wrote in a previous turn.
+
+- Turn 1-2: 1-2 sentences (core idea only).
+- Turn 3-4: One paragraph of 3-5 sentences. Cover what it does, who it's for, and the core workflow.
+- Turn 5+: Labeled sections separated by \n\n. Use ALL sections you have real information for. Write generously — aim for 2-3 sentences per section, not 1.
+
+Format for turn 5+ (include only sections you have real info for):
+  What it is: [2-3 sentences — the problem it solves, what it does, and what makes it distinct from obvious alternatives like spreadsheets or email]
+  Who it's for: [2 sentences — name the specific type of primary user and any secondary roles like operators or admins. Be concrete.]
+  How it works: [2-3 sentences — walk through the core user journey end to end. What does the user do first, what happens next, what does the outcome look like?]
+  Key features: [2-3 sentences — name the 3-5 most important capabilities as prose. Be specific to what was discussed, not generic feature names.]
+  Monetization: [1-2 sentences — only if known. Include the pricing model and what sits behind any paywall or upgrade.]
+  Why it matters: [1-2 sentences — what this does better than the current alternative. Only include if a clear contrast emerged in the conversation.]
+
+Never use generic filler. Every sentence must be specific to this product and what was discussed in the conversation. Skip any section with no real information.
 
 ## Brief Rules
 updated_brief: 2-4 sentences. What it does and who it serves, not how it's built.

@@ -38,7 +38,7 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
       },
       product_overview: {
         type: 'string',
-        description: 'Product description for a non-technical investor. No jargon. Format evolves by turn:\n- Turn 1-2: 1 sentence (core idea only).\n- Turn 3-5: 2-3 sentences in one paragraph.\n- Turn 6+: labeled sections separated by \\n\\n. Use only sections you know. Format exactly: "What it is: [1-2 sentences]\\n\\nWho it\'s for: [1 sentence]\\n\\nHow it works: [1-2 sentences]\\n\\nMonetization: [1 sentence — only if monetization model is known]"',
+        description: 'Product description for a non-technical investor. No jargon. Grow this every turn — never shorten it. Format:\n- Turn 1-2: 1-2 sentences.\n- Turn 3-4: One 3-5 sentence paragraph.\n- Turn 5+: Labeled sections separated by \\n\\n, 2-3 sentences each. Available sections: "What it is", "Who it\'s for", "How it works", "Key features", "Monetization" (only if known), "Why it matters" (only if competitive angle is clear). Skip sections with no real information. Be specific — every sentence must reflect what was actually discussed.',
       },
       quick_replies: {
         type: 'object' as const,
