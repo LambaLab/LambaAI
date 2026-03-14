@@ -191,7 +191,7 @@ export function useIntakeChat({ idea }: Props) {
 
     const msgIndex = messagesRef.current.findIndex((m) => m.id === messageId)
     if (msgIndex === -1) return
-    if (msgIndex === 0) return // Safety: never edit the very first message
+    if (msgIndex === 0) return // Don't edit the original idea — use Reset to start over
 
     const correctionMsg: ChatMessage = {
       id: crypto.randomUUID(),
