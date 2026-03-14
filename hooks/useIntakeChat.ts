@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { calculatePriceRange, applyComplexityAdjustment, tightenPriceRange, type PriceRange } from '@/lib/pricing/engine'
 import type { QuickReplies } from '@/lib/intake-types'
-import { bundleOnboardingContext } from '@/lib/intake-utils'
 
 export type ChatMessage = {
   id: string
@@ -31,56 +30,8 @@ type Props = {
   idea: string
 }
 
-const ONBOARDING_QUESTIONS = [
-  {
-    content: 'What platform are you building for?',
-    quickReplies: {
-      style: 'list' as const,
-      options: [
-        { label: '🌐 Web App', description: 'A browser-based product users visit on any device', value: 'Web App' },
-        { label: '📱 Mobile App', description: 'A native iOS or Android app on phones and tablets', value: 'Mobile App' },
-        { label: '🖥️ Both', description: 'Needs to work well on web and as a mobile app', value: 'Web + Mobile' },
-        { label: '🤔 Not sure yet', description: "I'll help you figure out the right fit", value: 'Platform TBD' },
-      ],
-    },
-  },
-  {
-    content: 'What type of product is this?',
-    quickReplies: {
-      style: 'list' as const,
-      options: [
-        { label: '🛒 Marketplace', description: 'Connects buyers and sellers or service providers', value: 'Marketplace' },
-        { label: '💬 Social / Community', description: 'People connect, share, and engage with each other', value: 'Social / Community' },
-        { label: '🛠️ SaaS / Tool', description: 'A software tool for businesses or internal teams', value: 'SaaS / Internal Tool' },
-        { label: '🎯 Something else', description: "A different kind of product — I'll describe it", value: 'Other' },
-      ],
-    },
-  },
-  {
-    content: "What's the goal for this product?",
-    quickReplies: {
-      style: 'list' as const,
-      options: [
-        { label: '🚀 Launch a startup', description: 'Build a new business around this product', value: 'Launch a startup' },
-        { label: '🏢 Grow my business', description: 'Expand or improve an existing business with this', value: 'Grow my existing business' },
-        { label: '🛠️ Build for my team', description: 'An internal tool to help my team work better', value: 'Build a tool for my team' },
-        { label: '🎯 Something else', description: "A different goal — I'll explain", value: 'Other' },
-      ],
-    },
-  },
-]
-
 export function useIntakeChat({ idea }: Props) {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'onboarding-0',
-      role: 'assistant',
-      content: ONBOARDING_QUESTIONS[0].content,
-      quickReplies: ONBOARDING_QUESTIONS[0].quickReplies,
-    },
-  ])
-  const [onboardingStep, setOnboardingStep] = useState(0)
-  const [onboardingAnswers, setOnboardingAnswers] = useState<string[]>([])
+  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [activeModules, setActiveModules] = useState<string[]>([])
   const [confidenceScore, setConfidenceScore] = useState(0)
   const [complexityMultiplier, setComplexityMultiplier] = useState(1.0)
@@ -97,6 +48,17 @@ export function useIntakeChat({ idea }: Props) {
   useEffect(() => { confidenceRef.current = confidenceScore }, [confidenceScore])
   useEffect(() => { activeModulesRef.current = activeModules }, [activeModules])
   useEffect(() => { complexityRef.current = complexityMultiplier }, [complexityMultiplier])
+
+  // Auto-send the idea on mount (fires once)
+  useEffect(() => {
+    if (!idea.trim()) return
+
+    const userMessage: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: idea }
+    messagesRef.current = [userMessage]
+    setMessages([userMessage])
+
+    streamAIResponse([{ role: 'user', content: idea }])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function computePriceRange(modules: string[], multiplier: number, score: number): PriceRange {
     const base = calculatePriceRange(modules)
@@ -198,70 +160,23 @@ export function useIntakeChat({ idea }: Props) {
   const sendMessage = useCallback(async (content: string) => {
     if (isStreaming) return
 
-    // ── Onboarding phase: intercept first 3 sends locally ───────────────────
-    if (onboardingStep < 3) {
-      const userMsg: ChatMessage = { id: crypto.randomUUID(), role: 'user', content }
-      const newAnswers = [...onboardingAnswers, content]
-      const newStep = onboardingStep + 1
-
-      setMessages((prev) => {
-        // Clear quickReplies from the last assistant message
-        const cleared = prev.map((m, i) =>
-          i === prev.length - 1 ? { ...m, quickReplies: undefined } : m
-        )
-        const withUser = [...cleared, userMsg]
-        // If more onboarding questions remain, inject the next one
-        if (newStep < 3) {
-          const nextQ = ONBOARDING_QUESTIONS[newStep]
-          return [
-            ...withUser,
-            {
-              id: `onboarding-${newStep}`,
-              role: 'assistant' as const,
-              content: nextQ.content,
-              quickReplies: nextQ.quickReplies,
-            },
-          ]
-        }
-        return withUser
-      })
-
-      setOnboardingAnswers(newAnswers)
-      setOnboardingStep(newStep)
-
-      // All 3 answered → bundle context and send to AI with a fresh history
-      if (newStep === 3) {
-        const bundled = bundleOnboardingContext({
-          idea,
-          platform: newAnswers[0],
-          productType: newAnswers[1],
-          goal: content,
-        })
-        await streamAIResponse([{ role: 'user', content: bundled }])
-      }
-      return
-    }
-
-    // ── Normal AI phase ──────────────────────────────────────────────────────
     const userMessage: ChatMessage = { id: crypto.randomUUID(), role: 'user', content }
 
-    // Exclude hardcoded onboarding messages from API history (ids start with 'onboarding-')
-    const aiHistory = messagesRef.current
-      .filter((m) => !m.id.startsWith('onboarding-'))
-      .map((m): ApiMessage => ({ role: m.role, content: m.content }))
-    const apiMessages: ApiMessage[] = [...aiHistory, { role: 'user', content }]
+    const apiMessages: ApiMessage[] = [
+      ...messagesRef.current.map((m): ApiMessage => ({ role: m.role, content: m.content })),
+      { role: 'user', content },
+    ]
 
-    setMessages((prev) => [...prev, userMessage])
-    // Clear quickReplies from last assistant message
     setMessages((prev) => {
-      const lastAssistantIdx = [...prev].reverse().findIndex((m) => m.role === 'assistant')
-      if (lastAssistantIdx === -1) return prev
-      const realIdx = prev.length - 1 - lastAssistantIdx
-      return prev.map((m, i) => i === realIdx ? { ...m, quickReplies: undefined } : m)
+      // Clear quickReplies from last assistant message
+      const cleared = prev.map((m, i) =>
+        i === prev.length - 1 && m.role === 'assistant' ? { ...m, quickReplies: undefined } : m
+      )
+      return [...cleared, userMessage]
     })
 
     await streamAIResponse(apiMessages)
-  }, [onboardingStep, onboardingAnswers, idea, isStreaming]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isStreaming]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleModule(moduleId: string) {
     const newModules = activeModules.includes(moduleId)
@@ -271,83 +186,37 @@ export function useIntakeChat({ idea }: Props) {
     setPriceRange(computePriceRange(newModules, complexityMultiplier, confidenceScore))
   }
 
-  // editMessage — re-opens a previous user message for editing.
-  // During onboarding (step < 3): resets to that onboarding step.
-  // After onboarding: injects a correction and calls the AI.
   const editMessage = useCallback(async (messageId: string, newContent: string) => {
     if (isStreaming) return
 
     const msgIndex = messagesRef.current.findIndex((m) => m.id === messageId)
     if (msgIndex === -1) return
-    // Safety guard: never edit the very first message
-    if (msgIndex === 0) return
+    if (msgIndex === 0) return // Safety: never edit the very first message
 
-    // Determine which onboarding index this message corresponds to
-    // Onboarding user messages are at positions 1, 3, 5 (after each Q)
-    const onboardingUserMessages = messagesRef.current
-      .slice(0, onboardingStep * 2 + 1) // rough slice during onboarding
-      .filter((m) => m.role === 'user' && !m.id.startsWith('onboarding-'))
-
-    const onboardingUserIndex = onboardingUserMessages.findIndex((m) => m.id === messageId)
-
-    if (onboardingUserIndex !== -1 && onboardingStep >= onboardingUserIndex + 1) {
-      // This is an onboarding message — reset to that step
-      const stepIndex = onboardingUserIndex // 0 = answer to Q1, etc.
-
-      // Clear messages from the user message onward, re-inject the question
-      const keptMessages = messagesRef.current.slice(0, msgIndex) // everything before this user msg
-      const nextQ = ONBOARDING_QUESTIONS[stepIndex]
-      const newMessages: ChatMessage[] = [
-        ...keptMessages,
-        {
-          id: `onboarding-${stepIndex}`,
-          role: 'assistant' as const,
-          content: nextQ.content,
-          quickReplies: nextQ.quickReplies,
-        },
-      ]
-      setMessages(newMessages)
-      setOnboardingStep(stepIndex)
-      setOnboardingAnswers((prev) => prev.slice(0, stepIndex))
-      return
-    }
-
-    // Post-onboarding: inject correction and call AI
     const correctionMsg: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'user',
       content: `Actually, let me clarify my earlier answer: ${newContent}`,
     }
 
-    // Keep messages up to (but not including) the edited message, then add correction
     const kept = messagesRef.current.slice(0, msgIndex)
     setMessages([...kept, correctionMsg])
 
-    const aiHistory = [...kept, correctionMsg]
-      .filter((m) => !m.id.startsWith('onboarding-'))
-      .map((m): ApiMessage => ({ role: m.role, content: m.content }))
+    const aiHistory = [...kept, correctionMsg].map(
+      (m): ApiMessage => ({ role: m.role, content: m.content })
+    )
 
     await streamAIResponse(aiHistory)
-  }, [onboardingStep, isStreaming]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isStreaming]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const reset = useCallback(() => {
-    const initialMessages: ChatMessage[] = [
-      {
-        id: 'onboarding-0',
-        role: 'assistant',
-        content: ONBOARDING_QUESTIONS[0].content,
-        quickReplies: ONBOARDING_QUESTIONS[0].quickReplies,
-      },
-    ]
     // Reset refs synchronously
-    messagesRef.current = initialMessages
+    messagesRef.current = []
     confidenceRef.current = 0
     activeModulesRef.current = []
     complexityRef.current = 1.0
-    // Reset state
-    setMessages(initialMessages)
-    setOnboardingStep(0)
-    setOnboardingAnswers([])
+    // Reset state — blank slate
+    setMessages([])
     setActiveModules([])
     setConfidenceScore(0)
     setComplexityMultiplier(1.0)
@@ -356,5 +225,5 @@ export function useIntakeChat({ idea }: Props) {
     setProductOverview('')
   }, [])
 
-  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, onboardingStep, editMessage, reset }
+  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, editMessage, reset }
 }
