@@ -84,19 +84,11 @@ export default function IntakeOverlay({ initialMessage, onReset, onClose }: Prop
       localStorage.removeItem(`lamba_msgs_${session.proposalId}`)
     }
     localStorage.removeItem('lamba_session')
-    // Clear the conversation URL
-    window.history.replaceState(null, '', '/')
-    // Call reset + clear session
-    resetRef.current?.()
-    setCurrentIdea('')
-    setResetConfirm(false)
-    setSession(null)
-    getOrCreateSession().then((data) => {
-      setSession(data)
-      // Don't push URL for blank post-reset session — URL pushed when user submits a real idea
-    }).catch(() => setSessionError(true))
-    // Notify parent synchronously
+    // Hard redirect to root — guarantees a clean Supabase auth state and fresh session.
+    // Avoids the "Couldn't start session" error that occurs when signInAnonymously() is
+    // called while an existing auth cookie is still present.
     onReset?.()
+    window.location.href = '/'
   }
 
   const isBlank = currentIdea === ''
@@ -125,10 +117,13 @@ export default function IntakeOverlay({ initialMessage, onReset, onClose }: Prop
       {/* Loading / error states — only shown when not minimized and session not ready */}
       {!minimized && sessionError && (
         <div className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${theme === 'light' ? 'bg-[#F5F4F0] intake-light' : 'bg-brand-dark'} ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-          <div className="text-center space-y-3">
-            <p className="text-[var(--ov-text,#ffffff)]">Couldn't start session. Please try again.</p>
-            <button onClick={() => setMinimized(true)} className="text-[var(--ov-text-muted,#727272)] text-sm hover:text-[var(--ov-text,#ffffff)] transition-colors cursor-pointer">
-              Dismiss
+          <div className="text-center space-y-4">
+            <p className="text-[var(--ov-text,#ffffff)]">Couldn't start session.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-brand-yellow text-brand-dark text-sm font-medium rounded-lg hover:bg-brand-yellow/90 transition-colors cursor-pointer"
+            >
+              Try again
             </button>
           </div>
         </div>
