@@ -47,8 +47,8 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
         properties: {
           style: {
             type: 'string' as const,
-            enum: ['list', 'icon-cards', 'pills'],
-            description: 'list = numbered items with descriptions (complex questions). icon-cards = 2x2 grid with emoji (platform/type). pills = compact chips (simple/short answers).',
+            enum: ['list', 'pills'],
+            description: 'list = numbered items with descriptions (default for most decisions). pills = compact chips (simple/short answers like yes/no or platform choice).',
           },
           multiSelect: {
             type: 'boolean' as const,
