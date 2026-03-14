@@ -76,7 +76,18 @@ export default function IntakeOverlay({ initialMessage, onReset, onClose }: Prop
     sessionStorage.removeItem('lamba_session')
     setSession(null)
     getOrCreateSession().then(setSession).catch(() => setSessionError(true))
+    // Notify parent synchronously — parent only manages UI state, no need to await session
     onReset?.()
+  }
+
+  const isBlank = currentIdea === ''
+
+  function handleCloseOrMinimize() {
+    if (isBlank) {
+      onClose?.()
+    } else {
+      setMinimized(true)
+    }
   }
 
   return (
@@ -148,11 +159,11 @@ export default function IntakeOverlay({ initialMessage, onReset, onClose }: Prop
                 {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
               <button
-                onClick={currentIdea === '' ? onClose : () => setMinimized(true)}
+                onClick={handleCloseOrMinimize}
                 className="w-8 h-8 rounded-lg bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] hover:bg-[var(--ov-input-bg,rgba(255,255,255,0.10))] flex items-center justify-center text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors"
-                aria-label={currentIdea === '' ? 'Close' : 'Minimize'}
+                aria-label={isBlank ? 'Close' : 'Minimize'}
               >
-                {currentIdea === '' ? <X className="w-4 h-4" /> : <Minus className="w-4 h-4" />}
+                {isBlank ? <X className="w-4 h-4" /> : <Minus className="w-4 h-4" />}
               </button>
             </div>
           </div>
