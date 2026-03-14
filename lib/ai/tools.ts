@@ -38,7 +38,7 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
       },
       product_overview: {
         type: 'string',
-        description: 'Product description for a non-technical investor. No jargon. Grow this every turn — never shorten it. Format:\n- Turn 1-2: 1-2 sentences.\n- Turn 3-4: One 3-5 sentence paragraph.\n- Turn 5+: Labeled sections separated by \\n\\n, 2-3 sentences each. Available sections: "What it is", "Who it\'s for", "How it works", "Key features", "Monetization" (only if known), "Why it matters" (only if competitive angle is clear). Skip sections with no real information. Be specific — every sentence must reflect what was actually discussed.',
+        description: 'Product description for a non-technical investor. No jargon. Only update when meaningful new information was learned this turn. If nothing significant changed, return an empty string — the previous overview is preserved automatically. When updating — never shorten existing content, only expand. Format:\n- Turn 1-2: 1-2 sentences.\n- Turn 3-4: One 3-5 sentence paragraph.\n- Turn 5+: Labeled sections separated by \\n\\n, 2-3 sentences each. Available sections: "What it is", "Who it\'s for", "How it works", "Key features", "Monetization" (only if known), "Why it matters" (only if competitive angle is clear). Skip sections with no real information. Be specific — every sentence must reflect what was actually discussed.',
       },
       quick_replies: {
         type: 'object' as const,
@@ -80,7 +80,7 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
       module_summaries: {
         type: 'object' as const,
         description:
-          'Optional. For each currently active module ID, a 1–2 sentence project-specific note describing what was decided and what the module will contain for this specific product. Keys are module IDs (e.g. "auth", "payments"). Values are plain sentences, no markdown. Update these incrementally — include all active modules, not just newly added ones.',
+          'Optional. Only include entries for modules that were newly detected or had their scope meaningfully clarified this turn. Previously established summaries are preserved automatically — omit unchanged modules. Keys are module IDs (e.g. "auth", "payments"). Values are 1–2 plain sentences specific to this product, no markdown.',
         additionalProperties: { type: 'string' as const },
       },
     },

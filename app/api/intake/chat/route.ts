@@ -33,29 +33,50 @@ export async function POST(req: NextRequest) {
         )
       }
 
+      // Buffer tool input JSON as it streams so we can send tool_result
+      // the moment the block ends — no need to wait for finalMessage().
+      let toolInputBuffer = ''
+      let currentToolName = ''
+      let toolResultSent = false
+
       try {
         for await (const chunk of stream) {
-          if (chunk.type === 'content_block_delta') {
+          if (chunk.type === 'content_block_start') {
+            if (chunk.content_block.type === 'tool_use') {
+              currentToolName = chunk.content_block.name
+              toolInputBuffer = ''
+            }
+          } else if (chunk.type === 'content_block_delta') {
             if (chunk.delta.type === 'text_delta') {
               send('text', { text: chunk.delta.text })
             } else if (chunk.delta.type === 'input_json_delta') {
-              send('tool_delta', { partial_json: chunk.delta.partial_json })
-            }
-          } else if (chunk.type === 'content_block_start') {
-            if (chunk.content_block.type === 'tool_use') {
-              send('tool_start', { name: chunk.content_block.name, id: chunk.content_block.id })
+              toolInputBuffer += chunk.delta.partial_json
             }
           } else if (chunk.type === 'content_block_stop') {
-            send('block_stop', {})
+            // Tool block finished — parse buffered JSON and send result immediately
+            if (currentToolName && toolInputBuffer) {
+              try {
+                const input = JSON.parse(toolInputBuffer)
+                send('tool_result', { name: currentToolName, input })
+                toolResultSent = true
+              } catch {
+                console.warn('Failed to parse tool JSON on block_stop')
+              }
+              currentToolName = ''
+              toolInputBuffer = ''
+            }
           }
         }
 
-        // Await finalMessage after loop completes — SDK guarantees resolution here
-        const finalMessage = await stream.finalMessage()
-        const toolBlock = finalMessage.content.find((b) => b.type === 'tool_use')
-        if (toolBlock && toolBlock.type === 'tool_use') {
-          send('tool_result', { name: toolBlock.name, input: toolBlock.input })
+        // Fallback: if buffer parse failed for any reason, try finalMessage
+        if (!toolResultSent) {
+          const finalMessage = await stream.finalMessage()
+          const toolBlock = finalMessage.content.find((b) => b.type === 'tool_use')
+          if (toolBlock && toolBlock.type === 'tool_use') {
+            send('tool_result', { name: toolBlock.name, input: toolBlock.input })
+          }
         }
+
         send('done', {})
       } catch (err) {
         send('error', { message: err instanceof Error ? err.message : 'Unknown error' })
