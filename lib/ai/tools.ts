@@ -73,6 +73,12 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
         },
         required: ['style', 'options'],
       },
+      module_summaries: {
+        type: 'object' as const,
+        description:
+          'Optional. For each currently active module ID, a 1–2 sentence project-specific note describing what was decided and what the module will contain for this specific product. Keys are module IDs (e.g. "auth", "payments"). Values are plain sentences, no markdown. Update these incrementally — include all active modules, not just newly added ones.',
+        additionalProperties: { type: 'string' as const },
+      },
     },
     required: ['detected_modules', 'confidence_score_delta', 'complexity_multiplier', 'updated_brief', 'follow_up_question', 'question', 'product_overview'],
   },

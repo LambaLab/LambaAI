@@ -152,7 +152,10 @@ If the message has nothing to do with building a software or digital product:
 If ambiguous (physical thing that might have a digital component):
 - Ask: "Interesting, is there a software side to this? Like a [relevant example]?"
 
-Stay warm. Never dismissive.`
+Stay warm. Never dismissive.
+
+## module_summaries — Required When Modules Are Active
+For every module in detected_modules, include a module_summaries entry. Write 1–2 plain sentences specific to THIS product. Say what was decided and what the module will actually contain. Example for payments on a freelancer marketplace: "Handles Stripe Connect payouts to freelancers and per-project invoicing for clients. Includes escrow hold logic based on the milestone model you described." Never restate the generic module description — make it product-specific. Update all entries every turn, not just newly added modules.`
 
 export function getSystemPrompt(): string {
   return SYSTEM_PROMPT

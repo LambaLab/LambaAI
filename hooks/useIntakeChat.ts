@@ -26,6 +26,7 @@ type UpdateProposalInput = {
   product_overview?: string
   capability_cards?: string[]
   quick_replies?: QuickReplies
+  module_summaries?: { [moduleId: string]: string }
 }
 
 type ApiMessage = { role: 'user' | 'assistant'; content: string }
@@ -45,6 +46,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   const [priceRange, setPriceRange] = useState<PriceRange>({ min: 0, max: 0 })
   const [isStreaming, setIsStreaming] = useState(false)
   const [productOverview, setProductOverview] = useState('')
+  const [moduleSummaries, setModuleSummaries] = useState<{ [moduleId: string]: string }>({})
 
   const messagesRef = useRef<ChatMessage[]>([])
   const confidenceRef = useRef(0)
@@ -165,6 +167,9 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             if (input?.product_overview && input.product_overview.trim()) {
               setProductOverview(input.product_overview.trim())
             }
+            if (input?.module_summaries && typeof input.module_summaries === 'object') {
+              setModuleSummaries(prev => ({ ...prev, ...input.module_summaries }))
+            }
 
             setMessages((prev) => {
               const last = prev[prev.length - 1]
@@ -281,7 +286,8 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     setPriceRange({ min: 0, max: 0 })
     setIsStreaming(false)
     setProductOverview('')
+    setModuleSummaries({})
   }, [proposalId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, editMessage, reset }
+  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, editMessage, reset, moduleSummaries }
 }
