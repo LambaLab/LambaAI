@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState } from 'react'
 import { ArrowRight } from 'lucide-react'
 import MessageBubble from './MessageBubble'
+import PauseCheckpoint from './PauseCheckpoint'
 import QuickReplies from './QuickReplies'
 import type { ChatMessage } from '@/hooks/useIntakeChat'
 import type { QuickReplies as QuickRepliesType } from '@/lib/intake-types'
@@ -12,10 +13,11 @@ type Props = {
   isStreaming: boolean
   onSend: (message: string, displayContent?: string, sourceQR?: QuickRepliesType, sourceQuestion?: string) => void
   onEdit?: (messageId: string, newContent: string, displayContent?: string) => void
+  onRequestViewProposal?: () => void
   constrained?: boolean
 }
 
-export default function ChatPanel({ messages, isStreaming, onSend, onEdit, constrained = false }: Props) {
+export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onRequestViewProposal, constrained = false }: Props) {
   const [input, setInput] = useState('')
   const [reEditingMessageId, setReEditingMessageId] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -68,7 +70,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, const
   // (only show when not streaming, so the rows don't flash during response)
   const lastMsg = messages[messages.length - 1]
   const listQR =
-    !isStreaming && lastMsg?.role === 'assistant' && lastMsg.quickReplies?.style === 'list'
+    !isStreaming && lastMsg?.role === 'assistant' && !lastMsg?.isPause && lastMsg.quickReplies?.style === 'list'
       ? lastMsg.quickReplies
       : null
   const questionText = listQR ? (lastMsg?.question ?? undefined) : undefined
@@ -91,16 +93,27 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, const
           style={{ maxWidth: constrained ? '650px' : '9999px' }}
         >
           {messages.map((msg, i) => (
-            <MessageBubble
-              key={msg.id}
-              message={msg}
-              isStreaming={isStreaming && i === messages.length - 1 && msg.role === 'assistant'}
-              onQuickReply={(value, label) => onSend(value, label)}
-              isLastMessage={i === messages.length - 1}
-              onEdit={onEdit}
-              onStartRowEdit={setReEditingMessageId}
-              isBeingReEdited={msg.id === reEditingMessageId}
-            />
+            msg.isPause ? (
+              <PauseCheckpoint
+                key={msg.id}
+                message={msg}
+                onSend={(val, display) => onSend(val, display)}
+                onRequestViewProposal={onRequestViewProposal}
+                isLast={i === messages.length - 1}
+                isStreaming={isStreaming && i === messages.length - 1}
+              />
+            ) : (
+              <MessageBubble
+                key={msg.id}
+                message={msg}
+                isStreaming={isStreaming && i === messages.length - 1 && msg.role === 'assistant'}
+                onQuickReply={(value, label) => onSend(value, label)}
+                isLastMessage={i === messages.length - 1}
+                onEdit={onEdit}
+                onStartRowEdit={setReEditingMessageId}
+                isBeingReEdited={msg.id === reEditingMessageId}
+              />
+            )
           ))}
           <div ref={bottomRef} />
         </div>

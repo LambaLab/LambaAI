@@ -73,6 +73,10 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
         },
         required: ['style', 'options'],
       },
+      suggest_pause: {
+        type: 'boolean' as const,
+        description: 'Set to true ONCE per conversation when confidence is 60%+ and you have covered: platform, target users, core workflow, and rough monetization. Triggers a breather checkpoint for the user to review their proposal. Use sparingly — only once, when genuine convergence is reached.',
+      },
       module_summaries: {
         type: 'object' as const,
         description:

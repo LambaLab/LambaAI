@@ -83,6 +83,11 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
     document.addEventListener('mouseup', onMouseUp)
   }, [])
 
+  // Opens the proposal panel if it isn't already open (used by PauseCheckpoint)
+  const openProposal = useCallback(() => {
+    if (!proposalOpen) onProposalToggle()
+  }, [proposalOpen, onProposalToggle])
+
   const onStateChangeRef = useRef(onStateChange)
   useEffect(() => { onStateChangeRef.current = onStateChange })
 
@@ -118,6 +123,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             isStreaming={isStreaming}
             onSend={sendMessage}
             onEdit={editMessage}
+            onRequestViewProposal={openProposal}
             constrained={chatConstrained}
           />
         </div>
@@ -160,6 +166,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             isStreaming={isStreaming}
             onSend={sendMessage}
             onEdit={editMessage}
+            onRequestViewProposal={openProposal}
           />
         </div>
         <MobileBottomDrawer

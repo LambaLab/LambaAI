@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
   const stream = anthropic.messages.stream({
     model: 'claude-sonnet-4-6',
-    max_tokens: 1024,
+    max_tokens: 4096,
     system: SYSTEM_PROMPT,
     tools: [UPDATE_PROPOSAL_TOOL],
     tool_choice: { type: 'any' },

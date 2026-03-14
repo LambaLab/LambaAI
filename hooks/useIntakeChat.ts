@@ -15,6 +15,7 @@ export type ChatMessage = {
   quickReplies?: QuickReplies
   sourceQuickReplies?: QuickReplies  // For user messages created by row selection: the original QR offered
   sourceQuestion?: string            // The question text that was shown when this row was selected
+  isPause?: boolean                  // true = this turn is a conversation checkpoint (breather)
 }
 
 type UpdateProposalInput = {
@@ -28,6 +29,7 @@ type UpdateProposalInput = {
   capability_cards?: string[]
   quick_replies?: QuickReplies
   module_summaries?: { [moduleId: string]: string }
+  suggest_pause?: boolean
 }
 
 type ApiMessage = { role: 'user' | 'assistant'; content: string }
@@ -56,6 +58,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   const complexityRef = useRef(1.0)
   const productOverviewRef = useRef('')
   const moduleSummariesRef = useRef<{ [moduleId: string]: string }>({})
+  const hasPaused = useRef(false)  // only fire the checkpoint once per session
 
   useEffect(() => { messagesRef.current = messages }, [messages])
   useEffect(() => { confidenceRef.current = confidenceScore }, [confidenceScore])
@@ -207,6 +210,10 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               setModuleSummaries(prev => ({ ...prev, ...input.module_summaries }))
             }
 
+            // Checkpoint (breather) — mark this turn once if conditions met
+            const isPauseThisTurn = !hasPaused.current && input?.suggest_pause === true
+            if (isPauseThisTurn) hasPaused.current = true
+
             setMessages((prev) => {
               const last = prev[prev.length - 1]
               if (last?.role !== 'assistant') return prev
@@ -232,6 +239,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                 content: bubbleContent,
                 question: isListQR ? (questionText || undefined) : undefined,
                 quickReplies: updatedQR,
+                isPause: isPauseThisTurn || undefined,
               }]
             })
 
@@ -354,6 +362,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     confidenceRef.current = 0
     activeModulesRef.current = []
     complexityRef.current = 1.0
+    hasPaused.current = false
     // Reset state — blank slate
     setMessages([])
     setActiveModules([])
