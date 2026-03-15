@@ -39,10 +39,15 @@ export async function POST(req: NextRequest) {
   }
 
   // Bump saved_at so the proposal shows recent activity
-  await supabase
+  const { error: updateError } = await supabase
     .from('proposals')
     .update({ saved_at: new Date().toISOString() })
     .eq('id', proposalId)
+
+  if (updateError) {
+    console.error('sync-messages saved_at update error:', updateError)
+    return NextResponse.json({ error: 'Failed to update saved_at' }, { status: 500 })
+  }
 
   return NextResponse.json({ success: true })
 }
