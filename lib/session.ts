@@ -43,13 +43,33 @@ export function getIdeaForSession(proposalId: string): string | null {
   return localStorage.getItem(`lamba_idea_${proposalId}`)
 }
 
+// In-flight guard — prevents concurrent API calls (e.g. React StrictMode double-fire)
+let inflightPromise: Promise<SessionData> | null = null
+
+// Retry up to 3 attempts with exponential backoff (800ms, 1600ms) before throwing
+async function createNewSession(attempt = 1): Promise<SessionData> {
+  const res = await fetch('/api/intake/session', { method: 'POST' })
+  if (!res.ok) {
+    if (attempt < 3) {
+      await new Promise(r => setTimeout(r, 800 * attempt))
+      return createNewSession(attempt + 1)
+    }
+    throw new Error('Failed to create session')
+  }
+  const data: SessionData = await res.json()
+  storeSession(data)
+  return data
+}
+
 export async function getOrCreateSession(): Promise<SessionData> {
   const stored = getStoredSession()
   if (stored) return stored
 
-  const res = await fetch('/api/intake/session', { method: 'POST' })
-  if (!res.ok) throw new Error('Failed to create session')
-  const data: SessionData = await res.json()
-  storeSession(data)
-  return data
+  // Deduplicate: if a creation request is already in-flight, reuse it
+  if (inflightPromise) return inflightPromise
+
+  inflightPromise = createNewSession().finally(() => {
+    inflightPromise = null
+  })
+  return inflightPromise
 }

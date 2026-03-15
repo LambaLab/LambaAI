@@ -6,6 +6,7 @@ import { useTheme } from '@/hooks/useTheme'
 import IntakeLayout from './IntakeLayout'
 import MinimizedBar from './MinimizedBar'
 import { getOrCreateSession, storeIdeaForSession, type SessionData } from '@/lib/session'
+import SessionLoadingScreen from './SessionLoadingScreen'
 
 type Props = {
   initialMessage: string
@@ -72,6 +73,17 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
     window.location.href = '/'
   }
 
+  function handleRetry() {
+    setSessionError(false)
+    getOrCreateSession()
+      .then((data) => {
+        setSession(data)
+        if (initialMessage) storeIdeaForSession(data.proposalId, initialMessage)
+        window.history.replaceState(null, '', `?c=${data.proposalId}`)
+      })
+      .catch(() => setSessionError(true))
+  }
+
   const isBlank = currentIdea === ''
 
   function handleCloseOrMinimize() {
@@ -99,9 +111,9 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
       {!minimized && sessionError && (
         <div className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${theme === 'light' ? 'bg-[#F5F4F0] intake-light' : 'bg-brand-dark'} ${mounted ? 'opacity-100' : 'opacity-0'}`}>
           <div className="text-center space-y-4">
-            <p className="text-[var(--ov-text,#ffffff)]">Couldn't start session.</p>
+            <p className="text-[var(--ov-text,#ffffff)]">Couldn&apos;t connect. Check your connection and try again.</p>
             <button
-              onClick={() => window.location.reload()}
+              onClick={handleRetry}
               className="px-4 py-2 bg-brand-yellow text-brand-dark text-sm font-medium rounded-lg hover:bg-brand-yellow/90 transition-colors cursor-pointer"
             >
               Try again
@@ -112,7 +124,7 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
 
       {!minimized && !session && !sessionError && (
         <div className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${theme === 'light' ? 'bg-[#F5F4F0] intake-light' : 'bg-brand-dark'} ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-          <div className="w-8 h-8 border-2 border-brand-yellow border-t-transparent rounded-full animate-spin" />
+          <SessionLoadingScreen idea={initialMessage} />
         </div>
       )}
 
