@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import HeroInput from './HeroInput'
 import IntakeOverlay from '@/components/intake/IntakeOverlay'
-import { getStoredSession, getIdeaForSession } from '@/lib/session'
+import { getStoredSession, getIdeaForSession, storeSession, storeIdeaForSession } from '@/lib/session'
 
 export default function HeroSection() {
   const [intakeOpen, setIntakeOpen] = useState(false)
@@ -12,19 +12,63 @@ export default function HeroSection() {
 
   // Restore conversation from localStorage/URL on mount
   useEffect(() => {
-    // Check URL for a conversation ID first
     const params = new URLSearchParams(window.location.search)
     const c = params.get('c')
+
     if (c) {
+      // Same-device: localStorage matches the URL param
       const storedSession = getStoredSession()
       const idea = storedSession?.proposalId === c ? getIdeaForSession(c) : null
       if (idea) {
-        // Only restore if there's a real idea (not a blank post-reset session)
         setInitialMessage(idea)
         setIntakeOpen(true)
         return
       }
+
+      // Cross-device: no localStorage match — fetch from Supabase
+      fetch(`/api/proposals/${c}/restore`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (!data || !data.brief) return
+
+          // Hydrate localStorage so useIntakeChat loads the restored state
+          storeSession({
+            sessionId: data.sessionId,
+            proposalId: data.proposalId,
+            userId: data.userId ?? '',
+          })
+          storeIdeaForSession(data.proposalId, data.brief)
+
+          if (Array.isArray(data.messages) && data.messages.length > 0) {
+            localStorage.setItem(`lamba_msgs_${data.proposalId}`, JSON.stringify(data.messages))
+          }
+
+          localStorage.setItem(
+            `lamba_proposal_${data.proposalId}`,
+            JSON.stringify({
+              activeModules: Array.isArray(data.modules) ? data.modules : [],
+              confidenceScore: typeof data.confidenceScore === 'number' ? data.confidenceScore : 0,
+              complexityMultiplier: 1.0,
+              productOverview: '',
+              moduleSummaries: {},
+              projectName: '',
+            })
+          )
+
+          // Mark as email-verified so auto-save continues from where it left off
+          localStorage.setItem(`lamba_email_verified_${data.proposalId}`, '1')
+          localStorage.setItem(
+            `lamba_synced_count_${data.proposalId}`,
+            String(data.messages?.length ?? 0)
+          )
+
+          setInitialMessage(data.brief)
+          setIntakeOpen(true)
+        })
+        .catch((e) => console.error('Restore error:', e))
+      return
     }
+
     // No URL param — check localStorage for any active session with a real idea
     const storedSession = getStoredSession()
     if (storedSession) {
