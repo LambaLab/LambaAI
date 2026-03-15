@@ -73,3 +73,82 @@ export async function getOrCreateSession(): Promise<SessionData> {
   })
   return inflightPromise
 }
+
+/**
+ * Hydrate localStorage with a restore response so useIntakeChat can load it.
+ * Used by both HeroSection (cross-device restore) and IntakeOverlay (proposal switching).
+ */
+export function hydrateProposalFromRestore(data: {
+  proposalId: string
+  sessionId: string
+  userId?: string
+  brief?: string
+  email?: string | null
+  modules?: unknown[]
+  confidenceScore?: number
+  messages?: { role: string; content: string; question?: string; quickReplies?: unknown }[]
+  metadata?: Record<string, unknown> | null
+}): void {
+  if (typeof window === 'undefined') return
+
+  storeSession({
+    sessionId: data.sessionId,
+    proposalId: data.proposalId,
+    userId: data.userId ?? '',
+  })
+  storeIdeaForSession(data.proposalId, data.brief || '')
+
+  const meta = data.metadata && typeof data.metadata === 'object' ? data.metadata : {} as Record<string, unknown>
+
+  localStorage.setItem(
+    `lamba_proposal_${data.proposalId}`,
+    JSON.stringify({
+      activeModules: Array.isArray(data.modules) ? data.modules : [],
+      confidenceScore: typeof data.confidenceScore === 'number' ? data.confidenceScore : 0,
+      complexityMultiplier: 1.0,
+      productOverview: meta.productOverview || '',
+      moduleSummaries: meta.moduleSummaries || {},
+      projectName: meta.projectName || '',
+      brief: data.brief || '',
+    })
+  )
+
+  if (meta.projectName) {
+    localStorage.setItem('lamba_app_name', String(meta.projectName))
+  }
+
+  // Attach last QR state to the final assistant message so the card renders on restore
+  if (meta.lastQuickReplies && Array.isArray(data.messages) && data.messages.length > 0) {
+    for (let i = data.messages.length - 1; i >= 0; i--) {
+      if (data.messages[i].role === 'assistant') {
+        data.messages[i].question = (meta.lastQuestion as string) || undefined
+        data.messages[i].quickReplies = meta.lastQuickReplies
+        break
+      }
+    }
+  }
+  if (Array.isArray(data.messages) && data.messages.length > 0) {
+    localStorage.setItem(`lamba_msgs_${data.proposalId}`, JSON.stringify(data.messages))
+  }
+
+  if (data.email) {
+    localStorage.setItem(`lamba_email_verified_${data.proposalId}`, '1')
+  }
+  localStorage.setItem(
+    `lamba_synced_count_${data.proposalId}`,
+    String(data.messages?.length ?? 0)
+  )
+}
+
+/** Remove all localStorage keys for a given proposal. */
+export function clearProposalData(proposalId: string): void {
+  if (typeof window === 'undefined') return
+  const keys = [
+    `lamba_idea_${proposalId}`,
+    `lamba_msgs_${proposalId}`,
+    `lamba_proposal_${proposalId}`,
+    `lamba_email_verified_${proposalId}`,
+    `lamba_synced_count_${proposalId}`,
+  ]
+  keys.forEach((k) => localStorage.removeItem(k))
+}

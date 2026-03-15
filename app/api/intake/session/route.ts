@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase/server'
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   const supabase = await createServerSupabaseClient()
 
   // Sign in anonymously — creates a real Supabase user with UUID
@@ -11,6 +11,9 @@ export async function POST() {
   }
 
   const userId = authData.user.id
+
+  const body = await req.json().catch(() => ({} as Record<string, unknown>))
+  const email = typeof body.email === 'string' && body.email ? body.email : null
 
   // Create session row
   const { data: session, error: sessionError } = await supabase
@@ -32,6 +35,7 @@ export async function POST() {
     .insert({
       session_id: session.id,
       user_id: userId,
+      ...(email ? { email, saved_at: new Date().toISOString() } : {}),
     })
     .select()
     .single()

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import HeroInput from './HeroInput'
 import IntakeOverlay from '@/components/intake/IntakeOverlay'
-import { getStoredSession, getIdeaForSession, storeSession, storeIdeaForSession } from '@/lib/session'
+import { getStoredSession, getIdeaForSession, hydrateProposalFromRestore } from '@/lib/session'
 
 export default function HeroSection() {
   const [intakeOpen, setIntakeOpen] = useState(false)
@@ -30,61 +30,7 @@ export default function HeroSection() {
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (!data) return
-          // brief may be empty if never persisted — still open the overlay
-          // (useIntakeChat will load the restored messages from localStorage)
-
-          // Hydrate localStorage so useIntakeChat loads the restored state
-          storeSession({
-            sessionId: data.sessionId,
-            proposalId: data.proposalId,
-            userId: data.userId ?? '',
-          })
-          storeIdeaForSession(data.proposalId, data.brief)
-
-          // Extract rich metadata (projectName, productOverview, moduleSummaries, lastQR)
-          const meta = data.metadata && typeof data.metadata === 'object' ? data.metadata : {}
-
-          localStorage.setItem(
-            `lamba_proposal_${data.proposalId}`,
-            JSON.stringify({
-              activeModules: Array.isArray(data.modules) ? data.modules : [],
-              confidenceScore: typeof data.confidenceScore === 'number' ? data.confidenceScore : 0,
-              complexityMultiplier: 1.0,
-              productOverview: meta.productOverview || '',
-              moduleSummaries: meta.moduleSummaries || {},
-              projectName: meta.projectName || '',
-              brief: data.brief || '',
-            })
-          )
-
-          // Restore app name so the header shows the project title
-          if (meta.projectName) {
-            localStorage.setItem('lamba_app_name', meta.projectName)
-          }
-
-          // Attach last QR state to the final assistant message so the card renders
-          if (meta.lastQuickReplies && Array.isArray(data.messages) && data.messages.length > 0) {
-            for (let i = data.messages.length - 1; i >= 0; i--) {
-              if (data.messages[i].role === 'assistant') {
-                data.messages[i].question = meta.lastQuestion || undefined
-                data.messages[i].quickReplies = meta.lastQuickReplies
-                break
-              }
-            }
-          }
-          if (Array.isArray(data.messages) && data.messages.length > 0) {
-            localStorage.setItem(`lamba_msgs_${data.proposalId}`, JSON.stringify(data.messages))
-          }
-
-          // Mark as email-verified so auto-save continues from where it left off
-          if (data.email) {
-            localStorage.setItem(`lamba_email_verified_${data.proposalId}`, '1')
-          }
-          localStorage.setItem(
-            `lamba_synced_count_${data.proposalId}`,
-            String(data.messages?.length ?? 0)
-          )
-
+          hydrateProposalFromRestore(data)
           setInitialMessage(data.brief || data.messages?.[0]?.content || '')
           setIntakeOpen(true)
         })
