@@ -87,6 +87,29 @@ export default function SaveForLaterModal({ proposalId, sessionId, projectName, 
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Verification failed')
+
+      // Fire-and-forget: backfill all messages to Supabase now that email is verified
+      try {
+        const raw = localStorage.getItem(`lamba_msgs_${proposalId}`)
+        const storedMessages: { role: string; content: string }[] = raw ? JSON.parse(raw) : []
+        const apiMessages = storedMessages.map((m) => ({
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+        }))
+        fetch('/api/intake/sync-messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ proposalId, sessionId, messages: apiMessages }),
+        })
+          .then(() => {
+            localStorage.setItem(`lamba_email_verified_${proposalId}`, '1')
+            localStorage.setItem(`lamba_synced_count_${proposalId}`, String(apiMessages.length))
+          })
+          .catch((e) => console.error('Initial sync error:', e))
+      } catch (e) {
+        console.error('Sync setup error:', e)
+      }
+
       setStep('success')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong')
