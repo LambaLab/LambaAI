@@ -109,11 +109,14 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               }
             } catch { /* ignore */ }
 
-            // Capture the last assistant message's QR state for restore
+            // Capture the last assistant message's QR state for restore.
+            // Guard: only save if options are populated — skeleton QR ({ style: 'list', options: [] })
+            // from partial_question can still be on the message if the page reloaded mid-stream.
             const lastAssistant = [...messages].reverse().find(m => m.role === 'assistant' && !m.isPause)
-            if (lastAssistant?.quickReplies && syncMetadata) {
+            const lastQR = lastAssistant?.quickReplies
+            if (lastQR && Array.isArray(lastQR.options) && lastQR.options.length > 0 && syncMetadata) {
               syncMetadata.lastQuestion = lastAssistant.question || undefined
-              syncMetadata.lastQuickReplies = lastAssistant.quickReplies
+              syncMetadata.lastQuickReplies = lastQR
             }
 
             fetch('/api/intake/sync-messages', {

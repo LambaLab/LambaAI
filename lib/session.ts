@@ -117,8 +117,13 @@ export function hydrateProposalFromRestore(data: {
     localStorage.setItem('lamba_app_name', String(meta.projectName))
   }
 
-  // Attach last QR state to the final assistant message so the card renders on restore
-  if (meta.lastQuickReplies && Array.isArray(data.messages) && data.messages.length > 0) {
+  // Attach last QR state to the final assistant message so the card renders on restore.
+  // Guard: only attach if options are populated — skeleton QR ({ style: 'list', options: [] })
+  // can get persisted if the user navigated away mid-stream; attaching it would show an
+  // eternal skeleton card with no rows.
+  const qr = meta.lastQuickReplies as Record<string, unknown> | undefined
+  const qrHasOptions = qr && Array.isArray(qr.options) && qr.options.length > 0
+  if (qrHasOptions && Array.isArray(data.messages) && data.messages.length > 0) {
     for (let i = data.messages.length - 1; i >= 0; i--) {
       if (data.messages[i].role === 'assistant') {
         data.messages[i].question = (meta.lastQuestion as string) || undefined
