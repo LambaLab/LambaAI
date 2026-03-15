@@ -16,9 +16,10 @@ type Props = {
   proposalOpen: boolean
   onProposalToggle: () => void
   onReset?: () => void
+  onSaveLater?: () => void
 }
 
-export default function IntakeLayout({ proposalId, initialMessage, onStateChange, onResetRef, theme, proposalOpen, onProposalToggle, onReset }: Props) {
+export default function IntakeLayout({ proposalId, initialMessage, onStateChange, onResetRef, theme, proposalOpen, onProposalToggle, onReset, onSaveLater }: Props) {
   const {
     messages,
     activeModules,
@@ -125,6 +126,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             onSend={sendMessage}
             onEdit={editMessage}
             onRequestViewProposal={openProposal}
+            onSaveLater={onSaveLater}
             constrained={chatConstrained}
             theme={theme}
           />
@@ -172,6 +174,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             onSend={sendMessage}
             onEdit={editMessage}
             onRequestViewProposal={openProposal}
+            onSaveLater={onSaveLater}
             theme={theme}
           />
         </div>

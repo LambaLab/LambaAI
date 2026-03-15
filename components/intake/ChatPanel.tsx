@@ -14,11 +14,12 @@ type Props = {
   onSend: (message: string, displayContent?: string, sourceQR?: QuickRepliesType, sourceQuestion?: string) => void
   onEdit?: (messageId: string, newContent: string, displayContent?: string) => void
   onRequestViewProposal?: () => void
+  onSaveLater?: () => void
   constrained?: boolean
   theme?: 'dark' | 'light'
 }
 
-export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onRequestViewProposal, constrained = false, theme }: Props) {
+export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onRequestViewProposal, onSaveLater, constrained = false, theme }: Props) {
   const [input, setInput] = useState('')
   const [reEditingMessageId, setReEditingMessageId] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -102,6 +103,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
                 message={msg}
                 onSend={(val, display) => onSend(val, display)}
                 onRequestViewProposal={onRequestViewProposal}
+                onSaveLater={onSaveLater}
                 isLast={i === messages.length - 1}
                 isStreaming={isStreaming && i === messages.length - 1}
               />

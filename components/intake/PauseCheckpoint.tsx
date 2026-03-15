@@ -6,6 +6,7 @@ type Props = {
   message: ChatMessage
   onSend: (value: string, display?: string) => void
   onRequestViewProposal?: () => void
+  onSaveLater?: () => void
   isLast: boolean
   isStreaming: boolean
 }
@@ -16,17 +17,17 @@ const CHECKPOINT_PILLS = [
   { value: '__continue__',      label: 'Keep going',         icon: '💬', disabled: false, primary: false },
   { value: '__view_proposal__', label: 'See proposal',       icon: '📋', disabled: false, primary: false },
   { value: '__submit__',        label: 'Submit proposal',    icon: '✅', disabled: false, primary: true  },
-  { value: '__save_later__',    label: 'Save for later',     icon: '🔖', disabled: true,  primary: false },
+  { value: '__save_later__',    label: 'Save for later',     icon: '🔖', disabled: false, primary: false },
 ]
 
-export default function PauseCheckpoint({ message, onSend, onRequestViewProposal, isLast, isStreaming }: Props) {
+export default function PauseCheckpoint({ message, onSend, onRequestViewProposal, onSaveLater, isLast, isStreaming }: Props) {
   const showActions = isLast && !isStreaming
 
   function handleSelect(value: string, label: string) {
     if (value === '__view_proposal__' || value === '__submit__') {
       onRequestViewProposal?.()
     } else if (value === '__save_later__') {
-      // Coming soon — placeholder, do nothing
+      onSaveLater?.()
     } else {
       // __continue__ → keep the conversation going
       onSend(value, label)

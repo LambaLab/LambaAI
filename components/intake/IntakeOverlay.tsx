@@ -5,6 +5,7 @@ import { Minus, Sun, Moon, X } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import IntakeLayout from './IntakeLayout'
 import MinimizedBar from './MinimizedBar'
+import SaveForLaterModal from './SaveForLaterModal'
 import { getOrCreateSession, storeIdeaForSession, type SessionData } from '@/lib/session'
 import SessionLoadingScreen from './SessionLoadingScreen'
 
@@ -21,6 +22,7 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
   const [mounted, setMounted] = useState(false)
   const [minimized, setMinimized] = useState(false)
   const [proposalOpen, setProposalOpen] = useState(false)
+  const [saveModalOpen, setSaveModalOpen] = useState(false)
   const [liveModuleCount, setLiveModuleCount] = useState(0)
   const [liveConfidenceScore, setLiveConfidenceScore] = useState(0)
   const [currentIdea, setCurrentIdea] = useState(initialMessage)
@@ -203,7 +205,8 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
                 <button
                   type="button"
                   className="hidden md:flex text-xs text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors cursor-pointer px-2 py-1.5"
-                  title="Save for later (coming soon)"
+                  title="Save for later"
+                  onClick={() => setSaveModalOpen(true)}
                 >
                   Save for later
                 </button>
@@ -248,8 +251,18 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
             theme={theme}
             proposalOpen={proposalOpen}
             onProposalToggle={() => setProposalOpen(p => !p)}
+            onSaveLater={() => setSaveModalOpen(true)}
           />
         </div>
+      )}
+
+      {saveModalOpen && session && (
+        <SaveForLaterModal
+          proposalId={session.proposalId}
+          sessionId={session.sessionId}
+          projectName={appName || undefined}
+          onClose={() => setSaveModalOpen(false)}
+        />
       )}
     </>
   )
