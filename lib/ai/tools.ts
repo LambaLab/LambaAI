@@ -3,7 +3,7 @@ import type Anthropic from '@anthropic-ai/sdk'
 export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
   name: 'update_proposal',
   description:
-    'Called by the AI after every turn to update the detected modules, confidence score, price adjustment, brief, and product overview. Always call this tool alongside the conversational response.',
+    'Called by the AI after every turn to update the detected modules, confidence score, price adjustment, brief, and product overview. Write the conversational response (reaction + insight) as plain text BEFORE calling this tool — do not put it in any tool field. Only structured metadata goes here.',
   input_schema: {
     type: 'object' as const,
     properties: {
@@ -27,10 +27,6 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
       updated_brief: {
         type: 'string',
         description: 'Concise 2–4 sentence brief of the project as understood so far.',
-      },
-      follow_up_question: {
-        type: 'string',
-        description: 'Reaction and insight for this turn — NOT the question. Two sentences max. Write each as its own paragraph separated by \\n\\n. Example: "Nice, personal task management.\\n\\nThe to-do space is crowded (Todoist, Things 3, Notion) but people keep building new ones because none feel quite right." Do NOT include the question here — put it in the question field.',
       },
       question: {
         type: 'string',
@@ -84,6 +80,6 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
         additionalProperties: { type: 'string' as const },
       },
     },
-    required: ['detected_modules', 'confidence_score_delta', 'complexity_multiplier', 'updated_brief', 'follow_up_question', 'question', 'product_overview'],
+    required: ['detected_modules', 'confidence_score_delta', 'complexity_multiplier', 'updated_brief', 'question', 'product_overview'],
   },
 }
