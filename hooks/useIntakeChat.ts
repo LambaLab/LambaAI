@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { calculatePriceRange, applyComplexityAdjustment, tightenPriceRange, type PriceRange } from '@/lib/pricing/engine'
 import { expandWithDependencies } from '@/lib/modules/dependencies'
 import type { QuickReplies } from '@/lib/intake-types'
+import { getStoredSession } from '@/lib/session'
 
 export type ChatMessage = {
   id: string
@@ -42,6 +43,8 @@ type Props = {
 
 const MSGS_KEY = (pid: string) => `lamba_msgs_${pid}`
 const PROPOSAL_KEY = (pid: string) => `lamba_proposal_${pid}`
+const EMAIL_VERIFIED_KEY = (pid: string) => `lamba_email_verified_${pid}`
+const SYNCED_COUNT_KEY   = (pid: string) => `lamba_synced_count_${pid}`
 
 export function useIntakeChat({ proposalId, idea }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -72,12 +75,40 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   useEffect(() => { productOverviewRef.current = productOverview }, [productOverview])
   useEffect(() => { moduleSummariesRef.current = moduleSummaries }, [moduleSummaries])
 
-  // Persist messages to localStorage after every update
+  // Persist messages to localStorage after every update.
+  // Also auto-saves to Supabase when email is verified and streaming is complete.
   useEffect(() => {
     if (messages.length > 0 && proposalId) {
       localStorage.setItem(MSGS_KEY(proposalId), JSON.stringify(messages))
+
+      if (!isStreaming && localStorage.getItem(EMAIL_VERIFIED_KEY(proposalId))) {
+        const storedSession = getStoredSession()
+        if (storedSession?.sessionId) {
+          const syncedCount = parseInt(
+            localStorage.getItem(SYNCED_COUNT_KEY(proposalId)) ?? '0',
+            10
+          )
+          const newMessages = messages.slice(syncedCount)
+          if (newMessages.length > 0) {
+            const newCount = messages.length
+            fetch('/api/intake/sync-messages', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                proposalId,
+                sessionId: storedSession.sessionId,
+                messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
+              }),
+            })
+              .then(() =>
+                localStorage.setItem(SYNCED_COUNT_KEY(proposalId), String(newCount))
+              )
+              .catch((e) => console.error('Auto-save error:', e))
+          }
+        }
+      }
     }
-  }, [messages, proposalId])
+  }, [messages, proposalId, isStreaming]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // NOTE: Proposal state is saved inline (not via a reactive effect) to avoid a
   // mount-order bug: a reactive effect would fire before the restore effect and
