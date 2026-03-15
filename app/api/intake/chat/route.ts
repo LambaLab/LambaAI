@@ -44,18 +44,74 @@ export async function POST(req: NextRequest) {
       let currentToolName = ''
       let toolResultSent = false
 
+      // Streaming extraction of follow_up_question from the tool JSON delta.
+      // follow_up_question is the first field in the schema so it generates first.
+      // As its characters arrive we forward them as text events — the client sees
+      // the reaction text appear in real time instead of waiting for the full JSON.
+      let fupState: 'search' | 'stream' | 'done' = 'search'
+      let fupCursor = 0   // position in toolInputBuffer up to which we have streamed
+      let fupEscaped = false
+
+      function streamFollowUpChars() {
+        if (fupState === 'done') return
+
+        if (fupState === 'search') {
+          const FIELD = '"follow_up_question"'
+          const fi = toolInputBuffer.indexOf(FIELD)
+          if (fi === -1) return
+          // Advance past the field name, colon, and any whitespace to the opening quote
+          let i = fi + FIELD.length
+          while (i < toolInputBuffer.length && toolInputBuffer[i] !== '"') i++
+          if (i >= toolInputBuffer.length) return  // opening quote not yet in buffer
+          fupCursor = i + 1  // position right after the opening quote
+          fupState = 'stream'
+        }
+
+        // Stream characters of the value until the closing unescaped quote
+        while (fupCursor < toolInputBuffer.length) {
+          const ch = toolInputBuffer[fupCursor++]
+          if (fupEscaped) {
+            if      (ch === 'n')  send('text', { text: '\n' })
+            else if (ch === '"')  send('text', { text: '"' })
+            else if (ch === '\\') send('text', { text: '\\' })
+            else if (ch === 't')  send('text', { text: '\t' })
+            else if (ch === 'u' && fupCursor + 4 <= toolInputBuffer.length) {
+              // \uXXXX unicode escape
+              const code = parseInt(toolInputBuffer.slice(fupCursor, fupCursor + 4), 16)
+              if (!isNaN(code)) send('text', { text: String.fromCharCode(code) })
+              fupCursor += 4
+            }
+            // else: unknown escape — skip
+            fupEscaped = false
+          } else if (ch === '\\') {
+            fupEscaped = true
+          } else if (ch === '"') {
+            fupState = 'done'  // reached end of follow_up_question value
+            break
+          } else {
+            send('text', { text: ch })
+          }
+        }
+      }
+
       try {
         for await (const chunk of stream) {
           if (chunk.type === 'content_block_start') {
             if (chunk.content_block.type === 'tool_use') {
               currentToolName = chunk.content_block.name
               toolInputBuffer = ''
+              // Reset extraction state for each new tool block
+              fupState = 'search'
+              fupCursor = 0
+              fupEscaped = false
             }
           } else if (chunk.type === 'content_block_delta') {
             if (chunk.delta.type === 'text_delta') {
               send('text', { text: chunk.delta.text })
             } else if (chunk.delta.type === 'input_json_delta') {
               toolInputBuffer += chunk.delta.partial_json
+              // Forward follow_up_question characters as text events in real time
+              streamFollowUpChars()
             }
           } else if (chunk.type === 'content_block_stop') {
             // Tool block finished — parse buffered JSON and send result immediately

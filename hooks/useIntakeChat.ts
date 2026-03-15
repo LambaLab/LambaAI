@@ -58,7 +58,8 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   const complexityRef = useRef(1.0)
   const productOverviewRef = useRef('')
   const moduleSummariesRef = useRef<{ [moduleId: string]: string }>({})
-  const hasPaused = useRef(false)  // only fire the checkpoint once per session
+  const lastPauseTurn = useRef(-999)  // turn index of the last checkpoint (-999 = never)
+  const turnCount = useRef(0)         // increments each time a tool_result is processed
 
   useEffect(() => { messagesRef.current = messages }, [messages])
   useEffect(() => { confidenceRef.current = confidenceScore }, [confidenceScore])
@@ -220,9 +221,11 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               setModuleSummaries(prev => ({ ...prev, ...input.module_summaries }))
             }
 
-            // Checkpoint (breather) — mark this turn once if conditions met
-            const isPauseThisTurn = !hasPaused.current && input?.suggest_pause === true
-            if (isPauseThisTurn) hasPaused.current = true
+            // Checkpoint (breather) — allow recurring pauses, min 4 turns apart
+            turnCount.current++
+            const turnsSinceLast = turnCount.current - lastPauseTurn.current
+            const isPauseThisTurn = input?.suggest_pause === true && turnsSinceLast >= 4
+            if (isPauseThisTurn) lastPauseTurn.current = turnCount.current
 
             setMessages((prev) => {
               const last = prev[prev.length - 1]
@@ -382,7 +385,8 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     confidenceRef.current = 0
     activeModulesRef.current = []
     complexityRef.current = 1.0
-    hasPaused.current = false
+    lastPauseTurn.current = -999
+    turnCount.current = 0
     // Reset state — blank slate
     setMessages([])
     setActiveModules([])

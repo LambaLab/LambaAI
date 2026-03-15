@@ -3,10 +3,17 @@ import type Anthropic from '@anthropic-ai/sdk'
 export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
   name: 'update_proposal',
   description:
-    'Called by the AI after every turn to update the detected modules, confidence score, price adjustment, brief, and product overview. Write the conversational response (reaction + insight) as plain text BEFORE calling this tool — do not put it in any tool field. Only structured metadata goes here.',
+    'Called by the AI after every turn to update the detected modules, confidence score, price adjustment, brief, and product overview. Always call this tool alongside the conversational response.',
   input_schema: {
     type: 'object' as const,
     properties: {
+      // follow_up_question MUST be first — the server extracts it from the
+      // streaming JSON delta and forwards it to the client as live text events
+      // so the user sees the reaction immediately without waiting for the full JSON.
+      follow_up_question: {
+        type: 'string',
+        description: 'Reaction and insight for this turn — NOT the question. Two paragraphs max, separated by \\n\\n. Paragraph 1: 1-sentence reaction, specific to what they said. Paragraph 2: 1-2 sentence insight (comparable product, tension, tradeoff). Skip paragraph 2 only for very vague inputs with nothing to riff on. Do NOT include the question here — put it in the question field.',
+      },
       detected_modules: {
         type: 'array',
         items: { type: 'string' },
@@ -71,7 +78,7 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
       },
       suggest_pause: {
         type: 'boolean' as const,
-        description: 'Set to true ONCE per conversation when confidence is 60%+ and you have covered: platform, target users, core workflow, and rough monetization. Triggers a breather checkpoint for the user to review their proposal. Use sparingly — only once, when genuine convergence is reached.',
+        description: 'Set to true when confidence is 60%+ and you have covered: platform, target users, core workflow, and rough monetization. Can fire multiple times as the conversation deepens — for example at 60% and again at 80%. Never trigger two checkpoints back-to-back; wait at least 4 turns between them.',
       },
       module_summaries: {
         type: 'object' as const,
@@ -80,6 +87,6 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
         additionalProperties: { type: 'string' as const },
       },
     },
-    required: ['detected_modules', 'confidence_score_delta', 'complexity_multiplier', 'updated_brief', 'question', 'product_overview'],
+    required: ['follow_up_question', 'detected_modules', 'confidence_score_delta', 'complexity_multiplier', 'updated_brief', 'question', 'product_overview'],
   },
 }
