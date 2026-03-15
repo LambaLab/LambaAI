@@ -258,6 +258,21 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             const bubble2: ChatMessage = { id: crypto.randomUUID(), role: 'assistant', content: '' }
             activeBubbleId = bubble2.id
             setMessages((prev) => [...prev, bubble2])
+          } else if (event === 'partial_question') {
+            // question field is complete but quick_replies is still generating.
+            // Show the QR card skeleton immediately so the user sees something.
+            const questionText = typeof data.question === 'string' ? data.question.trim() : ''
+            if (questionText) {
+              setMessages((prev) => {
+                const last = prev[prev.length - 1]
+                if (last?.id !== activeBubbleId) return prev
+                return [...prev.slice(0, -1), {
+                  ...last,
+                  question: questionText,
+                  quickReplies: { style: 'list' as const, options: [] },
+                }]
+              })
+            }
           } else if (event === 'partial_result') {
             // question + quick_replies are now complete in the server's JSON buffer.
             // Show the QR card immediately — the heavy metadata fields (product_overview,
@@ -272,8 +287,11 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               setMessages((prev) => {
                 const last = prev[prev.length - 1]
                 if (last?.id !== activeBubbleId) return prev  // user already moved on
-                // Question was already streamed into bubble content — don't duplicate
-                const bubbleContent = last.content
+                const base = last.content  // follow_up_question text already streamed in
+                const bubbleContent =
+                  !isListQR && questionText
+                    ? base ? `${base}\n\n${questionText}` : questionText
+                    : base
                 return [...prev.slice(0, -1), {
                   ...last,
                   content: bubbleContent,
@@ -365,9 +383,13 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                 return [...prev.slice(0, -1), reactionBubble, checkpointMsg]
               }
 
-              // Normal turn — question was already streamed into bubble content
+              // Normal turn
+              // For list QR: question goes in the rows card header (message.question), not in the bubble
+              // For no QR or pills QR: question is appended to bubble content so it's visible
               const base = last.content || followUp
-              const bubbleContent = base
+              const bubbleContent = !isListQR && questionText
+                ? (base ? `${base}\n\n${questionText}` : questionText)
+                : base
 
               return [...prev.slice(0, -1), {
                 ...last,

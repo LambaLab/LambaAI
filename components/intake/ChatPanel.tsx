@@ -86,11 +86,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
 
   // Active QR at bottom: re-edit takes priority over new question QR
   const activeQR = reEditingQR ?? listQR
-  // For new QR cards, question is already in the bubble — don't show as card header.
-  // For re-edit cards, show question header (provides context for the re-selection).
-  const displayQuestion = reEditingQR ? reEditingQuestion : undefined
-  // Source question for message storage: always from the actual question
-  const sourceQuestion = reEditingQR ? reEditingQuestion : questionText
+  const activeQuestion = reEditingQR ? reEditingQuestion : questionText
 
   return (
     <div className="flex flex-col h-full">
@@ -173,11 +169,11 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
                   setReEditingMessageId(null)
                 } else {
                   // Normal selection: new user message
-                  onSend(value, answerDisplay, activeQR, sourceQuestion || undefined)
+                  onSend(value, answerDisplay, activeQR, activeQuestion || undefined)
                 }
               }}
               disabled={isStreaming}
-              question={displayQuestion}
+              question={activeQuestion}
             />
           </>
         ) : (

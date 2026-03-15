@@ -139,6 +139,25 @@ export default function QuickReplies({ quickReplies, onSelect, disabled, questio
   }
 
   // style === 'list' — rendered at the bottom of ChatPanel
+  // Loading skeleton: question is ready but options are still generating
+  if (style === 'list' && options.length === 0) {
+    return (
+      <div className="rounded-xl border border-[var(--ov-border,rgba(255,255,255,0.10))] overflow-hidden">
+        {question && (
+          <div className="px-4 py-3 border-b border-[var(--ov-border,rgba(255,255,255,0.10))]">
+            <p className="text-sm text-[var(--ov-text,#ffffff)] leading-relaxed">{question}</p>
+          </div>
+        )}
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="px-4 py-3.5 border-t border-[var(--ov-border,rgba(255,255,255,0.10))] first:border-t-0 animate-pulse">
+            <div className="h-4 bg-[var(--ov-surface-subtle,rgba(255,255,255,0.08))] rounded w-2/5 mb-2" />
+            <div className="h-3 bg-[var(--ov-surface-subtle,rgba(255,255,255,0.04))] rounded w-3/5" />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div className="rounded-xl border border-[var(--ov-border,rgba(255,255,255,0.10))] overflow-hidden">
       {/* Question header */}
