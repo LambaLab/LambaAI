@@ -24,12 +24,14 @@ export type Database = {
           id: string
           session_id: string
           user_id: string | null
-          status: 'draft' | 'pending_review' | 'approved' | 'accepted'
+          status: 'draft' | 'saved' | 'pending_review' | 'approved' | 'accepted'
           modules: Json
           confidence_score: number
           price_min: number
           price_max: number
           brief: string
+          email: string | null
+          saved_at: string | null
           admin_notes: string | null
           prd: string | null
           technical_architecture: string | null
@@ -43,12 +45,14 @@ export type Database = {
           id?: string
           session_id: string
           user_id?: string | null
-          status?: 'draft' | 'pending_review' | 'approved' | 'accepted'
+          status?: 'draft' | 'saved' | 'pending_review' | 'approved' | 'accepted'
           modules?: Json
           confidence_score?: number
           price_min?: number
           price_max?: number
           brief?: string
+          email?: string | null
+          saved_at?: string | null
           admin_notes?: string | null
           prd?: string | null
           technical_architecture?: string | null
@@ -77,6 +81,30 @@ export type Database = {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['chat_messages']['Insert']>
+        Relationships: []
+      }
+      otp_codes: {
+        Row: {
+          id: string
+          email: string
+          code: string
+          proposal_id: string
+          session_id: string
+          expires_at: string
+          used: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          email: string
+          code: string
+          proposal_id: string
+          session_id: string
+          expires_at: string
+          used?: boolean
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['otp_codes']['Insert']>
         Relationships: []
       }
     }

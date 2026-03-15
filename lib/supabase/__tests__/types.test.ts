@@ -14,6 +14,8 @@ describe('Database types', () => {
       price_min: 0,
       price_max: 0,
       brief: '',
+      email: null,
+      saved_at: null,
       admin_notes: null,
       prd: null,
       technical_architecture: null,
