@@ -91,8 +91,8 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
       {/* Messages — scroll container stays full-width always; content div handles centering */}
       <div className="flex-1 overflow-y-auto py-4 scrollbar-hide">
         <div
-          className="px-4 space-y-4 mx-auto"
-          style={{ maxWidth: constrained ? '650px' : '9999px' }}
+          className="px-6 space-y-4 mx-auto w-full"
+          style={{ maxWidth: '760px' }}
         >
           {messages.map((msg, i) => (
             msg.isPause ? (
@@ -131,10 +131,10 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
       </div>
 
       {/* Bottom area: list rows card (new question OR re-edit) OR regular textarea */}
-      <div className="flex-shrink-0 px-4 pb-4">
+      <div className="flex-shrink-0 px-6 pb-4">
         <div
-          className="mx-auto"
-          style={{ maxWidth: constrained ? '650px' : '9999px' }}
+          className="mx-auto w-full"
+          style={{ maxWidth: '760px' }}
         >
         {activeQR ? (
           <>
