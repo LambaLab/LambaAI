@@ -22,14 +22,22 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
         type: 'string',
         description: 'Only set when pivoting to a new topic area for the first time (e.g. moving from features to monetization, or from platform to target users). 1-2 sentences max. Reference specific facts the user already stated — use their exact words or numbers (e.g. "you mentioned a 7-day trial", "since you\'re going iOS-first"). Write it as a natural spoken bridge: acknowledge where we just were and orient toward the new territory. Leave as an empty string ("") when staying within the same topic, or when no prior-stated facts are relevant. Never use it for generic transitions like "Now let\'s talk about..." with no callback to their own words. Always leave as "" on suggest_pause turns.',
       },
-      // question and quick_replies MUST come after transition_text — the server detects
-      // their completion in the streaming JSON delta and sends a partial_result event
-      // immediately so the QR card appears once both bubbles are fully streamed.
-      // Moving these before the heavy metadata fields (product_overview, module_summaries)
-      // eliminates a 5–7 second delay where the user would otherwise see nothing.
+      // suggest_pause MUST come before question/quick_replies — the server checks it
+      // before emitting a partial_result event. When true, partial_result is suppressed
+      // so the reaction bubble doesn't receive checkpoint QRs prematurely; the pause
+      // checkpoint is created separately in tool_result.
+      suggest_pause: {
+        type: 'boolean' as const,
+        description: 'Set to true when confidence is 60%+ and you have covered: platform, target users, core workflow, and rough monetization. Can fire multiple times as the conversation deepens — for example at 60% and again at 80%. Never trigger two checkpoints back-to-back; wait at least 4 turns between them.',
+      },
+      // question and quick_replies MUST come after suggest_pause so the server always
+      // knows whether this is a pause turn before partial_result fires.
+      // They also MUST come before the heavy metadata fields (product_overview,
+      // module_summaries) — placing them early eliminates a 5–7 second delay where
+      // the user would otherwise see nothing after the text stops streaming.
       question: {
         type: 'string',
-        description: 'REQUIRED every turn. Never empty. The single question for this turn — one crisp sentence ending with ?. This is the user\'s call to action: what they read last and respond to. When quick replies are present it appears as the card header; otherwise it is appended to the message. If the idea is vague, ask what the product does. If the idea is clear, ask the most important architectural unknown.',
+        description: 'REQUIRED every turn. Never empty. Ends with ?. On normal turns: one crisp question sentence — the user\'s call to action. On suggest_pause turns: 2-4 sentences covering what\'s been established (use the user\'s exact words/numbers), note that progress is saved, then close with a warm invitation to review, continue, or save.',
       },
       quick_replies: {
         type: 'object' as const,
@@ -63,10 +71,6 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
           },
         },
         required: ['style', 'options'],
-      },
-      suggest_pause: {
-        type: 'boolean' as const,
-        description: 'Set to true when confidence is 60%+ and you have covered: platform, target users, core workflow, and rough monetization. Can fire multiple times as the conversation deepens — for example at 60% and again at 80%. Never trigger two checkpoints back-to-back; wait at least 4 turns between them.',
       },
       detected_modules: {
         type: 'array',

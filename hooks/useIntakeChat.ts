@@ -301,6 +301,28 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                 : undefined
               const isListQR = updatedQR?.style === 'list'
 
+              if (isPauseThisTurn) {
+                // PAUSE TURN: split into two separate messages so the reaction appears
+                // as a standard MessageBubble before the checkpoint divider.
+                // 1. Reaction bubble — normal MessageBubble (follow_up_question streamed live)
+                const reactionBubble: ChatMessage = {
+                  ...last,
+                  content: last.content || followUp,
+                  question: undefined,
+                  quickReplies: undefined,
+                  isPause: undefined,
+                }
+                // 2. Pause checkpoint — friendly intro from the `question` field + hardcoded CTAs
+                const checkpointMsg: ChatMessage = {
+                  id: crypto.randomUUID(),
+                  role: 'assistant',
+                  content: questionText || 'Good progress. Want to take a look at what we\'ve built, keep going, or save this for later?',
+                  isPause: true,
+                }
+                return [...prev.slice(0, -1), reactionBubble, checkpointMsg]
+              }
+
+              // Normal turn — existing logic
               // For list QR: question goes in the rows card header (message.question), not in the bubble
               // For no QR or pills QR: question is appended to bubble content so it's visible
               const base = last.content || followUp
@@ -313,7 +335,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                 content: bubbleContent,
                 question: isListQR ? (questionText || undefined) : undefined,
                 quickReplies: updatedQR,
-                isPause: isPauseThisTurn || undefined,
+                isPause: undefined,
               }]
             })
 

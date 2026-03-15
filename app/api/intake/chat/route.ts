@@ -256,6 +256,21 @@ export async function POST(req: NextRequest) {
         // the second bubble is still streaming (it would flash in mid-sentence)
         if (txState !== 'done' && txState !== 'empty') return
 
+        // suggest_pause now appears before question/quick_replies in the schema, so it's
+        // always generated before we reach this point. Wait for it to arrive — we must
+        // know whether this is a pause turn before deciding to emit partial_result.
+        const suggestPauseMatch = toolInputBuffer.match(/"suggest_pause"\s*:\s*(true|false)/)
+        if (suggestPauseMatch === null) return  // not yet generated — wait
+
+        if (suggestPauseMatch[1] === 'true') {
+          // Pause turn: the checkpoint is created in tool_result on the client.
+          // Suppressing partial_result here prevents QRs from being attached to the
+          // reaction bubble prematurely and keeps isStreaming=true until the checkpoint
+          // message exists and isStreaming is reset by the tool_result handler.
+          partialResultSent = true
+          return
+        }
+
         const question = extractStringField('question')
         if (question === null) return
 
@@ -269,11 +284,7 @@ export async function POST(req: NextRequest) {
           return
         }
 
-        // Best-effort: include suggest_pause if already in buffer
-        const suggestPauseMatch = toolInputBuffer.match(/"suggest_pause"\s*:\s*(true|false)/)
-        const suggestPause = suggestPauseMatch?.[1] === 'true'
-
-        send('partial_result', { question, quick_replies: quickReplies, suggest_pause: suggestPause })
+        send('partial_result', { question, quick_replies: quickReplies, suggest_pause: false })
         partialResultSent = true
       }
 

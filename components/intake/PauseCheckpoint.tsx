@@ -13,10 +13,10 @@ type Props = {
 // Hard-coded pill definitions — keeps the UI stable regardless of what
 // label text the AI returned, and adds "Save for later" as a placeholder.
 const CHECKPOINT_PILLS = [
-  { value: '__continue__',      label: 'Keep going',      icon: '💬', disabled: false },
-  { value: '__view_proposal__', label: 'See proposal',    icon: '📋', disabled: false },
-  { value: '__submit__',        label: 'Submit it',       icon: '✅', disabled: false },
-  { value: '__save_later__',    label: 'Save for later',  icon: '🔖', disabled: true  },
+  { value: '__continue__',      label: 'Keep going',         icon: '💬', disabled: false, primary: false },
+  { value: '__view_proposal__', label: 'See proposal',       icon: '📋', disabled: false, primary: false },
+  { value: '__submit__',        label: 'Submit proposal',    icon: '✅', disabled: false, primary: true  },
+  { value: '__save_later__',    label: 'Save for later',     icon: '🔖', disabled: true,  primary: false },
 ]
 
 export default function PauseCheckpoint({ message, onSend, onRequestViewProposal, isLast, isStreaming }: Props) {
@@ -47,14 +47,11 @@ export default function PauseCheckpoint({ message, onSend, onRequestViewProposal
         <div className="flex-1 h-px bg-[var(--ov-border,rgba(255,255,255,0.07))]" />
       </div>
 
-      {/* ── AI message — plain inline text, no bubble ── */}
+      {/* ── Checkpoint intro — warm summary of what's been established ── */}
       <div className="text-sm text-[var(--ov-text,#ffffff)] leading-relaxed space-y-2">
         {paragraphs.map((para, i) => (
           <p key={i}>{para}</p>
         ))}
-        {message.question && (
-          <p className="text-[var(--ov-text-muted,#b0b0b0)]">{message.question}</p>
-        )}
       </div>
 
       {/* ── Compact inline pill buttons ── */}
@@ -67,10 +64,12 @@ export default function PauseCheckpoint({ message, onSend, onRequestViewProposal
               onClick={() => !pill.disabled && handleSelect(pill.value, pill.label)}
               disabled={pill.disabled}
               className={[
-                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-colors',
-                pill.disabled
-                  ? 'border-[var(--ov-border,rgba(255,255,255,0.06))] text-[var(--ov-text-muted,#727272)] opacity-40 cursor-not-allowed'
-                  : 'border-[var(--ov-border,rgba(255,255,255,0.12))] text-[var(--ov-text,#ffffff)] hover:border-brand-yellow/50 hover:text-brand-yellow cursor-pointer',
+                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-colors',
+                pill.primary
+                  ? 'bg-brand-yellow border border-brand-yellow text-brand-dark hover:bg-brand-yellow/90 cursor-pointer font-medium'
+                  : pill.disabled
+                    ? 'border border-[var(--ov-border,rgba(255,255,255,0.06))] text-[var(--ov-text-muted,#727272)] opacity-40 cursor-not-allowed'
+                    : 'border border-[var(--ov-border,rgba(255,255,255,0.12))] text-[var(--ov-text,#ffffff)] hover:border-brand-yellow/50 hover:text-brand-yellow cursor-pointer',
               ].join(' ')}
             >
               <span className="leading-none text-base">{pill.icon}</span>
