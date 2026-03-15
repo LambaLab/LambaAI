@@ -94,11 +94,84 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Partial-result detection: question and quick_replies are the 2nd and 3rd
-      // fields in the schema, so they generate right after follow_up_question.
-      // As soon as both are complete in the buffer, send a partial_result event
-      // so the client can show the QR card without waiting for the full JSON
-      // (which includes the heavy product_overview and module_summaries fields).
+      // transition_text streaming — runs after fupState === 'done'.
+      // transition_text is optional (model may produce "" or omit it entirely).
+      // When non-empty, we send a bubble_split event first so the client creates a
+      // second assistant message, then stream the transition chars as text events
+      // into that second bubble.  When empty or absent, txState resolves to 'empty'
+      // immediately and everything behaves exactly as before (one bubble).
+      //
+      // States:
+      //   'search' — scanning buffer for "transition_text" or "question" key
+      //   'split'  — found opening quote; peeking at first char to decide
+      //   'stream' — streaming non-empty value chars as text events (bubble 2)
+      //   'done'   — closing quote reached; transition complete
+      //   'empty'  — model produced "" or skipped the field; no second bubble
+      let txState: 'search' | 'split' | 'stream' | 'done' | 'empty' = 'search'
+      let txCursor = 0
+      let txEscaped = false
+      let bubbleSplitSent = false
+
+      function streamTransitionChars() {
+        // Only runs once follow_up_question is fully streamed
+        if (fupState !== 'done') return
+        if (txState === 'done' || txState === 'empty') return
+
+        if (txState === 'search') {
+          const TX_FIELD = '"transition_text"'
+          const Q_FIELD  = '"question"'
+          const txi = toolInputBuffer.indexOf(TX_FIELD)
+          const qi  = toolInputBuffer.indexOf(Q_FIELD)
+          if (txi === -1 && qi === -1) return  // neither visible yet
+          // If "question" appears before "transition_text" the model skipped it
+          if (qi !== -1 && (txi === -1 || qi < txi)) { txState = 'empty'; return }
+          // transition_text key found — advance past key, colon, whitespace to opening quote
+          let i = txi + TX_FIELD.length
+          while (i < toolInputBuffer.length && toolInputBuffer[i] !== '"') i++
+          if (i >= toolInputBuffer.length) return  // opening quote not yet in buffer
+          txCursor = i + 1  // position right after opening quote
+          txState = 'split'
+        }
+
+        if (txState === 'split') {
+          if (txCursor >= toolInputBuffer.length) return
+          if (toolInputBuffer[txCursor] === '"') { txState = 'empty'; return }  // empty string ""
+          // Non-empty value — fire bubble_split once, then start streaming chars
+          if (!bubbleSplitSent) { send('bubble_split', {}); bubbleSplitSent = true }
+          txState = 'stream'
+        }
+
+        if (txState === 'stream') {
+          while (txCursor < toolInputBuffer.length) {
+            const ch = toolInputBuffer[txCursor++]
+            if (txEscaped) {
+              if      (ch === 'n')  send('text', { text: '\n' })
+              else if (ch === '"')  send('text', { text: '"' })
+              else if (ch === '\\') send('text', { text: '\\' })
+              else if (ch === 't')  send('text', { text: '\t' })
+              else if (ch === 'u' && txCursor + 4 <= toolInputBuffer.length) {
+                const code = parseInt(toolInputBuffer.slice(txCursor, txCursor + 4), 16)
+                if (!isNaN(code)) send('text', { text: String.fromCharCode(code) })
+                txCursor += 4
+              }
+              // else: unknown escape — skip char
+              txEscaped = false
+            } else if (ch === '\\') {
+              txEscaped = true
+            } else if (ch === '"') {
+              txState = 'done'; break
+            } else {
+              send('text', { text: ch })
+            }
+          }
+        }
+      }
+
+      // Partial-result detection: question and quick_replies come after transition_text
+      // in the schema order, so they generate after the transition is done.
+      // As soon as both are complete in the buffer (and txState is terminal), send a
+      // partial_result event so the client can show the QR card without waiting for
+      // the full JSON (which includes the heavy product_overview and module_summaries).
       let partialResultSent = false
 
       // Extract a complete JSON string value for the given field name from the buffer.
@@ -179,6 +252,9 @@ export async function POST(req: NextRequest) {
 
       function tryEmitPartialResult() {
         if (partialResultSent || fupState !== 'done') return
+        // Block until transition_text is resolved — QR card must not appear while
+        // the second bubble is still streaming (it would flash in mid-sentence)
+        if (txState !== 'done' && txState !== 'empty') return
 
         const question = extractStringField('question')
         if (question === null) return
@@ -207,21 +283,29 @@ export async function POST(req: NextRequest) {
             if (chunk.content_block.type === 'tool_use') {
               currentToolName = chunk.content_block.name
               toolInputBuffer = ''
-              // Reset extraction state for each new tool block
+              // Reset fup extraction state for each new tool block
               fupState = 'search'
               fupCursor = 0
               fupEscaped = false
               partialResultSent = false
+              // Reset transition_text extraction state
+              txState = 'search'
+              txCursor = 0
+              txEscaped = false
+              bubbleSplitSent = false
             }
           } else if (chunk.type === 'content_block_delta') {
             if (chunk.delta.type === 'text_delta') {
               send('text', { text: chunk.delta.text })
             } else if (chunk.delta.type === 'input_json_delta') {
               toolInputBuffer += chunk.delta.partial_json
-              // Forward follow_up_question characters as text events in real time
+              // 1. Stream follow_up_question chars as text events (bubble 1)
               streamFollowUpChars()
-              // As soon as question + quick_replies are complete, send partial_result
-              // so the client can show the QR card without waiting for the full JSON.
+              // 2. Stream transition_text chars as text events (bubble 2, if present)
+              //    Also fires bubble_split event to create the second bubble on the client
+              streamTransitionChars()
+              // 3. Once transition is resolved, watch for question + quick_replies
+              //    completing so we can show the QR card without waiting for full JSON
               tryEmitPartialResult()
             }
           } else if (chunk.type === 'content_block_stop') {

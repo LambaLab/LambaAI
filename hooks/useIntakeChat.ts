@@ -149,7 +149,11 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     streamIdRef.current = myStreamId
     setIsStreaming(true)
     const assistantMessage: ChatMessage = { id: crypto.randomUUID(), role: 'assistant', content: '' }
-    const assistantId = assistantMessage.id  // captured for the finally guard
+    // activeBubbleId tracks the ID of the assistant message currently receiving text events.
+    // It starts as bubble 1 and is reassigned to bubble 2 when a bubble_split event arrives
+    // (i.e. when the AI produces transition_text for a topic pivot). All setMessages guards
+    // use this variable so stale streams can never corrupt a different message.
+    let activeBubbleId = assistantMessage.id
     setMessages((prev) => [...prev, assistantMessage])
 
     try {
@@ -198,7 +202,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               // Guard: only update the specific assistant message for this stream.
               // If the user submitted before this event arrived, last.id will be a
               // different message and we must not corrupt it.
-              if (last?.id !== assistantId) return prev
+              if (last?.id !== activeBubbleId) return prev
               return [...prev.slice(0, -1), { ...last, content: last.content + (data.text as string) }]
             })
           } else if (event === 'error') {
@@ -208,9 +212,18 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             console.error('SSE error from route:', msg)
             setMessages((prev) => {
               const last = prev[prev.length - 1]
-              if (last?.id !== assistantId) return prev
+              if (last?.id !== activeBubbleId) return prev
               return [...prev.slice(0, -1), { ...last, content: 'Something went wrong. Please try again.' }]
             })
+          } else if (event === 'bubble_split') {
+            // The AI produced a non-empty transition_text — create a second assistant
+            // message bubble and redirect all subsequent text events into it.
+            // The stale-stream guard prevents an old stream from injecting a spurious
+            // second bubble into a newer stream's conversation.
+            if (streamIdRef.current !== myStreamId) continue
+            const bubble2: ChatMessage = { id: crypto.randomUUID(), role: 'assistant', content: '' }
+            activeBubbleId = bubble2.id
+            setMessages((prev) => [...prev, bubble2])
           } else if (event === 'partial_result') {
             // question + quick_replies are now complete in the server's JSON buffer.
             // Show the QR card immediately — the heavy metadata fields (product_overview,
@@ -224,7 +237,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               const isListQR = updatedQR.style === 'list'
               setMessages((prev) => {
                 const last = prev[prev.length - 1]
-                if (last?.id !== assistantId) return prev  // user already moved on
+                if (last?.id !== activeBubbleId) return prev  // user already moved on
                 const base = last.content  // follow_up_question text already streamed in
                 const bubbleContent =
                   !isListQR && questionText
@@ -277,7 +290,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               const last = prev[prev.length - 1]
               // Guard: if the user already responded (after a partial_result), last.id will
               // be a different message and we must not overwrite the new stream's state.
-              if (last?.id !== assistantId) return prev
+              if (last?.id !== activeBubbleId) return prev
               const followUp = typeof input?.follow_up_question === 'string' ? input.follow_up_question : ''
               const questionText = typeof input?.question === 'string' ? input.question.trim() : ''
               // Validate quick_replies — empty options array is as bad as no quick_replies
@@ -348,7 +361,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
       // started after the user submitted while this stream was still draining.
       setMessages((prev) => {
         const last = prev[prev.length - 1]
-        if (last?.id === assistantId && last.role === 'assistant' && !last.content.trim()) {
+        if (last?.id === activeBubbleId && last.role === 'assistant' && !last.content.trim()) {
           return [...prev.slice(0, -1), { ...last, content: 'Something went wrong. Please try again.' }]
         }
         return prev

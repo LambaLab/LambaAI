@@ -14,9 +14,17 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
         type: 'string',
         description: 'Reaction and insight for this turn — NOT the question. Two paragraphs max, separated by \\n\\n. Paragraph 1: 1-sentence reaction, specific to what they said. Paragraph 2: 1-2 sentence insight (comparable product, tension, tradeoff). Skip paragraph 2 only for very vague inputs with nothing to riff on. Do NOT include the question here — put it in the question field.',
       },
-      // question and quick_replies MUST come second and third — the server detects
+      // transition_text is OPTIONAL — only set when pivoting to a new topic area.
+      // When present and non-empty, the server streams it into a second chat bubble
+      // (via bubble_split event) so topic transitions appear as visually distinct
+      // messages rather than being buried inside the reaction paragraph.
+      transition_text: {
+        type: 'string',
+        description: 'Only set when pivoting to a new topic area for the first time (e.g. moving from features to monetization, or from platform to target users). 1-2 sentences max. Reference specific facts the user already stated — use their exact words or numbers (e.g. "you mentioned a 7-day trial", "since you\'re going iOS-first"). Write it as a natural spoken bridge: acknowledge where we just were and orient toward the new territory. Leave as an empty string ("") when staying within the same topic, or when no prior-stated facts are relevant. Never use it for generic transitions like "Now let\'s talk about..." with no callback to their own words. Always leave as "" on suggest_pause turns.',
+      },
+      // question and quick_replies MUST come after transition_text — the server detects
       // their completion in the streaming JSON delta and sends a partial_result event
-      // immediately so the QR card appears within ~1 second of the reaction text.
+      // immediately so the QR card appears once both bubbles are fully streamed.
       // Moving these before the heavy metadata fields (product_overview, module_summaries)
       // eliminates a 5–7 second delay where the user would otherwise see nothing.
       question: {
