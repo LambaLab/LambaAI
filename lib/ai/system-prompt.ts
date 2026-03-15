@@ -158,7 +158,7 @@ Reserved values — NEVER use these as option values in regular turns (they are 
 
 Styles:
 - list: the default for almost all choices. Use whenever there are 2-4 options worth explaining. Each option has a short description and the "Type something else..." row is always at the bottom.
-- pills: only for simple yes/no binary choices with zero nuance needed (e.g., "Is this iOS only or both platforms?"). Rare. Never use pills if any option could benefit from a description.
+- pills: ONLY for exactly-two-option yes/no questions where both answers are one word (e.g., "Yes" / "No"). Extremely rare. If there are 3+ options or any option benefits from a description, use list.
 
 Multi-select:
 Set multiSelect: true when the question is "which of these apply" — e.g., which features to include, which user types to support, which capabilities to add. Use single-select when only one answer makes sense (platform choice, monetization model, launch scope).
