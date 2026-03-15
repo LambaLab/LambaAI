@@ -171,7 +171,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
             />
           </>
         ) : (
-          <div className="flex items-end gap-2 bg-[var(--ov-input-bg,rgba(255,255,255,0.05))] border border-[var(--ov-border,rgba(255,255,255,0.10))] rounded-xl p-3 focus-within:border-brand-yellow/30 transition-colors">
+          <div className="flex items-center gap-2 bg-[var(--ov-input-bg,rgba(255,255,255,0.05))] border border-[var(--ov-border,rgba(255,255,255,0.10))] rounded-xl p-3 focus-within:border-brand-yellow/30 transition-colors">
             <textarea
               ref={textareaRef}
               value={input}

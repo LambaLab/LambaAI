@@ -34,7 +34,7 @@ export default function HeroInput({ onFirstMessage }: Props) {
 
   return (
     <div className="relative w-full max-w-2xl mx-auto">
-      <div className="flex items-end gap-3 bg-white/5 border border-white/10 rounded-2xl p-4 focus-within:border-brand-yellow/50 transition-colors">
+      <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-4 focus-within:border-brand-yellow/50 transition-colors">
         <textarea
           ref={textareaRef}
           value={value}
