@@ -106,7 +106,7 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
             <div
               className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                 isUser
-                  ? `bg-brand-yellow text-brand-dark font-medium rounded-br-sm ${isBeingReEdited ? 'ring-2 ring-brand-yellow/60 ring-offset-2 ring-offset-[var(--ov-input-bg,#1a1a1a)]' : ''}`
+                  ? `border border-brand-yellow text-[var(--ov-text,#ffffff)] font-medium rounded-br-sm ${isBeingReEdited ? 'ring-2 ring-brand-yellow/60 ring-offset-2 ring-offset-[var(--ov-input-bg,#1a1a1a)]' : ''}`
                   : 'bg-[var(--ov-bubble-ai-bg,rgba(255,255,255,0.05))] text-[var(--ov-text,#ffffff)] border border-[var(--ov-bubble-ai-border,transparent)] rounded-bl-sm'
               }`}
             >
