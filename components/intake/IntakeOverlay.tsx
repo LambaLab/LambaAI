@@ -25,6 +25,7 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
   const [saveModalOpen, setSaveModalOpen] = useState(false)
   const [liveModuleCount, setLiveModuleCount] = useState(0)
   const [liveConfidenceScore, setLiveConfidenceScore] = useState(0)
+  const [emailVerified, setEmailVerified] = useState(false)
   const [currentIdea, setCurrentIdea] = useState(initialMessage)
   // Editable app name — AI-generated initially, user can override. Persisted in localStorage.
   const [appName, setAppName] = useState('')
@@ -87,6 +88,10 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
       }
       // Push unique conversation URL
       window.history.replaceState(null, '', `?c=${data.proposalId}`)
+      // Check if email was already verified for this proposal
+      if (localStorage.getItem(`lamba_email_verified_${data.proposalId}`)) {
+        setEmailVerified(true)
+      }
     }).catch(() => setSessionError(true))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -200,8 +205,8 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
             )}
 
             <div className="flex items-center gap-2">
-              {/* Save for later — only visible when proposal panel is closed */}
-              {!proposalOpen && (
+              {/* Save for later — hidden when email is already verified or proposal panel is open */}
+              {!proposalOpen && !emailVerified && (
                 <button
                   type="button"
                   className="hidden md:flex text-xs text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors cursor-pointer px-2 py-1.5"
@@ -261,7 +266,13 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
           proposalId={session.proposalId}
           sessionId={session.sessionId}
           projectName={appName || undefined}
-          onClose={() => setSaveModalOpen(false)}
+          onClose={() => {
+            setSaveModalOpen(false)
+            // Re-check email verified flag (modal may have just set it)
+            if (localStorage.getItem(`lamba_email_verified_${session.proposalId}`)) {
+              setEmailVerified(true)
+            }
+          }}
         />
       )}
     </>

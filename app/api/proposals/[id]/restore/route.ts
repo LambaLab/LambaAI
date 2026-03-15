@@ -10,7 +10,7 @@ export async function GET(
 
   const { data: proposal, error: proposalError } = await supabase
     .from('proposals')
-    .select('id, session_id, user_id, brief, email, modules, confidence_score')
+    .select('id, session_id, user_id, brief, email, modules, confidence_score, metadata')
     .eq('id', proposalId)
     .single()
 
@@ -44,6 +44,9 @@ export async function GET(
     || messages.find((m) => m.role === 'user')?.content
     || ''
 
+  // Parse metadata blob (projectName, productOverview, moduleSummaries, lastQR)
+  const meta = (proposal as Record<string, unknown>).metadata as Record<string, unknown> | null
+
   return NextResponse.json({
     proposalId: proposal.id,
     sessionId: proposal.session_id,
@@ -53,5 +56,6 @@ export async function GET(
     modules: Array.isArray(proposal.modules) ? proposal.modules : [],
     confidenceScore: typeof proposal.confidence_score === 'number' ? proposal.confidence_score : 0,
     messages,
+    metadata: meta ?? null,
   })
 }

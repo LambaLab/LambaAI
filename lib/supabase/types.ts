@@ -38,6 +38,7 @@ export type Database = {
           task_breakdown: Json | null
           timeline: string | null
           milestone_plan: Json | null
+          metadata: Json | null
           created_at: string
           updated_at: string
         }
@@ -59,6 +60,7 @@ export type Database = {
           task_breakdown?: Json | null
           timeline?: string | null
           milestone_plan?: Json | null
+          metadata?: Json | null
         }
         Update: Partial<Database['public']['Tables']['proposals']['Insert']>
         Relationships: []

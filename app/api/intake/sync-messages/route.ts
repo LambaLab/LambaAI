@@ -4,7 +4,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 type MessageInput = { role: 'user' | 'assistant'; content: string }
 
 export async function POST(req: NextRequest) {
-  const { proposalId, sessionId, messages, brief, modules, confidenceScore } = await req.json()
+  const { proposalId, sessionId, messages, brief, modules, confidenceScore, metadata } = await req.json()
 
   if (!proposalId || !sessionId || !Array.isArray(messages)) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
   if (typeof brief === 'string' && brief) proposalUpdate.brief = brief
   if (Array.isArray(modules)) proposalUpdate.modules = modules
   if (typeof confidenceScore === 'number') proposalUpdate.confidence_score = confidenceScore
+  if (metadata && typeof metadata === 'object') proposalUpdate.metadata = metadata
 
   const { error: updateError } = await supabase
     .from('proposals')

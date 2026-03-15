@@ -95,12 +95,26 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             let syncBrief: string | undefined
             let syncModules: string[] | undefined
             let syncConfidence: number | undefined
+            let syncMetadata: Record<string, unknown> | undefined
             try {
               const p = JSON.parse(localStorage.getItem(PROPOSAL_KEY(proposalId)) ?? '{}')
               if (typeof p.brief === 'string' && p.brief) syncBrief = p.brief
               if (Array.isArray(p.activeModules)) syncModules = p.activeModules
               if (typeof p.confidenceScore === 'number') syncConfidence = p.confidenceScore
+              // Rich metadata for full-fidelity restore
+              syncMetadata = {
+                ...(typeof p.projectName === 'string' && p.projectName ? { projectName: p.projectName } : {}),
+                ...(typeof p.productOverview === 'string' && p.productOverview ? { productOverview: p.productOverview } : {}),
+                ...(p.moduleSummaries && typeof p.moduleSummaries === 'object' ? { moduleSummaries: p.moduleSummaries } : {}),
+              }
             } catch { /* ignore */ }
+
+            // Capture the last assistant message's QR state for restore
+            const lastAssistant = [...messages].reverse().find(m => m.role === 'assistant' && !m.isPause)
+            if (lastAssistant?.quickReplies && syncMetadata) {
+              syncMetadata.lastQuestion = lastAssistant.question || undefined
+              syncMetadata.lastQuickReplies = lastAssistant.quickReplies
+            }
 
             fetch('/api/intake/sync-messages', {
               method: 'POST',
@@ -112,6 +126,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                 brief: syncBrief,
                 modules: syncModules,
                 confidenceScore: syncConfidence,
+                metadata: syncMetadata,
               }),
             })
               .then(() =>

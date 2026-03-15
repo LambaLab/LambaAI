@@ -41,9 +41,8 @@ export default function HeroSection() {
           })
           storeIdeaForSession(data.proposalId, data.brief)
 
-          if (Array.isArray(data.messages) && data.messages.length > 0) {
-            localStorage.setItem(`lamba_msgs_${data.proposalId}`, JSON.stringify(data.messages))
-          }
+          // Extract rich metadata (projectName, productOverview, moduleSummaries, lastQR)
+          const meta = data.metadata && typeof data.metadata === 'object' ? data.metadata : {}
 
           localStorage.setItem(
             `lamba_proposal_${data.proposalId}`,
@@ -51,20 +50,42 @@ export default function HeroSection() {
               activeModules: Array.isArray(data.modules) ? data.modules : [],
               confidenceScore: typeof data.confidenceScore === 'number' ? data.confidenceScore : 0,
               complexityMultiplier: 1.0,
-              productOverview: '',
-              moduleSummaries: {},
-              projectName: '',
+              productOverview: meta.productOverview || '',
+              moduleSummaries: meta.moduleSummaries || {},
+              projectName: meta.projectName || '',
+              brief: data.brief || '',
             })
           )
 
+          // Restore app name so the header shows the project title
+          if (meta.projectName) {
+            localStorage.setItem('lamba_app_name', meta.projectName)
+          }
+
+          // Attach last QR state to the final assistant message so the card renders
+          if (meta.lastQuickReplies && Array.isArray(data.messages) && data.messages.length > 0) {
+            for (let i = data.messages.length - 1; i >= 0; i--) {
+              if (data.messages[i].role === 'assistant') {
+                data.messages[i].question = meta.lastQuestion || undefined
+                data.messages[i].quickReplies = meta.lastQuickReplies
+                break
+              }
+            }
+          }
+          if (Array.isArray(data.messages) && data.messages.length > 0) {
+            localStorage.setItem(`lamba_msgs_${data.proposalId}`, JSON.stringify(data.messages))
+          }
+
           // Mark as email-verified so auto-save continues from where it left off
-          localStorage.setItem(`lamba_email_verified_${data.proposalId}`, '1')
+          if (data.email) {
+            localStorage.setItem(`lamba_email_verified_${data.proposalId}`, '1')
+          }
           localStorage.setItem(
             `lamba_synced_count_${data.proposalId}`,
             String(data.messages?.length ?? 0)
           )
 
-          setInitialMessage(data.brief)
+          setInitialMessage(data.brief || data.messages?.[0]?.content || '')
           setIntakeOpen(true)
         })
         .catch((e) => console.error('Restore error:', e))

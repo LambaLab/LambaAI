@@ -22,6 +22,7 @@ describe('Database types', () => {
       task_breakdown: null,
       timeline: null,
       milestone_plan: null,
+      metadata: null,
       created_at: '',
       updated_at: '',
     }
