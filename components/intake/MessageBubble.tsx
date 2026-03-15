@@ -67,7 +67,7 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
           className="rounded-full flex-shrink-0 mt-1 select-none"
         />
       )}
-      <div className={`space-y-3 ${isUser ? 'max-w-[85%]' : 'max-w-[80%]'}`}>
+      <div className={`space-y-3 ${isUser ? 'max-w-[85%] w-fit' : 'max-w-[80%]'}`}>
         {/* Question context: shown above row-selection answer bubbles so the answer has clear context */}
         {isUser && message.sourceQuestion && !isEditing && (
           <p className="text-[11px] text-[var(--ov-text-muted,#727272)] text-right leading-relaxed px-1 mb-1">
