@@ -313,13 +313,22 @@ export async function POST(req: NextRequest) {
         // the second bubble is still streaming (it would flash in mid-sentence)
         if (txState !== 'done' && txState !== 'empty') return
 
-        // suggest_pause now appears before question/quick_replies in the schema, so it's
-        // always generated before we reach this point. Wait for it to arrive — we must
-        // know whether this is a pause turn before deciding to emit partial_result.
+        // suggest_pause is optional (not in the required array), so the model sometimes
+        // omits it entirely. The field comes before question in the schema, so if question
+        // is already in the buffer, suggest_pause was either generated already or skipped.
+        // Strategy:
+        //   • suggest_pause not found AND question not found → genuinely early, wait
+        //   • suggest_pause not found BUT question found    → model skipped it, treat as false
+        //   • suggest_pause = true                          → suppress partial_result (pause turn)
+        //   • suggest_pause = false                         → proceed normally
         const suggestPauseMatch = toolInputBuffer.match(/"suggest_pause"\s*:\s*(true|false)/)
-        if (suggestPauseMatch === null) return  // not yet generated — wait
-
-        if (suggestPauseMatch[1] === 'true') {
+        if (suggestPauseMatch === null) {
+          // Model hasn't generated suggest_pause yet. If question is also absent we're
+          // still early in generation — wait. If question IS present, the model skipped
+          // suggest_pause (it's optional). Treat as false and proceed.
+          if (!toolInputBuffer.includes('"question"')) return
+          // fall through — treat suggest_pause as false
+        } else if (suggestPauseMatch[1] === 'true') {
           // Pause turn: the checkpoint is created in tool_result on the client.
           // Suppressing partial_result here prevents QRs from being attached to the
           // reaction bubble prematurely and keeps isStreaming=true until the checkpoint
