@@ -91,6 +91,17 @@ export function useIntakeChat({ proposalId, idea }: Props) {
           const newMessages = messages.slice(syncedCount)
           if (newMessages.length > 0) {
             const newCount = messages.length
+            // Include proposal metadata so Supabase has it for cross-device restore
+            let syncBrief: string | undefined
+            let syncModules: string[] | undefined
+            let syncConfidence: number | undefined
+            try {
+              const p = JSON.parse(localStorage.getItem(PROPOSAL_KEY(proposalId)) ?? '{}')
+              if (typeof p.brief === 'string' && p.brief) syncBrief = p.brief
+              if (Array.isArray(p.activeModules)) syncModules = p.activeModules
+              if (typeof p.confidenceScore === 'number') syncConfidence = p.confidenceScore
+            } catch { /* ignore */ }
+
             fetch('/api/intake/sync-messages', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -98,6 +109,9 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                 proposalId,
                 sessionId: storedSession.sessionId,
                 messages: newMessages.map((m) => ({ role: m.role, content: m.content })),
+                brief: syncBrief,
+                modules: syncModules,
+                confidenceScore: syncConfidence,
               }),
             })
               .then(() =>
@@ -421,6 +435,9 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                 const savedProjectName = (input?.project_name && input.project_name.trim())
                   ? input.project_name.trim()
                   : ''
+                const savedBrief = (input?.updated_brief && input.updated_brief.trim())
+                  ? input.updated_brief.trim()
+                  : undefined
                 localStorage.setItem(PROPOSAL_KEY(proposalId), JSON.stringify({
                   activeModules: newModules,
                   confidenceScore: newScore,
@@ -428,6 +445,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                   productOverview: savedOverview,
                   moduleSummaries: savedSummaries,
                   projectName: savedProjectName || undefined,
+                  brief: savedBrief,
                 }))
               } catch { /* Ignore QuotaExceededError */ }
             }

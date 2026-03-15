@@ -4,7 +4,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 type MessageInput = { role: 'user' | 'assistant'; content: string }
 
 export async function POST(req: NextRequest) {
-  const { proposalId, sessionId, messages } = await req.json()
+  const { proposalId, sessionId, messages, brief, modules, confidenceScore } = await req.json()
 
   if (!proposalId || !sessionId || !Array.isArray(messages)) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
@@ -38,10 +38,15 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Bump saved_at so the proposal shows recent activity
+  // Bump saved_at and persist proposal metadata so cross-device restore works
+  const proposalUpdate: Record<string, unknown> = { saved_at: new Date().toISOString() }
+  if (typeof brief === 'string' && brief) proposalUpdate.brief = brief
+  if (Array.isArray(modules)) proposalUpdate.modules = modules
+  if (typeof confidenceScore === 'number') proposalUpdate.confidence_score = confidenceScore
+
   const { error: updateError } = await supabase
     .from('proposals')
-    .update({ saved_at: new Date().toISOString() })
+    .update(proposalUpdate)
     .eq('id', proposalId)
 
   if (updateError) {

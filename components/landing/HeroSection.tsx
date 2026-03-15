@@ -29,7 +29,9 @@ export default function HeroSection() {
       fetch(`/api/proposals/${c}/restore`)
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          if (!data || !data.brief) return
+          if (!data) return
+          // brief may be empty if never persisted — still open the overlay
+          // (useIntakeChat will load the restored messages from localStorage)
 
           // Hydrate localStorage so useIntakeChat loads the restored state
           storeSession({

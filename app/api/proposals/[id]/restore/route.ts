@@ -18,8 +18,7 @@ export async function GET(
     console.error('[restore] proposal fetch error:', proposalError)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-  // Only restore proposals that have a verified email
-  if (!proposal || !proposal.email) {
+  if (!proposal) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
@@ -40,12 +39,17 @@ export async function GET(
     content: m.content,
   }))
 
+  // brief may be null if it was never persisted — fall back to first user message
+  const brief = proposal.brief
+    || messages.find((m) => m.role === 'user')?.content
+    || ''
+
   return NextResponse.json({
     proposalId: proposal.id,
     sessionId: proposal.session_id,
     userId: proposal.user_id ?? '',
-    brief: proposal.brief,
-    email: proposal.email,
+    brief,
+    email: proposal.email ?? null,
     modules: Array.isArray(proposal.modules) ? proposal.modules : [],
     confidenceScore: typeof proposal.confidence_score === 'number' ? proposal.confidence_score : 0,
     messages,
