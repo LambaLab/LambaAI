@@ -10,66 +10,76 @@ type Props = {
   isStreaming: boolean
 }
 
+// Hard-coded pill definitions — keeps the UI stable regardless of what
+// label text the AI returned, and adds "Save for later" as a placeholder.
+const CHECKPOINT_PILLS = [
+  { value: '__continue__',      label: 'Keep going',      icon: '💬', disabled: false },
+  { value: '__view_proposal__', label: 'See proposal',    icon: '📋', disabled: false },
+  { value: '__submit__',        label: 'Submit it',       icon: '✅', disabled: false },
+  { value: '__save_later__',    label: 'Save for later',  icon: '🔖', disabled: true  },
+]
+
 export default function PauseCheckpoint({ message, onSend, onRequestViewProposal, isLast, isStreaming }: Props) {
-  const options = isLast && !isStreaming ? (message.quickReplies?.options ?? []) : []
+  const showActions = isLast && !isStreaming
 
   function handleSelect(value: string, label: string) {
     if (value === '__view_proposal__' || value === '__submit__') {
       onRequestViewProposal?.()
+    } else if (value === '__save_later__') {
+      // Coming soon — placeholder, do nothing
     } else {
-      // __continue__ and anything custom → send as normal message
-      onSend(label, label)
+      // __continue__ → keep the conversation going
+      onSend(value, label)
     }
   }
 
+  const paragraphs = message.content ? message.content.split('\n\n').filter(Boolean) : []
+
   return (
-    <div className="w-full rounded-xl border border-brand-yellow/30 bg-brand-yellow/[0.03] overflow-hidden">
-      {/* Header label */}
-      <div className="flex items-center gap-2 px-4 pt-3 pb-2 border-b border-brand-yellow/10">
-        <div className="w-1.5 h-1.5 rounded-full bg-brand-yellow" />
-        <span className="text-[10px] font-semibold tracking-widest uppercase text-brand-yellow/70">
-          Proposal Checkpoint
+    <div className="w-full space-y-4 py-1">
+
+      {/* ── Horizontal divider with centred label ── */}
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-px bg-[var(--ov-border,rgba(255,255,255,0.07))]" />
+        <span className="text-[10px] tracking-[0.18em] uppercase text-[var(--ov-text-muted,#727272)] select-none whitespace-nowrap">
+          take a breath
         </span>
+        <div className="flex-1 h-px bg-[var(--ov-border,rgba(255,255,255,0.07))]" />
       </div>
 
-      {/* AI message text */}
-      <div className="px-4 py-3">
-        <p className="text-sm text-[var(--ov-text,#ffffff)] leading-relaxed whitespace-pre-line">
-          {message.content}
-        </p>
+      {/* ── AI message — plain inline text, no bubble ── */}
+      <div className="text-sm text-[var(--ov-text,#ffffff)] leading-relaxed space-y-2">
+        {paragraphs.map((para, i) => (
+          <p key={i}>{para}</p>
+        ))}
         {message.question && (
-          <p className="mt-2 text-sm text-[var(--ov-text,#ffffff)] font-medium">
-            {message.question}
-          </p>
+          <p className="text-[var(--ov-text-muted,#b0b0b0)]">{message.question}</p>
         )}
       </div>
 
-      {/* Action rows — only when last message and not streaming */}
-      {options.length > 0 && (
-        <div className="px-3 pb-3 space-y-1.5">
-          {options.map((opt, i) => (
+      {/* ── Compact inline pill buttons ── */}
+      {showActions && (
+        <div className="flex flex-wrap gap-2">
+          {CHECKPOINT_PILLS.map((pill) => (
             <button
-              key={opt.value}
+              key={pill.value}
               type="button"
-              onClick={() => handleSelect(opt.value, opt.label)}
-              className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg bg-[var(--ov-surface-subtle,rgba(255,255,255,0.04))] border border-[var(--ov-border,rgba(255,255,255,0.06))] hover:border-brand-yellow/30 hover:bg-brand-yellow/[0.04] transition-all text-left cursor-pointer"
+              onClick={() => !pill.disabled && handleSelect(pill.value, pill.label)}
+              disabled={pill.disabled}
+              className={[
+                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-colors',
+                pill.disabled
+                  ? 'border-[var(--ov-border,rgba(255,255,255,0.06))] text-[var(--ov-text-muted,#727272)] opacity-40 cursor-not-allowed'
+                  : 'border-[var(--ov-border,rgba(255,255,255,0.12))] text-[var(--ov-text,#ffffff)] hover:border-brand-yellow/50 hover:text-brand-yellow cursor-pointer',
+              ].join(' ')}
             >
-              <div className="flex items-center gap-2.5 min-w-0">
-                {opt.icon && <span className="text-base leading-none flex-shrink-0">{opt.icon}</span>}
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-[var(--ov-text,#ffffff)] truncate">{opt.label}</p>
-                  {opt.description && (
-                    <p className="text-xs text-[var(--ov-text-muted,#727272)] truncate">{opt.description}</p>
-                  )}
-                </div>
-              </div>
-              <span className="text-xs text-[var(--ov-text-muted,#727272)] flex-shrink-0 ml-3 w-5 h-5 rounded-full bg-white/5 flex items-center justify-center">
-                {i + 1}
-              </span>
+              <span className="leading-none text-base">{pill.icon}</span>
+              {pill.label}
             </button>
           ))}
         </div>
       )}
+
     </div>
   )
 }

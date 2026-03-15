@@ -107,7 +107,16 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
                 key={msg.id}
                 message={msg}
                 isStreaming={isStreaming && i === messages.length - 1 && msg.role === 'assistant'}
-                onQuickReply={(value, label) => onSend(value, label)}
+                onQuickReply={(value, label) => {
+                  // Intercept reserved proposal-action values anywhere they appear.
+                  // The AI occasionally generates these in regular turns — never let
+                  // them be sent as plain messages; always treat them as UI actions.
+                  if (value === '__view_proposal__' || value === '__submit__') {
+                    onRequestViewProposal?.()
+                    return
+                  }
+                  onSend(value, label)
+                }}
                 isLastMessage={i === messages.length - 1}
                 onEdit={onEdit}
                 onStartRowEdit={setReEditingMessageId}
@@ -141,6 +150,11 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
             <QuickReplies
               quickReplies={activeQR}
               onSelect={(value, label) => {
+                // Intercept reserved proposal actions — open the panel instead of sending.
+                if (value === '__view_proposal__' || value === '__submit__') {
+                  onRequestViewProposal?.()
+                  return
+                }
                 // displayContent is just the answer label — question is shown separately above the bubble
                 const answerDisplay = label || value
                 if (reEditingQR && reEditingMessageId) {

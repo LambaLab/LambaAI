@@ -189,6 +189,16 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               if (last?.role !== 'assistant') return prev
               return [...prev.slice(0, -1), { ...last, content: last.content + (data.text as string) }]
             })
+          } else if (event === 'error') {
+            // Route explicitly signalled an error (e.g. Anthropic API failure).
+            // Show a visible message immediately instead of leaving an empty bubble.
+            const msg = typeof data.message === 'string' ? data.message : ''
+            console.error('SSE error from route:', msg)
+            setMessages((prev) => {
+              const last = prev[prev.length - 1]
+              if (last?.role !== 'assistant') return prev
+              return [...prev.slice(0, -1), { ...last, content: 'Something went wrong. Please try again.' }]
+            })
           } else if (event === 'tool_result') {
             const input = data.input as UpdateProposalInput
             // Auto-expand to include required dependencies (e.g. payments → auth + database)
@@ -271,9 +281,19 @@ export function useIntakeChat({ proposalId, idea }: Props) {
       setMessages((prev) => {
         const last = prev[prev.length - 1]
         if (last?.role !== 'assistant') return prev
-        return [...prev.slice(0, -1), { ...last, content: 'Sorry, something went wrong. Please try again.' }]
+        return [...prev.slice(0, -1), { ...last, content: 'Something went wrong. Please try again.' }]
       })
     } finally {
+      // Guard: if the stream closed without ever populating the assistant bubble
+      // (e.g. Vercel function timeout, network drop), replace the empty bubble with
+      // a visible error message so the user isn't left staring at a blank reply.
+      setMessages((prev) => {
+        const last = prev[prev.length - 1]
+        if (last?.role === 'assistant' && !last.content.trim()) {
+          return [...prev.slice(0, -1), { ...last, content: 'Something went wrong. Please try again.' }]
+        }
+        return prev
+      })
       setIsStreaming(false)
     }
   }

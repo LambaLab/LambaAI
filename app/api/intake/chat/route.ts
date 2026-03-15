@@ -3,6 +3,11 @@ import { NextRequest } from 'next/server'
 import { UPDATE_PROPOSAL_TOOL } from '@/lib/ai/tools'
 import { SYSTEM_PROMPT } from '@/lib/ai/system-prompt'
 
+// Extend Vercel serverless function timeout to 60 s (max on Hobby, well within Pro).
+// Without this, Vercel's default 10 s timeout kills the function mid-stream and
+// the client receives an empty response with the loading spinner stuck on.
+export const maxDuration = 60
+
 const anthropic = new Anthropic()
 
 const MAX_MESSAGES = 50
@@ -90,7 +95,10 @@ export async function POST(req: NextRequest) {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
+      'Connection': 'keep-alive',
+      // Tell nginx/Vercel edge layer not to buffer this response —
+      // chunks must reach the client as soon as they are enqueued.
+      'X-Accel-Buffering': 'no',
     },
   })
 }

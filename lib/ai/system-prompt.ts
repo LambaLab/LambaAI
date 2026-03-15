@@ -112,6 +112,8 @@ Always set allowCustom: true on list-style replies — this adds a "Type somethi
 
 Never provide an empty options array. If you genuinely cannot think of at least 2 meaningful options, skip quick_replies entirely.
 
+Reserved values — NEVER use these as option values in regular turns (they are only valid inside a suggest_pause checkpoint): __continue__, __view_proposal__, __submit__. Using them outside of a checkpoint will break the UI.
+
 Styles:
 - list: the default for almost all choices. Use whenever there are 2-4 options worth explaining. Each option has a short description and the "Type something else..." row is always at the bottom.
 - pills: only for simple yes/no binary choices with zero nuance needed (e.g., "Is this iOS only or both platforms?"). Rare. Never use pills if any option could benefit from a description.
