@@ -174,6 +174,24 @@ export async function POST(req: NextRequest) {
       // the full JSON (which includes the heavy product_overview and module_summaries).
       let partialResultSent = false
 
+      // Partial-modules detection: detected_modules comes right after quick_replies
+      // in the schema so it generates within ~100ms of the QR card appearing.
+      // Fire partial_modules as soon as the array is complete — this makes the module
+      // cards appear immediately instead of waiting for product_overview and
+      // module_summaries (which can add 4–6 extra seconds before tool_result fires).
+      let partialModulesSent = false
+
+      function tryEmitPartialModules() {
+        // Only fire after the QR card is visible, and only once per turn
+        if (partialModulesSent || !partialResultSent) return
+
+        const detectedModules = extractArrayField('detected_modules')
+        if (detectedModules === null) return  // array not yet complete in buffer
+
+        send('partial_modules', { detected_modules: detectedModules })
+        partialModulesSent = true
+      }
+
       // Extract a complete JSON string value for the given field name from the buffer.
       // Returns the decoded string, or null if the value is not yet fully present.
       function extractStringField(fieldName: string): string | null {
@@ -209,6 +227,45 @@ export async function POST(req: NextRequest) {
           }
         }
         return null  // closing quote not yet in buffer
+      }
+
+      // Extract a complete JSON array value for the given field name from the buffer.
+      // Uses bracket depth tracking to find the closing ]. Returns the parsed array,
+      // or null if the array is not yet fully present in the buffer.
+      function extractArrayField(fieldName: string): unknown[] | null {
+        const FIELD = `"${fieldName}"`
+        const fi = toolInputBuffer.indexOf(FIELD)
+        if (fi === -1) return null
+        let i = fi + FIELD.length
+        // Skip colon and whitespace to opening bracket
+        while (i < toolInputBuffer.length && toolInputBuffer[i] !== '[') i++
+        if (i >= toolInputBuffer.length) return null
+        const start = i
+        let depth = 0
+        let inStr = false
+        let strEsc = false
+        let end = -1
+        for (let j = start; j < toolInputBuffer.length; j++) {
+          const ch = toolInputBuffer[j]
+          if (inStr) {
+            if (strEsc)           { strEsc = false }
+            else if (ch === '\\') { strEsc = true }
+            else if (ch === '"')  { inStr = false }
+          } else {
+            if      (ch === '"')              { inStr = true }
+            else if (ch === '{' || ch === '[') { depth++ }
+            else if (ch === '}' || ch === ']') {
+              depth--
+              if (depth === 0) { end = j; break }
+            }
+          }
+        }
+        if (end === -1) return null
+        try {
+          return JSON.parse(toolInputBuffer.slice(start, end + 1)) as unknown[]
+        } catch {
+          return null
+        }
       }
 
       // Extract a complete JSON object value for the given field name from the buffer.
@@ -299,6 +356,7 @@ export async function POST(req: NextRequest) {
               fupCursor = 0
               fupEscaped = false
               partialResultSent = false
+              partialModulesSent = false
               // Reset transition_text extraction state
               txState = 'search'
               txCursor = 0
@@ -318,6 +376,10 @@ export async function POST(req: NextRequest) {
               // 3. Once transition is resolved, watch for question + quick_replies
               //    completing so we can show the QR card without waiting for full JSON
               tryEmitPartialResult()
+              // 4. Once QR card is shown, watch for detected_modules completing so we
+              //    can update the module panel immediately — before the heavy
+              //    product_overview and module_summaries fields finish generating
+              tryEmitPartialModules()
             }
           } else if (chunk.type === 'content_block_stop') {
             // Tool block finished — parse buffered JSON and send result immediately

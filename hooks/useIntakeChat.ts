@@ -293,6 +293,15 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               // there's nothing left the user needs to wait for.
               if (streamIdRef.current === myStreamId) setIsStreaming(false)
             }
+          } else if (event === 'partial_modules') {
+            // detected_modules is complete in the server buffer — update the panel now,
+            // before the heavy product_overview / module_summaries fields finish.
+            // tool_result will overwrite these with identical values; no double-counting.
+            const rawModules = data.detected_modules
+            if (Array.isArray(rawModules)) {
+              const earlyModules = expandWithDependencies(rawModules as string[])
+              setActiveModules(earlyModules)
+            }
           } else if (event === 'tool_result') {
             const input = data.input as UpdateProposalInput
             // Auto-expand to include required dependencies (e.g. payments → auth + database)
