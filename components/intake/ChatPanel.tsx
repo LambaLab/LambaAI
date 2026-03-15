@@ -66,11 +66,13 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
     el.style.height = `${el.scrollHeight}px`
   }
 
-  // Detect if the last assistant message has list-style quick replies
-  // (only show when not streaming, so the rows don't flash during response)
+  // Show the list QR card as soon as the last assistant message has both content and
+  // quickReplies set (tool_result arrived). No longer gated on !isStreaming — the
+  // Anthropic stream may still be draining message_delta/message_stop events but
+  // there's nothing left to display, and waiting causes a multi-second delay.
   const lastMsg = messages[messages.length - 1]
   const listQR =
-    !isStreaming && lastMsg?.role === 'assistant' && !lastMsg?.isPause && lastMsg.quickReplies?.style === 'list'
+    lastMsg?.role === 'assistant' && !lastMsg?.isPause && lastMsg.quickReplies?.style === 'list' && !!lastMsg.content
       ? lastMsg.quickReplies
       : null
   const questionText = listQR ? (lastMsg?.question ?? undefined) : undefined

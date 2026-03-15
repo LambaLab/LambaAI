@@ -60,6 +60,8 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   const moduleSummariesRef = useRef<{ [moduleId: string]: string }>({})
   const lastPauseTurn = useRef(-999)  // turn index of the last checkpoint (-999 = never)
   const turnCount = useRef(0)         // increments each time a tool_result is processed
+  const streamIdRef = useRef<string>('')  // ID of the currently-active stream; used to prevent
+                                          // stale streams from clobbering newer state
 
   useEffect(() => { messagesRef.current = messages }, [messages])
   useEffect(() => { confidenceRef.current = confidenceScore }, [confidenceScore])
@@ -140,8 +142,14 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   // Streams from /api/intake/chat with the given API message history.
   // Adds an empty assistant message first, then fills it in as tokens arrive.
   async function streamAIResponse(apiMessages: ApiMessage[]) {
+    // Capture a unique ID for this stream invocation so stale streams (still draining
+    // after the user submitted a new message) can be identified and their side-effects
+    // suppressed without cancelling the HTTP request itself.
+    const myStreamId = crypto.randomUUID()
+    streamIdRef.current = myStreamId
     setIsStreaming(true)
     const assistantMessage: ChatMessage = { id: crypto.randomUUID(), role: 'assistant', content: '' }
+    const assistantId = assistantMessage.id  // captured for the finally guard
     setMessages((prev) => [...prev, assistantMessage])
 
     try {
@@ -187,7 +195,10 @@ export function useIntakeChat({ proposalId, idea }: Props) {
           if (event === 'text') {
             setMessages((prev) => {
               const last = prev[prev.length - 1]
-              if (last?.role !== 'assistant') return prev
+              // Guard: only update the specific assistant message for this stream.
+              // If the user submitted before this event arrived, last.id will be a
+              // different message and we must not corrupt it.
+              if (last?.id !== assistantId) return prev
               return [...prev.slice(0, -1), { ...last, content: last.content + (data.text as string) }]
             })
           } else if (event === 'error') {
@@ -197,9 +208,44 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             console.error('SSE error from route:', msg)
             setMessages((prev) => {
               const last = prev[prev.length - 1]
-              if (last?.role !== 'assistant') return prev
+              if (last?.id !== assistantId) return prev
               return [...prev.slice(0, -1), { ...last, content: 'Something went wrong. Please try again.' }]
             })
+          } else if (event === 'partial_result') {
+            // question + quick_replies are now complete in the server's JSON buffer.
+            // Show the QR card immediately — the heavy metadata fields (product_overview,
+            // module_summaries) are still generating but aren't needed for interactivity.
+            const questionText = typeof data.question === 'string' ? data.question.trim() : ''
+            const rawQR = data.quick_replies as QuickReplies | undefined
+            const updatedQR =
+              rawQR && Array.isArray(rawQR.options) && rawQR.options.length > 0 ? rawQR : undefined
+
+            if (updatedQR) {
+              const isListQR = updatedQR.style === 'list'
+              setMessages((prev) => {
+                const last = prev[prev.length - 1]
+                if (last?.id !== assistantId) return prev  // user already moved on
+                const base = last.content  // follow_up_question text already streamed in
+                const bubbleContent =
+                  !isListQR && questionText
+                    ? base ? `${base}\n\n${questionText}` : questionText
+                    : base
+                return [...prev.slice(0, -1), {
+                  ...last,
+                  content: bubbleContent,
+                  question: isListQR ? (questionText || undefined) : undefined,
+                  quickReplies: updatedQR,
+                  // suggest_pause is best-effort — may or may not be in the buffer yet.
+                  // tool_result will set isPause correctly; partial_result only sets it
+                  // when the field was already present to avoid a jarring re-render.
+                  isPause: data.suggest_pause === true || undefined,
+                }]
+              })
+              // Mark this stream done so the QR card and input become interactive.
+              // The Anthropic stream is still open generating metadata fields, but
+              // there's nothing left the user needs to wait for.
+              if (streamIdRef.current === myStreamId) setIsStreaming(false)
+            }
           } else if (event === 'tool_result') {
             const input = data.input as UpdateProposalInput
             // Auto-expand to include required dependencies (e.g. payments → auth + database)
@@ -229,16 +275,18 @@ export function useIntakeChat({ proposalId, idea }: Props) {
 
             setMessages((prev) => {
               const last = prev[prev.length - 1]
-              if (last?.role !== 'assistant') return prev
+              // Guard: if the user already responded (after a partial_result), last.id will
+              // be a different message and we must not overwrite the new stream's state.
+              if (last?.id !== assistantId) return prev
               const followUp = typeof input?.follow_up_question === 'string' ? input.follow_up_question : ''
               const questionText = typeof input?.question === 'string' ? input.question.trim() : ''
               // Validate quick_replies — empty options array is as bad as no quick_replies
-            // (QuickReplies component would render only "Type something", which is confusing)
-            const rawQR = input?.quick_replies
-            const updatedQR = rawQR && Array.isArray(rawQR.options) && rawQR.options.length > 0
-              ? rawQR
-              : undefined
-            const isListQR = updatedQR?.style === 'list'
+              // (QuickReplies component would render only "Type something", which is confusing)
+              const rawQR = input?.quick_replies
+              const updatedQR = rawQR && Array.isArray(rawQR.options) && rawQR.options.length > 0
+                ? rawQR
+                : undefined
+              const isListQR = updatedQR?.style === 'list'
 
               // For list QR: question goes in the rows card header (message.question), not in the bubble
               // For no QR or pills QR: question is appended to bubble content so it's visible
@@ -255,6 +303,13 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                 isPause: isPauseThisTurn || undefined,
               }]
             })
+
+            // Mark streaming done — the QR card and question are ready to show.
+            // The Anthropic stream may still be open (consuming message_delta / message_stop)
+            // but there's nothing left to display; we don't need to wait for it.
+            // Guard: don't reset isStreaming if a newer stream has already started
+            // (happens when partial_result already set it to false and the user submitted).
+            if (streamIdRef.current === myStreamId) setIsStreaming(false)
 
             // Save proposal state inline so it survives page reload.
             // Must be inline (not a reactive effect) to avoid the mount-order bug
@@ -287,17 +342,21 @@ export function useIntakeChat({ proposalId, idea }: Props) {
         return [...prev.slice(0, -1), { ...last, content: 'Something went wrong. Please try again.' }]
       })
     } finally {
-      // Guard: if the stream closed without ever populating the assistant bubble
-      // (e.g. Vercel function timeout, network drop), replace the empty bubble with
-      // a visible error message so the user isn't left staring at a blank reply.
+      // Guard: if the stream closed without ever producing a tool_result (e.g. Vercel
+      // timeout, network drop), replace the empty bubble with a visible error.
+      // We check the message ID so a stale stream doesn't clobber a newer one that
+      // started after the user submitted while this stream was still draining.
       setMessages((prev) => {
         const last = prev[prev.length - 1]
-        if (last?.role === 'assistant' && !last.content.trim()) {
+        if (last?.id === assistantId && last.role === 'assistant' && !last.content.trim()) {
           return [...prev.slice(0, -1), { ...last, content: 'Something went wrong. Please try again.' }]
         }
         return prev
       })
-      setIsStreaming(false)
+      // Safety net — only reset if this is still the active stream; a newer stream
+      // may have started (e.g. user submitted after partial_result) in which case
+      // we must NOT clobber its isStreaming state.
+      if (streamIdRef.current === myStreamId) setIsStreaming(false)
     }
   }
 

@@ -94,6 +94,113 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      // Partial-result detection: question and quick_replies are the 2nd and 3rd
+      // fields in the schema, so they generate right after follow_up_question.
+      // As soon as both are complete in the buffer, send a partial_result event
+      // so the client can show the QR card without waiting for the full JSON
+      // (which includes the heavy product_overview and module_summaries fields).
+      let partialResultSent = false
+
+      // Extract a complete JSON string value for the given field name from the buffer.
+      // Returns the decoded string, or null if the value is not yet fully present.
+      function extractStringField(fieldName: string): string | null {
+        const FIELD = `"${fieldName}"`
+        const fi = toolInputBuffer.indexOf(FIELD)
+        if (fi === -1) return null
+        let i = fi + FIELD.length
+        // Skip colon and whitespace to opening quote
+        while (i < toolInputBuffer.length && toolInputBuffer[i] !== '"') i++
+        if (i >= toolInputBuffer.length) return null
+        i++ // past opening quote
+        let value = ''
+        let escaped = false
+        while (i < toolInputBuffer.length) {
+          const ch = toolInputBuffer[i++]
+          if (escaped) {
+            if      (ch === 'n')  value += '\n'
+            else if (ch === '"')  value += '"'
+            else if (ch === '\\') value += '\\'
+            else if (ch === 't')  value += '\t'
+            else if (ch === 'u' && i + 3 < toolInputBuffer.length) {
+              const code = parseInt(toolInputBuffer.slice(i, i + 4), 16)
+              if (!isNaN(code)) value += String.fromCharCode(code)
+              i += 4
+            }
+            escaped = false
+          } else if (ch === '\\') {
+            escaped = true
+          } else if (ch === '"') {
+            return value  // closing quote found — value is complete
+          } else {
+            value += ch
+          }
+        }
+        return null  // closing quote not yet in buffer
+      }
+
+      // Extract a complete JSON object value for the given field name from the buffer.
+      // Uses brace/bracket depth tracking to find the closing }. Returns the parsed
+      // object, or null if the object is not yet fully present.
+      function extractObjectField(fieldName: string): Record<string, unknown> | null {
+        const FIELD = `"${fieldName}"`
+        const fi = toolInputBuffer.indexOf(FIELD)
+        if (fi === -1) return null
+        let i = fi + FIELD.length
+        // Skip colon and whitespace to opening brace
+        while (i < toolInputBuffer.length && toolInputBuffer[i] !== '{') i++
+        if (i >= toolInputBuffer.length) return null
+        const start = i
+        let depth = 0
+        let inStr = false
+        let strEsc = false
+        let end = -1
+        for (let j = start; j < toolInputBuffer.length; j++) {
+          const ch = toolInputBuffer[j]
+          if (inStr) {
+            if (strEsc)       { strEsc = false }
+            else if (ch === '\\') { strEsc = true }
+            else if (ch === '"')  { inStr = false }
+          } else {
+            if      (ch === '"')              { inStr = true }
+            else if (ch === '{' || ch === '[') { depth++ }
+            else if (ch === '}' || ch === ']') {
+              depth--
+              if (depth === 0) { end = j; break }
+            }
+          }
+        }
+        if (end === -1) return null
+        try {
+          return JSON.parse(toolInputBuffer.slice(start, end + 1)) as Record<string, unknown>
+        } catch {
+          return null
+        }
+      }
+
+      function tryEmitPartialResult() {
+        if (partialResultSent || fupState !== 'done') return
+
+        const question = extractStringField('question')
+        if (question === null) return
+
+        const quickReplies = extractObjectField('quick_replies')
+        if (quickReplies === null) return
+
+        // Validate quick_replies has at least one option
+        const options = quickReplies.options
+        if (!Array.isArray(options) || options.length === 0) {
+          partialResultSent = true  // invalid QR — don't retry; full tool_result will handle
+          return
+        }
+
+        // Best-effort: include suggest_pause if already in buffer
+        const suggestPauseMatch = toolInputBuffer.match(/"suggest_pause"\s*:\s*(true|false)/)
+        const suggestPause = suggestPauseMatch?.[1] === 'true'
+
+        send('partial_result', { question, quick_replies: quickReplies, suggest_pause: suggestPause })
+        partialResultSent = true
+      }
+
       try {
         for await (const chunk of stream) {
           if (chunk.type === 'content_block_start') {
@@ -104,6 +211,7 @@ export async function POST(req: NextRequest) {
               fupState = 'search'
               fupCursor = 0
               fupEscaped = false
+              partialResultSent = false
             }
           } else if (chunk.type === 'content_block_delta') {
             if (chunk.delta.type === 'text_delta') {
@@ -112,6 +220,9 @@ export async function POST(req: NextRequest) {
               toolInputBuffer += chunk.delta.partial_json
               // Forward follow_up_question characters as text events in real time
               streamFollowUpChars()
+              // As soon as question + quick_replies are complete, send partial_result
+              // so the client can show the QR card without waiting for the full JSON.
+              tryEmitPartialResult()
             }
           } else if (chunk.type === 'content_block_stop') {
             // Tool block finished — parse buffered JSON and send result immediately
