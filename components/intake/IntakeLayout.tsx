@@ -126,6 +126,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             onEdit={editMessage}
             onRequestViewProposal={openProposal}
             constrained={chatConstrained}
+            theme={theme}
           />
         </div>
 
@@ -171,6 +172,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             onSend={sendMessage}
             onEdit={editMessage}
             onRequestViewProposal={openProposal}
+            theme={theme}
           />
         </div>
         <MobileBottomDrawer

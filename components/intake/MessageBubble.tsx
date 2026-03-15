@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { Pencil, Check, X } from 'lucide-react'
 import Image from 'next/image'
-import { useTheme } from '@/hooks/useTheme'
 import type { ChatMessage } from '@/hooks/useIntakeChat'
 import QuickReplies from './QuickReplies'
 import TypingIndicator from './TypingIndicator'
@@ -16,10 +15,10 @@ type Props = {
   onEdit?: (messageId: string, newContent: string, displayContent?: string) => void
   onStartRowEdit?: (messageId: string) => void  // For row-selection messages: show rows at bottom instead of textarea
   isBeingReEdited?: boolean                      // Visual indicator that this message's rows are active at bottom
+  theme?: 'dark' | 'light'
 }
 
-export default function MessageBubble({ message, isStreaming, onQuickReply, isLastMessage, onEdit, onStartRowEdit, isBeingReEdited }: Props) {
-  const { theme } = useTheme()
+export default function MessageBubble({ message, isStreaming, onQuickReply, isLastMessage, onEdit, onStartRowEdit, isBeingReEdited, theme }: Props) {
   const isUser = message.role === 'user'
   const iconSrc = theme === 'light' ? '/light icon.png' : '/dark icon.jpg'
 

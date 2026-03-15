@@ -15,9 +15,10 @@ type Props = {
   onEdit?: (messageId: string, newContent: string, displayContent?: string) => void
   onRequestViewProposal?: () => void
   constrained?: boolean
+  theme?: 'dark' | 'light'
 }
 
-export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onRequestViewProposal, constrained = false }: Props) {
+export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onRequestViewProposal, constrained = false, theme }: Props) {
   const [input, setInput] = useState('')
   const [reEditingMessageId, setReEditingMessageId] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -108,6 +109,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
               <MessageBubble
                 key={msg.id}
                 message={msg}
+                theme={theme}
                 isStreaming={isStreaming && i === messages.length - 1 && msg.role === 'assistant'}
                 onQuickReply={(value, label) => {
                   // Intercept reserved proposal-action values anywhere they appear.
