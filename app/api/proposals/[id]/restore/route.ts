@@ -8,22 +8,31 @@ export async function GET(
   const { id: proposalId } = await params
   const supabase = createServiceClient()
 
-  const { data: proposal } = await supabase
+  const { data: proposal, error: proposalError } = await supabase
     .from('proposals')
     .select('id, session_id, user_id, brief, email, modules, confidence_score')
     .eq('id', proposalId)
     .single()
 
+  if (proposalError && proposalError.code !== 'PGRST116') {
+    console.error('[restore] proposal fetch error:', proposalError)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
   // Only restore proposals that have a verified email
   if (!proposal || !proposal.email) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  const { data: dbMessages } = await supabase
+  const { data: dbMessages, error: messagesError } = await supabase
     .from('chat_messages')
     .select('role, content')
     .eq('proposal_id', proposalId)
     .order('created_at', { ascending: true })
+
+  if (messagesError) {
+    console.error('[restore] messages fetch error:', messagesError)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 
   const messages = (dbMessages ?? []).map((m) => ({
     id: crypto.randomUUID(),
