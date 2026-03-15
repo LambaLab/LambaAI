@@ -272,11 +272,8 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               setMessages((prev) => {
                 const last = prev[prev.length - 1]
                 if (last?.id !== activeBubbleId) return prev  // user already moved on
-                const base = last.content  // follow_up_question text already streamed in
-                const bubbleContent =
-                  !isListQR && questionText
-                    ? base ? `${base}\n\n${questionText}` : questionText
-                    : base
+                // Question was already streamed into bubble content — don't duplicate
+                const bubbleContent = last.content
                 return [...prev.slice(0, -1), {
                   ...last,
                   content: bubbleContent,
@@ -368,13 +365,9 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                 return [...prev.slice(0, -1), reactionBubble, checkpointMsg]
               }
 
-              // Normal turn — existing logic
-              // For list QR: question goes in the rows card header (message.question), not in the bubble
-              // For no QR or pills QR: question is appended to bubble content so it's visible
+              // Normal turn — question was already streamed into bubble content
               const base = last.content || followUp
-              const bubbleContent = !isListQR && questionText
-                ? (base ? `${base}\n\n${questionText}` : questionText)
-                : base
+              const bubbleContent = base
 
               return [...prev.slice(0, -1), {
                 ...last,

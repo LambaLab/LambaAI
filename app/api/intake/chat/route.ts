@@ -112,6 +112,15 @@ export async function POST(req: NextRequest) {
       let txEscaped = false
       let bubbleSplitSent = false
 
+      // Question streaming — runs after transition_text is resolved and suggest_pause
+      // is checked (non-pause turns only). Streams question characters as text events
+      // into the current bubble so the user sees continuous text instead of a multi-
+      // second gap between the reaction finishing and the QR card appearing.
+      let qState: 'search' | 'stream' | 'done' = 'search'
+      let qCursor = 0
+      let qEscaped = false
+      let questionStreamSuppressed = false
+
       function streamTransitionChars() {
         // Only runs once follow_up_question is fully streamed
         if (fupState !== 'done') return
@@ -160,6 +169,57 @@ export async function POST(req: NextRequest) {
               txEscaped = true
             } else if (ch === '"') {
               txState = 'done'; break
+            } else {
+              send('text', { text: ch })
+            }
+          }
+        }
+      }
+
+      function streamQuestionChars() {
+        if (fupState !== 'done') return
+        if (txState !== 'done' && txState !== 'empty') return
+        if (qState === 'done' || questionStreamSuppressed) return
+
+        if (qState === 'search') {
+          // On pause turns, don't stream — the checkpoint message handles the question
+          const spMatch = toolInputBuffer.match(/"suggest_pause"\s*:\s*(true|false)/)
+          if (spMatch?.[1] === 'true') {
+            questionStreamSuppressed = true
+            return
+          }
+          const FIELD = '"question"'
+          const fi = toolInputBuffer.indexOf(FIELD)
+          if (fi === -1) return
+          // suggest_pause was either false or omitted — safe to stream
+          let i = fi + FIELD.length
+          while (i < toolInputBuffer.length && toolInputBuffer[i] !== '"') i++
+          if (i >= toolInputBuffer.length) return
+          // Paragraph separator before the question
+          send('text', { text: '\n\n' })
+          qCursor = i + 1
+          qState = 'stream'
+        }
+
+        if (qState === 'stream') {
+          while (qCursor < toolInputBuffer.length) {
+            const ch = toolInputBuffer[qCursor++]
+            if (qEscaped) {
+              if      (ch === 'n')  send('text', { text: '\n' })
+              else if (ch === '"')  send('text', { text: '"' })
+              else if (ch === '\\') send('text', { text: '\\' })
+              else if (ch === 't')  send('text', { text: '\t' })
+              else if (ch === 'u' && qCursor + 4 <= toolInputBuffer.length) {
+                const code = parseInt(toolInputBuffer.slice(qCursor, qCursor + 4), 16)
+                if (!isNaN(code)) send('text', { text: String.fromCharCode(code) })
+                qCursor += 4
+              }
+              qEscaped = false
+            } else if (ch === '\\') {
+              qEscaped = true
+            } else if (ch === '"') {
+              qState = 'done'
+              break
             } else {
               send('text', { text: ch })
             }
@@ -373,6 +433,10 @@ export async function POST(req: NextRequest) {
               txCursor = 0
               txEscaped = false
               bubbleSplitSent = false
+              qState = 'search'
+              qCursor = 0
+              qEscaped = false
+              questionStreamSuppressed = false
             }
           } else if (chunk.type === 'content_block_delta') {
             if (chunk.delta.type === 'text_delta') {
@@ -384,10 +448,13 @@ export async function POST(req: NextRequest) {
               // 2. Stream transition_text chars as text events (bubble 2, if present)
               //    Also fires bubble_split event to create the second bubble on the client
               streamTransitionChars()
-              // 3. Once transition is resolved, watch for question + quick_replies
+              // 3. Stream question chars as text events into the current bubble so the
+              //    user sees continuous text (no dead gap before the QR card appears)
+              streamQuestionChars()
+              // 4. Once transition is resolved, watch for question + quick_replies
               //    completing so we can show the QR card without waiting for full JSON
               tryEmitPartialResult()
-              // 4. Once QR card is shown, watch for detected_modules completing so we
+              // 5. Once QR card is shown, watch for detected_modules completing so we
               //    can update the module panel immediately — before the heavy
               //    product_overview and module_summaries fields finish generating
               tryEmitPartialModules()
