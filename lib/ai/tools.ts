@@ -4,6 +4,7 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
   name: 'update_proposal',
   description:
     'Called by the AI after every turn to update the detected modules, confidence score, price adjustment, brief, and product overview. Always call this tool alongside the conversational response.',
+  cache_control: { type: 'ephemeral' },
   input_schema: {
     type: 'object' as const,
     properties: {
@@ -108,6 +109,6 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
         additionalProperties: { type: 'string' as const },
       },
     },
-    required: ['follow_up_question', 'detected_modules', 'confidence_score_delta', 'complexity_multiplier', 'updated_brief', 'question', 'product_overview'],
+    required: ['follow_up_question', 'detected_modules', 'confidence_score_delta', 'question'],
   },
 }

@@ -20,9 +20,15 @@ export async function POST(req: NextRequest) {
   }
 
   const stream = anthropic.messages.stream({
-    model: 'claude-sonnet-4-6',
+    model: process.env.INTAKE_MODEL || 'claude-haiku-4-5-20251001',
     max_tokens: 4096,
-    system: SYSTEM_PROMPT,
+    system: [
+      {
+        type: 'text' as const,
+        text: SYSTEM_PROMPT,
+        cache_control: { type: 'ephemeral' as const },
+      },
+    ],
     tools: [UPDATE_PROPOSAL_TOOL],
     tool_choice: { type: 'any' },
     messages,

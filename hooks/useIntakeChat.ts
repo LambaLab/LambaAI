@@ -217,6 +217,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     // (i.e. when the AI produces transition_text for a topic pivot). All setMessages guards
     // use this variable so stale streams can never corrupt a different message.
     let activeBubbleId = assistantMessage.id
+    let partialResultApplied = false  // tracks if partial_result already built bubbleContent
     setMessages((prev) => [...prev, assistantMessage])
 
     try {
@@ -332,6 +333,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                   isPause: data.suggest_pause === true || undefined,
                 }]
               })
+              partialResultApplied = true
               // Mark this stream done so the QR card and input become interactive.
               // The Anthropic stream is still open generating metadata fields, but
               // there's nothing left the user needs to wait for.
@@ -415,8 +417,9 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               // Normal turn
               // For list QR: question goes in the rows card header (message.question), not in the bubble
               // For no QR or pills QR: question is appended to bubble content so it's visible
+              // Skip appending if partial_result already built the content (avoids duplicate question)
               const base = last.content || followUp
-              const bubbleContent = !isListQR && questionText
+              const bubbleContent = !isListQR && questionText && !partialResultApplied
                 ? (base ? `${base}\n\n${questionText}` : questionText)
                 : base
 
