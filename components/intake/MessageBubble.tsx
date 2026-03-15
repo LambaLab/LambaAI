@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Pencil, Check, X } from 'lucide-react'
 import Image from 'next/image'
+import { useTheme } from '@/hooks/useTheme'
 import type { ChatMessage } from '@/hooks/useIntakeChat'
 import QuickReplies from './QuickReplies'
 import TypingIndicator from './TypingIndicator'
@@ -18,7 +19,9 @@ type Props = {
 }
 
 export default function MessageBubble({ message, isStreaming, onQuickReply, isLastMessage, onEdit, onStartRowEdit, isBeingReEdited }: Props) {
+  const { theme } = useTheme()
   const isUser = message.role === 'user'
+  const iconSrc = theme === 'light' ? '/light icon.png' : '/dark icon.jpg'
 
   // User bubbles show displayContent when available (e.g. quick reply label instead of raw value)
   const rawContent = isUser
@@ -58,7 +61,7 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
     <div className={`flex ${isUser ? 'justify-end' : 'items-start gap-2'}`}>
       {!isUser && (
         <Image
-          src="/Icons-01.png"
+          src={iconSrc}
           alt="Lamba Lab"
           width={24}
           height={24}
