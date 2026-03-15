@@ -204,12 +204,12 @@ export default function ModulesPanel({
       {/* 4. Bottom action bar */}
       <div className="flex-shrink-0 border-t border-[var(--ov-border,rgba(255,255,255,0.05))] px-4 py-4 space-y-2">
 
-        {/* Save Proposal — placeholder */}
+        {/* Save proposal for Later — placeholder */}
         <button
           type="button"
           className="w-full py-2.5 rounded-xl border border-[var(--ov-border,rgba(255,255,255,0.10))] text-[var(--ov-text,#ffffff)] text-sm font-medium hover:bg-white/[0.03] transition-colors cursor-pointer"
         >
-          Save Proposal
+          Save proposal for Later
         </button>
 
         {/* Submit Proposal — replaces "View Full Proposal", shown once AI has started */}

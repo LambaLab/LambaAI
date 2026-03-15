@@ -131,9 +131,12 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
         {/* Draggable divider — only rendered when proposal is open */}
         {proposalOpen && (
           <div
-            className="w-1 cursor-col-resize flex-shrink-0 bg-white/5 hover:bg-brand-yellow/30 active:bg-brand-yellow/50 transition-colors"
+            className="w-1 cursor-col-resize flex-shrink-0 relative bg-white/5 hover:bg-brand-yellow/30 active:bg-brand-yellow/50 transition-colors group"
             onMouseDown={handleDividerMouseDown}
-          />
+          >
+            {/* Drag handle: small pill indicator centred on the divider */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-5 rounded-full bg-white/20 group-hover:bg-brand-yellow/70 transition-colors pointer-events-none" />
+          </div>
         )}
 
         {/* Proposal panel — slides in/out */}

@@ -24,6 +24,10 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
   const [liveModuleCount, setLiveModuleCount] = useState(0)
   const [liveConfidenceScore, setLiveConfidenceScore] = useState(0)
   const [currentIdea, setCurrentIdea] = useState(initialMessage)
+  // Editable app name — defaults to "Brief Lab", persisted in localStorage
+  const [appName, setAppName] = useState('Brief Lab')
+  const [editingName, setEditingName] = useState(false)
+  const [nameInputValue, setNameInputValue] = useState('Brief Lab')
 
   useEffect(() => {
     setMounted(true)
@@ -35,6 +39,23 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
       document.body.style.overflow = ''
     }
   }, [])
+
+  // Load persisted app name on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('lamba_app_name')
+    if (saved) {
+      setAppName(saved)
+      setNameInputValue(saved)
+    }
+  }, [])
+
+  function saveAppName() {
+    const trimmed = nameInputValue.trim() || 'Brief Lab'
+    setAppName(trimmed)
+    setNameInputValue(trimmed)
+    localStorage.setItem('lamba_app_name', trimmed)
+    setEditingName(false)
+  }
 
   useEffect(() => {
     if (minimized) {
@@ -133,18 +154,56 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
         <div className={`fixed inset-0 z-50 flex flex-col transition-opacity duration-300 ${theme === 'light' ? 'bg-[#F5F4F0] intake-light' : 'bg-brand-dark'} ${mounted ? 'opacity-100' : 'opacity-0'} ${minimized ? 'hidden' : ''}`}>
           {/* Top bar */}
           <div className={`flex items-center justify-between px-4 py-3 border-b flex-shrink-0 ${theme === 'light' ? 'border-[rgba(0,0,0,0.08)]' : 'border-white/5'}`}>
-            <span className="font-bebas text-xl tracking-widest text-[var(--ov-text,#ffffff)]">LAMBA LAB</span>
+
+            {/* App name — editable in place on click */}
+            {editingName ? (
+              <input
+                autoFocus
+                value={nameInputValue}
+                onChange={(e) => setNameInputValue(e.target.value)}
+                onBlur={saveAppName}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') saveAppName()
+                  if (e.key === 'Escape') { setNameInputValue(appName); setEditingName(false) }
+                }}
+                maxLength={20}
+                className="font-bebas text-xl tracking-widest text-[var(--ov-text,#ffffff)] bg-transparent border-b border-brand-yellow/50 outline-none uppercase w-36"
+              />
+            ) : (
+              <button
+                onClick={() => { setNameInputValue(appName); setEditingName(true) }}
+                className="font-bebas text-xl tracking-widest text-[var(--ov-text,#ffffff)] hover:opacity-75 transition-opacity cursor-text group flex items-center gap-1.5"
+                title="Click to rename"
+              >
+                {appName.toUpperCase()}
+                <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-[var(--ov-text-muted,#727272)] font-sans tracking-normal normal-case leading-none">✎</span>
+              </button>
+            )}
+
             <div className="flex items-center gap-2">
+              {/* Save for later — only visible when proposal panel is closed */}
+              {!proposalOpen && (
+                <button
+                  type="button"
+                  className="hidden md:flex text-xs text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors cursor-pointer px-2 py-1.5"
+                  title="Save for later (coming soon)"
+                >
+                  Save for later
+                </button>
+              )}
+
+              {/* View / Hide Proposal button — no yellow fill when open */}
               <button
                 onClick={() => setProposalOpen(p => !p)}
-                className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
-                  proposalOpen
-                    ? 'bg-brand-yellow text-brand-dark border-brand-yellow'
-                    : 'bg-transparent text-[var(--ov-text,#ffffff)] border-white/10 hover:border-white/20'
-                }`}
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border border-white/10 hover:border-white/20 bg-transparent text-[var(--ov-text,#ffffff)]"
               >
-                Proposal <span className={proposalOpen ? 'text-brand-dark/60' : 'text-brand-yellow'}>{liveConfidenceScore}%</span>
+                {proposalOpen ? (
+                  'Hide proposal'
+                ) : (
+                  <>View Proposal <span className="text-brand-yellow">{liveConfidenceScore}%</span></>
+                )}
               </button>
+
               <button
                 onClick={toggleTheme}
                 className="w-8 h-8 rounded-lg bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] hover:bg-[var(--ov-input-bg,rgba(255,255,255,0.10))] flex items-center justify-center text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors cursor-pointer"
