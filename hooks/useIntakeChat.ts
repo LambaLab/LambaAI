@@ -30,6 +30,7 @@ type UpdateProposalInput = {
   quick_replies?: QuickReplies
   module_summaries?: { [moduleId: string]: string }
   suggest_pause?: boolean
+  project_name?: string
 }
 
 type ApiMessage = { role: 'user' | 'assistant'; content: string }
@@ -51,6 +52,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   const [isStreaming, setIsStreaming] = useState(false)
   const [productOverview, setProductOverview] = useState('')
   const [moduleSummaries, setModuleSummaries] = useState<{ [moduleId: string]: string }>({})
+  const [projectName, setProjectName] = useState('')
 
   const messagesRef = useRef<ChatMessage[]>([])
   const confidenceRef = useRef(0)
@@ -111,6 +113,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               setPriceRange(computePriceRange(modules, multiplier, score))
               if (typeof p.productOverview === 'string' && p.productOverview) setProductOverview(p.productOverview)
               if (p.moduleSummaries && typeof p.moduleSummaries === 'object') setModuleSummaries(p.moduleSummaries)
+              if (typeof p.projectName === 'string' && p.projectName) setProjectName(p.projectName)
             } catch {
               // Ignore — non-critical, proposal panel will just be empty
             }
@@ -279,6 +282,9 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             if (input?.module_summaries && typeof input.module_summaries === 'object') {
               setModuleSummaries(prev => ({ ...prev, ...input.module_summaries }))
             }
+            if (input?.project_name && input.project_name.trim()) {
+              setProjectName(input.project_name.trim())
+            }
 
             // Checkpoint (breather) — allow recurring pauses, min 4 turns apart
             turnCount.current++
@@ -357,12 +363,16 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                 const savedSummaries = (input?.module_summaries && typeof input.module_summaries === 'object')
                   ? { ...moduleSummariesRef.current, ...input.module_summaries }
                   : moduleSummariesRef.current
+                const savedProjectName = (input?.project_name && input.project_name.trim())
+                  ? input.project_name.trim()
+                  : ''
                 localStorage.setItem(PROPOSAL_KEY(proposalId), JSON.stringify({
                   activeModules: newModules,
                   confidenceScore: newScore,
                   complexityMultiplier: newMultiplier,
                   productOverview: savedOverview,
                   moduleSummaries: savedSummaries,
+                  projectName: savedProjectName || undefined,
                 }))
               } catch { /* Ignore QuotaExceededError */ }
             }
@@ -490,7 +500,8 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     setIsStreaming(false)
     setProductOverview('')
     setModuleSummaries({})
+    setProjectName('')
   }, [proposalId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, editMessage, reset, moduleSummaries }
+  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, editMessage, reset, moduleSummaries, projectName }
 }

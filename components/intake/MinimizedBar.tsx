@@ -3,24 +3,24 @@
 import { ChevronUp } from 'lucide-react'
 
 type Props = {
-  moduleCount: number
+  appName: string
   confidenceScore: number
   onExpand: () => void
 }
 
-export default function MinimizedBar({ moduleCount, confidenceScore, onExpand }: Props) {
+export default function MinimizedBar({ appName, confidenceScore, onExpand }: Props) {
   const pct = Math.min(100, Math.max(0, confidenceScore))
+  const displayName = appName ? appName.toUpperCase() : 'YOUR APP'
   return (
     <button
       onClick={onExpand}
       className="fixed bottom-4 right-4 z-50 flex items-center gap-3 px-4 py-3 bg-[var(--ov-surface,#1a1a1a)] border border-[var(--ov-border,rgba(255,255,255,0.10))] rounded-2xl shadow-2xl hover:border-brand-yellow/30 transition-all w-72"
     >
-      <span className="text-base">🔨</span>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-bebas tracking-widest text-[var(--ov-text,#ffffff)]">LAMBA LAB</p>
+      <div className="flex-1 min-w-0 text-left">
+        <p className="text-xs font-bebas tracking-widest text-[var(--ov-text,#ffffff)]">{displayName}</p>
         <div className="flex items-center gap-2 mt-0.5">
           <p className="text-[11px] text-[var(--ov-text-muted,#727272)] whitespace-nowrap">
-            {moduleCount} module{moduleCount !== 1 ? 's' : ''} · {pct}%
+            {pct}%
           </p>
           <div className="flex-1 h-1 bg-[var(--ov-track,rgba(255,255,255,0.10))] rounded-full overflow-hidden">
             <div

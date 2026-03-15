@@ -93,6 +93,10 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
         type: 'string',
         description: 'Concise 2–4 sentence brief of the project as understood so far.',
       },
+      project_name: {
+        type: 'string',
+        description: '2-4 word name for this project derived from what the user is building. Use plain title case — no generic words like "App" or "Platform" unless they add meaning. Examples: "Mom Task Tracker", "Freelance Marketplace", "Gym Booking Tool", "Daily Focus App". Update every turn to reflect new understanding. If the product is too vague to name yet, return an empty string ("").',
+      },
       product_overview: {
         type: 'string',
         description: 'Product description for a non-technical investor. No jargon. Only update when meaningful new information was learned this turn. If nothing significant changed, return an empty string — the previous overview is preserved automatically. When updating — never shorten existing content, only expand. Format:\n- Turn 1-2: 1-2 sentences.\n- Turn 3-4: One 3-5 sentence paragraph.\n- Turn 5+: Labeled sections separated by \\n\\n, 2-3 sentences each. Available sections: "What it is", "Who it\'s for", "How it works", "Key features", "Monetization" (only if known), "Why it matters" (only if competitive angle is clear). Skip sections with no real information. Be specific — every sentence must reflect what was actually discussed.',

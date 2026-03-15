@@ -24,10 +24,12 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
   const [liveModuleCount, setLiveModuleCount] = useState(0)
   const [liveConfidenceScore, setLiveConfidenceScore] = useState(0)
   const [currentIdea, setCurrentIdea] = useState(initialMessage)
-  // Editable app name — defaults to "Brief Lab", persisted in localStorage
-  const [appName, setAppName] = useState('Brief Lab')
+  // Editable app name — AI-generated initially, user can override. Persisted in localStorage.
+  const [appName, setAppName] = useState('')
   const [editingName, setEditingName] = useState(false)
-  const [nameInputValue, setNameInputValue] = useState('Brief Lab')
+  const [nameInputValue, setNameInputValue] = useState('')
+  // Track whether the user has manually edited the name — if so, don't overwrite with AI suggestions
+  const nameManuallyEditedRef = useRef(false)
 
   useEffect(() => {
     setMounted(true)
@@ -40,17 +42,26 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
     }
   }, [])
 
-  // Load persisted app name on mount
+  // Load persisted app name on mount — if present, the user manually set it
   useEffect(() => {
     const saved = localStorage.getItem('lamba_app_name')
     if (saved) {
+      nameManuallyEditedRef.current = true
       setAppName(saved)
       setNameInputValue(saved)
     }
   }, [])
 
   function saveAppName() {
-    const trimmed = nameInputValue.trim() || 'Brief Lab'
+    const trimmed = nameInputValue.trim()
+    if (!trimmed) {
+      // User cleared the name — revert to AI-generated (or blank) and stop tracking manual override
+      nameManuallyEditedRef.current = false
+      localStorage.removeItem('lamba_app_name')
+      setEditingName(false)
+      return
+    }
+    nameManuallyEditedRef.current = true
     setAppName(trimmed)
     setNameInputValue(trimmed)
     localStorage.setItem('lamba_app_name', trimmed)
@@ -77,9 +88,15 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
     }).catch(() => setSessionError(true))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleStateChange = useCallback((m: number, c: number) => {
+  const handleStateChange = useCallback((m: number, c: number, pName?: string) => {
     setLiveModuleCount(m)
     setLiveConfidenceScore(c)
+    // Auto-update the app name with the AI-generated project name —
+    // but only if the user hasn't manually set their own name
+    if (pName && pName.trim() && !nameManuallyEditedRef.current) {
+      setAppName(pName.trim())
+      setNameInputValue(pName.trim())
+    }
   }, [])
 
   const resetRef = useRef<(() => void) | null>(null)
@@ -122,7 +139,7 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
       {/* MinimizedBar — always rendered when minimized */}
       {minimized && (
         <MinimizedBar
-          moduleCount={liveModuleCount}
+          appName={appName}
           confidenceScore={liveConfidenceScore}
           onExpand={() => setMinimized(false)}
         />
@@ -172,10 +189,10 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
             ) : (
               <button
                 onClick={() => { setNameInputValue(appName); setEditingName(true) }}
-                className="font-bebas text-xl tracking-widest text-[var(--ov-text,#ffffff)] hover:opacity-75 transition-opacity cursor-text group flex items-center gap-1.5"
+                className="font-bebas text-xl tracking-widest text-[var(--ov-text,#ffffff)] hover:opacity-75 transition-opacity cursor-pointer group flex items-center gap-1.5"
                 title="Click to rename"
               >
-                {appName.toUpperCase()}
+                {appName ? appName.toUpperCase() : <span className="text-[var(--ov-text-muted,#727272)]">YOUR APP</span>}
                 <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-[var(--ov-text-muted,#727272)] font-sans tracking-normal normal-case leading-none">✎</span>
               </button>
             )}
