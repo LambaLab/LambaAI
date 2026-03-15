@@ -324,6 +324,7 @@ export async function POST(req: NextRequest) {
           // Suppressing partial_result here prevents QRs from being attached to the
           // reaction bubble prematurely and keeps isStreaming=true until the checkpoint
           // message exists and isStreaming is reset by the tool_result handler.
+          send('debug', { why: 'suppressed_pause' })
           partialResultSent = true
           return
         }
@@ -337,6 +338,7 @@ export async function POST(req: NextRequest) {
         // Validate quick_replies has at least one option
         const options = quickReplies.options
         if (!Array.isArray(options) || options.length === 0) {
+          send('debug', { why: 'invalid_options', opts: JSON.stringify(options ?? null).slice(0, 100) })
           partialResultSent = true  // invalid QR — don't retry; full tool_result will handle
           return
         }
@@ -382,6 +384,19 @@ export async function POST(req: NextRequest) {
               tryEmitPartialModules()
             }
           } else if (chunk.type === 'content_block_stop') {
+            // Diagnostic: capture state at end of tool block to understand partial_result behaviour
+            if (currentToolName && !partialResultSent) {
+              const spMatch = toolInputBuffer.match(/"suggest_pause"\s*:\s*(true|false)/)
+              send('debug', {
+                why: 'no_partial_result_at_stop',
+                fup: fupState,
+                tx: txState,
+                suggestPause: spMatch?.[1] ?? null,
+                hasQ: toolInputBuffer.includes('"question"'),
+                hasQR: toolInputBuffer.includes('"quick_replies"'),
+                bufLen: toolInputBuffer.length,
+              })
+            }
             // Tool block finished — parse buffered JSON and send result immediately
             if (currentToolName && toolInputBuffer) {
               try {
