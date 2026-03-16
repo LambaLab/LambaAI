@@ -97,15 +97,18 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
     el.style.height = `${el.scrollHeight}px`
   }
 
-  // Show the list QR card as soon as the last assistant message has both content and
-  // quickReplies set (tool_result arrived). No longer gated on !isStreaming — the
-  // Anthropic stream may still be draining message_delta/message_stop events but
-  // there's nothing left to display, and waiting causes a multi-second delay.
+  // Show the list QR card at the bottom for the last assistant message.
+  // Safety net: treat pills with 3+ options as list — normalizeQRStyle should have
+  // caught this upstream, but defend at render level to prevent pills from ever
+  // showing inline when they should be a card.
   const lastMsg = messages[messages.length - 1]
-  const listQR =
-    lastMsg?.role === 'assistant' && !lastMsg?.isPause && lastMsg.quickReplies?.style === 'list' && !!lastMsg.content
-      ? lastMsg.quickReplies
-      : null
+  const lastQR = lastMsg?.role === 'assistant' && !lastMsg?.isPause && lastMsg.quickReplies && !!lastMsg.content
+    ? lastMsg.quickReplies
+    : null
+  const shouldBeList = lastQR && (lastQR.style === 'list' || (Array.isArray(lastQR.options) && lastQR.options.length >= 3))
+  const listQR = shouldBeList
+    ? { ...lastQR!, style: 'list' as const }
+    : null
   const questionText = listQR ? (lastMsg?.question ?? undefined) : undefined
 
   // Compute question number: count non-pause, non-divider assistant messages after the first one.

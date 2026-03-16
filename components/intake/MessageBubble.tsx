@@ -36,16 +36,26 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
   const iconSrc = theme === 'light' ? '/light icon.png' : '/dark icon.jpg'
 
   // User bubbles show displayContent when available (e.g. quick reply label instead of raw value)
-  const rawContent = isUser
+  const rawContentRaw = isUser
     ? (message.displayContent ?? message.content)
     : message.content
+
+  // Sanitize: the AI sometimes outputs literal \n instead of actual newlines
+  // (double-escaped in JSON). Replace literal backslash-n sequences with real newlines.
+  const rawContent = rawContentRaw
+    .replace(/\\n/g, '\n')
+    .replace(/\\t/g, '\t')
 
   // Render all paragraphs — the question is now its own field, not embedded in content
   const paragraphs = rawContent.split('\n\n').filter(Boolean)
   const displayParagraphs = paragraphs
 
-  // Don't render list QR inline — ChatPanel renders it at the bottom
-  const isListQR = !isUser && message.quickReplies?.style === 'list' && isLastMessage
+  // Don't render list QR inline — ChatPanel renders it at the bottom.
+  // Safety net: treat pills with 3+ options as list (normalizeQRStyle should have
+  // caught this, but defend at render level too).
+  const qr = message.quickReplies
+  const shouldBeList = qr && (qr.style === 'list' || (Array.isArray(qr.options) && qr.options.length >= 3))
+  const isListQR = !isUser && shouldBeList && isLastMessage
   const showInlineQR = message.quickReplies && isLastMessage && onQuickReply && !isListQR
 
   // Edit state uses displayContent for the initial value so user sees human-readable text

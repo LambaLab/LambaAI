@@ -50,13 +50,20 @@ type UpdateProposalInput = {
 
 type ApiMessage = { role: 'user' | 'assistant'; content: string }
 
-// Normalize QR style: the AI (Haiku) sometimes returns pills for 3+ options,
-// violating the prompt rule that pills are only for 2-option yes/no.
-// Force to list when there are 3+ options so the bottom card always renders.
+// Normalize QR style: force list style for 3+ options regardless of what the AI
+// specified. Also defaults missing/invalid style to 'list'. This is the definitive
+// safety net — the AI (Haiku) sometimes sends pills for 3+ options, or omits the
+// style field entirely. Both cases should render as the full card with rows.
 function normalizeQRStyle(qr: QuickReplies | undefined): QuickReplies | undefined {
   if (!qr) return qr
-  if (qr.style === 'pills' && Array.isArray(qr.options) && qr.options.length >= 3) {
+  const hasMultipleOptions = Array.isArray(qr.options) && qr.options.length >= 3
+  // Force list for 3+ options regardless of AI's style choice
+  if (hasMultipleOptions && qr.style !== 'list') {
     return { ...qr, style: 'list' }
+  }
+  // Default missing style
+  if (!qr.style) {
+    return { ...qr, style: hasMultipleOptions ? 'list' : 'pills' }
   }
   return qr
 }

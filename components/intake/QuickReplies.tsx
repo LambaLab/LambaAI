@@ -17,7 +17,13 @@ type Props = {
 }
 
 export default function QuickReplies({ quickReplies, onSelect, disabled, question, questionNumber, onSkipQuestion, onPauseQuestions, isPaused, onResumeQuestions }: Props) {
-  const { style, multiSelect, allowCustom, options } = quickReplies
+  const { multiSelect, allowCustom, options } = quickReplies
+  // Safety net: force list for 3+ options regardless of AI's style choice.
+  // This is the last line of defence — normalizeQRStyle and ChatPanel should
+  // have already converted, but if data somehow arrives uncorrected, catch it here.
+  const style = (quickReplies.style !== 'list' && Array.isArray(options) && options.length >= 3)
+    ? 'list' as const
+    : quickReplies.style
   // Always show "Type something else..." for list style
   const effectiveAllowCustom = style === 'list' ? true : (allowCustom ?? false)
   const [selected, setSelected] = useState<string[]>([])
