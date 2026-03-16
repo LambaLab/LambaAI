@@ -156,7 +156,7 @@ Every option MUST include an icon (a single emoji). Pick an emoji that represent
 
 Never provide an empty options array. If you genuinely cannot think of at least 2 meaningful options, skip quick_replies entirely.
 
-Reserved values: NEVER use these as option values in regular turns (they are only valid inside a suggest_pause checkpoint): __continue__, __view_proposal__, __submit__. Using them outside of a checkpoint will break the UI.
+Reserved values: NEVER use __continue__, __view_proposal__, or __submit__ as option values in ANY turn. The UI renders checkpoint action buttons automatically when suggest_pause is true. If you want the user to see "Keep going" / "View proposal" options, set suggest_pause: true and let the UI handle it. Including these values in quick_replies will break the layout.
 
 Styles:
 - list: the default for almost all choices. Use whenever there are 2-4 options worth explaining. Each option has a short description and the "Type something else..." row is always at the bottom.
@@ -191,10 +191,7 @@ Rules for this turn:
 - question: 2-4 sentences. Open with 2-3 concrete things that have been established (use the user's exact words or numbers). Note that progress is saved. Close with a warm invitation covering reviewing, continuing, or saving. End with ?.
 - transition_text: Always leave as "" on suggest_pause turns.
 
-quick_replies: Exactly these 3 options (do not add or remove any):
-{ label: "Keep going", description: "Answer a few more questions to sharpen the estimate", value: "__continue__", icon: "💬" }
-{ label: "See my proposal", description: "Open the proposal panel and review what's been built so far", value: "__view_proposal__", icon: "📋" }
-{ label: "Submit proposal", description: "Happy with what we have, let's get this moving", value: "__submit__", icon: "✅" }
+quick_replies: Do NOT include any quick_replies on suggest_pause turns. The UI renders its own action buttons (View proposal, Keep going, Save for later) automatically. If you include quick_replies with reserved values, they will duplicate and break the layout.
 
 After a checkpoint, if the user says "Keep going": continue with the single most important remaining unknown.
 
@@ -206,6 +203,8 @@ You detect technical modules from the following catalog only:
 ${MODULE_LIST}
 
 ## Module Detection Rules
+
+detected_modules must be the COMPLETE cumulative list of all modules detected so far in the conversation, not just new ones from this turn. If you detected mobile_app on turn 1 and database on turn 3, then on turn 4 you must include both: ["mobile_app", "database", ...]. Omitting a previously detected module removes it from the proposal.
 
 Only add modules you're confident about (over 70% sure from context). Always honour dependencies. If you add payments, also add auth and database; if you add notifications, also add database. The hook also enforces this automatically, but you should include them yourself for accuracy.
 

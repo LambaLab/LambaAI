@@ -80,7 +80,7 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
       detected_modules: {
         type: 'array',
         items: { type: 'string' },
-        description: 'List of module IDs detected so far (from the module catalog)',
+        description: 'COMPLETE cumulative list of ALL module IDs detected so far across the entire conversation. Always include every previously detected module plus any new ones this turn.',
       },
       confidence_score_delta: {
         type: 'number',

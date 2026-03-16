@@ -445,9 +445,11 @@ export function useIntakeChat({ proposalId, idea }: Props) {
           } else if (event === 'tool_result') {
             const input = data.input as UpdateProposalInput
             // Auto-expand to include required dependencies (e.g. payments → auth + database)
-            const newModules = expandWithDependencies(
-              Array.isArray(input?.detected_modules) ? input.detected_modules : []
-            )
+            // UNION with existing modules — the AI may only send new or currently-relevant
+            // modules each turn, so we must accumulate across the entire conversation.
+            const aiModules = Array.isArray(input?.detected_modules) ? input.detected_modules : []
+            const merged = Array.from(new Set([...activeModulesRef.current, ...aiModules]))
+            const newModules = expandWithDependencies(merged)
             const newMultiplier = typeof input?.complexity_multiplier === 'number' ? input.complexity_multiplier : 1.0
             const delta = typeof input?.confidence_score_delta === 'number' ? input.confidence_score_delta : 0
             const newScore = Math.max(0, Math.min(85, confidenceRef.current + delta))
