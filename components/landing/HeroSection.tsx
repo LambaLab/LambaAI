@@ -30,7 +30,10 @@ export default function HeroSection() {
       fetch(`/api/proposals/${c}/restore`)
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          if (!data) {
+          // Treat as expired if no data OR if the response has no meaningful content
+          // (API returns 200 with empty fields for proposals that were never saved)
+          const hasContent = data && (data.brief || (data.messages && data.messages.length > 0))
+          if (!hasContent) {
             setExpiredLink(true)
             return
           }
