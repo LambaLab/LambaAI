@@ -315,18 +315,31 @@ export function useIntakeChat({ proposalId, idea }: Props) {
 
     // No stored messages — auto-send the idea or show welcome message
     if (!idea.trim()) {
-      // New empty proposal — show a welcome message after a brief delay
-      const timer = setTimeout(() => {
+      // New empty proposal — simulate typing then reveal the welcome message
+      const welcomeId = crypto.randomUUID()
+      const emptyWelcome: ChatMessage = {
+        id: welcomeId,
+        role: 'assistant',
+        content: '',
+        createdAt: Date.now(),
+      }
+      // Step 1: Show empty bubble with typing indicator
+      const t1 = setTimeout(() => {
+        messagesRef.current = [emptyWelcome]
+        setMessages([emptyWelcome])
+        setIsStreaming(true)
+      }, 10)
+      // Step 2: Fill in the content after a realistic typing delay
+      const t2 = setTimeout(() => {
         const welcome: ChatMessage = {
-          id: crypto.randomUUID(),
-          role: 'assistant',
+          ...emptyWelcome,
           content: "What would you like to build? Describe your idea in the chat below and I'll help you shape it into a proposal.",
-          createdAt: Date.now(),
         }
         messagesRef.current = [welcome]
         setMessages([welcome])
-      }, 10)
-      return () => clearTimeout(timer)
+        setIsStreaming(false)
+      }, 1200)
+      return () => { clearTimeout(t1); clearTimeout(t2) }
     }
 
     const userMessage: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: idea, createdAt: Date.now() }

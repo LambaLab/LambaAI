@@ -135,7 +135,7 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
         storeIdeaForSession(data.proposalId, initialMessage)
       }
       // Push unique conversation URL
-      window.history.replaceState(null, '', `?c=${data.proposalId}`)
+      window.history.replaceState(null, '', `/?c=${data.proposalId}`)
       // Check if email was already verified for this proposal
       if (localStorage.getItem(`lamba_email_verified_${data.proposalId}`)) {
         setEmailVerified(true)
@@ -220,7 +220,7 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
       // Update URL
       const targetSlug = (data as Record<string, unknown>).slug as string | null
       setCurrentSlug(targetSlug ?? null)
-      window.history.replaceState(null, '', targetSlug ? `/proposal/${targetSlug}` : `?c=${targetId}`)
+      window.history.replaceState(null, '', targetSlug ? `/proposal/${targetSlug}` : `/?c=${targetId}`)
 
       // Update app name
       nameManuallyEditedRef.current = false
@@ -282,7 +282,7 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
     // ② Temporary session — triggers immediate remount with blank chat
     const tempId = crypto.randomUUID()
     const tempSession: SessionData = { proposalId: tempId, sessionId: tempId, userId: '' }
-    window.history.replaceState(null, '', '?c=' + tempId)
+    window.history.replaceState(null, '', '/?c=' + tempId)
     setSession(tempSession)
 
     // ③ Real session creation in background
@@ -314,7 +314,7 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
         localStorage.removeItem(`lamba_proposal_${tempId}`)
       }
 
-      window.history.replaceState(null, '', '?c=' + newSessionData.proposalId)
+      window.history.replaceState(null, '', '/?c=' + newSessionData.proposalId)
       setCurrentSlug(null)
       setSession(newSessionData)
 
@@ -399,7 +399,7 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
       .then((data) => {
         setSession(data)
         if (initialMessage) storeIdeaForSession(data.proposalId, initialMessage)
-        window.history.replaceState(null, '', `?c=${data.proposalId}`)
+        window.history.replaceState(null, '', `/?c=${data.proposalId}`)
       })
       .catch(() => setSessionError(true))
   }
