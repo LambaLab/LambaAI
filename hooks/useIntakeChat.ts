@@ -652,15 +652,59 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               const bubbleContent = !isListFinal && finalQuestion && !partialResultApplied
                 ? (base ? `${base}\n\n${finalQuestion}` : finalQuestion)
                 : base
+              // Ensure bubble always has content — empty bubbles get filtered from API
+              // messages which can create invalid consecutive same-role messages (400 error).
+              const safeContent = bubbleContent || finalQuestion || followUp || '...'
 
               return [...prev.slice(0, -1), {
                 ...last,
-                content: bubbleContent,
+                content: safeContent,
                 question: isListFinal ? (finalQuestion || undefined) : undefined,
                 quickReplies: finalQR,
                 isPause: undefined,
               }]
             })
+
+            // ── Stale-stream guard ──
+            // If a newer stream has started (user clicked QR after partial_result),
+            // skip ALL remaining side effects (phase tracking, divider insertion,
+            // localStorage persistence). The newer stream's tool_result will handle them.
+            // Only allow: proposal metadata updates (already done above) and isStreaming reset.
+            const isStaleStream = streamIdRef.current !== myStreamId
+
+            // Mark streaming done — guard against resetting a newer stream's flag.
+            if (!isStaleStream) setIsStreaming(false)
+
+            if (isStaleStream) {
+              // Still persist proposal data (modules, score, overview) since those are
+              // cumulative and safe to apply from any stream. But skip everything else.
+              if (proposalId) {
+                try {
+                  const savedOverview = (input?.product_overview && input.product_overview.trim())
+                    ? input.product_overview.trim()
+                    : productOverviewRef.current
+                  const savedSummaries = (input?.module_summaries && typeof input.module_summaries === 'object')
+                    ? { ...moduleSummariesRef.current, ...input.module_summaries }
+                    : moduleSummariesRef.current
+                  const savedProjectName = (input?.project_name && input.project_name.trim())
+                    ? input.project_name.trim()
+                    : ''
+                  const savedBrief = (input?.updated_brief && input.updated_brief.trim())
+                    ? input.updated_brief.trim()
+                    : undefined
+                  localStorage.setItem(PROPOSAL_KEY(proposalId), JSON.stringify({
+                    activeModules: newModules,
+                    confidenceScore: newScore,
+                    complexityMultiplier: newMultiplier,
+                    productOverview: savedOverview,
+                    moduleSummaries: savedSummaries,
+                    projectName: savedProjectName || undefined,
+                    brief: savedBrief,
+                  }))
+                } catch { /* Ignore QuotaExceededError */ }
+              }
+              continue  // Skip phase tracking, dividers, and phase persistence
+            }
 
             // When paused and the AI sends a new list QR (which we stripped above),
             // save it for the peek card so the user sees the next question peeking.
@@ -689,7 +733,6 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             if (effectivePhase === 'discovery' && turnCount.current >= 7 && activeModulesRef.current.length >= 2) {
               console.log('[Phase] Client forcing transition to deep_dive after', turnCount.current, 'turns')
               effectivePhase = 'deep_dive'
-              // Build queue from detected modules, prioritizing mobile_app/web_app first
               const mods = [...activeModulesRef.current]
               const coreFirst = ['mobile_app', 'web_app']
               const sorted = [
@@ -707,17 +750,16 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             // Module-start divider: insert when AI moves to a new module
             const newMod = effectiveModule
             if (newMod && newMod !== prevModuleRef.current && !input?.module_complete) {
-              const queueArr = Array.isArray(input?.modules_queue) ? input.modules_queue : []
-              const pos = queueArr.indexOf(newMod)
-              const totalModules = queueArr.length + completedModules.length
+              const queueArr = Array.isArray(input?.modules_queue) ? input.modules_queue : effectiveQueue
+              const totalModules = queueArr.length + completedModulesRef.current.length
               const moduleStartMsg: ChatMessage = {
                 id: crypto.randomUUID(),
                 role: 'assistant',
                 content: '',
                 isModuleStart: true,
                 moduleId: newMod,
-                modulePosition: completedModules.length + 1,
-                modulesTotal: totalModules || (queueArr.length > 0 ? queueArr.length + completedModules.length : undefined),
+                modulePosition: completedModulesRef.current.length + 1,
+                modulesTotal: totalModules || undefined,
                 createdAt: Date.now(),
               }
               setMessages(prev => {
@@ -734,8 +776,6 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             // Module-complete divider: insert when AI signals a module is done
             if (input?.module_complete === true && newMod) {
               setCompletedModules(prev => prev.includes(newMod) ? prev : [...prev, newMod])
-              // The module-complete message doubles as a checkpoint (isPause: true)
-              // so the PauseCheckpoint component renders the pills.
               const moduleCompleteMsg: ChatMessage = {
                 id: crypto.randomUUID(),
                 role: 'assistant',
@@ -750,16 +790,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               prevModuleRef.current = newMod
             }
 
-            // Mark streaming done — the QR card and question are ready to show.
-            // The Anthropic stream may still be open (consuming message_delta / message_stop)
-            // but there's nothing left to display; we don't need to wait for it.
-            // Guard: don't reset isStreaming if a newer stream has already started
-            // (happens when partial_result already set it to false and the user submitted).
-            if (streamIdRef.current === myStreamId) setIsStreaming(false)
-
             // Save proposal state inline so it survives page reload.
-            // Must be inline (not a reactive effect) to avoid the mount-order bug
-            // where the persistence effect fires before the restore effect.
             if (proposalId) {
               try {
                 const savedOverview = (input?.product_overview && input.product_overview.trim())
@@ -784,14 +815,14 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                   brief: savedBrief,
                 }))
                 // Persist phase state for cross-refresh restoration
-                // Use effective values (which may have been overridden by client-side enforcement)
+                // Use refs to avoid stale closure values
                 const phaseState = {
                   currentPhase: effectivePhase || 'discovery',
                   currentModule: effectiveModule,
                   modulesQueue: effectiveQueue,
                   completedModules: input?.module_complete && newMod
-                    ? [...completedModules.filter(m => m !== newMod), newMod]
-                    : completedModules,
+                    ? [...completedModulesRef.current.filter(m => m !== newMod), newMod]
+                    : completedModulesRef.current,
                 }
                 localStorage.setItem(PHASE_KEY(proposalId), JSON.stringify(phaseState))
               } catch { /* Ignore QuotaExceededError */ }
@@ -828,11 +859,16 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   const sendMessage = useCallback(async (content: string, displayContent?: string, sourceQuickReplies?: QuickReplies, sourceQuestion?: string) => {
     if (isStreaming) return
 
+    // Ensure we always have non-empty content for the API.
+    // The AI sometimes generates QR options with empty `value` but valid `label`.
+    // When the user clicks such an option, content is "" but displayContent has the label.
+    const safeContent = content || displayContent || 'continue'
+
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'user',
-      content,
-      displayContent: displayContent && displayContent !== content ? displayContent : undefined,
+      content: safeContent,
+      displayContent: displayContent && displayContent !== safeContent ? displayContent : undefined,
       sourceQuickReplies,
       sourceQuestion,
       createdAt: Date.now(),
@@ -840,11 +876,13 @@ export function useIntakeChat({ proposalId, idea }: Props) {
 
     const apiMessages = mergeConsecutiveMessages([
       ...messagesRef.current
-        // Filter out module dividers and any messages with empty content
-        // (the Claude API rejects messages where content is missing/empty)
-        .filter(m => !m.isModuleStart && !m.isModuleComplete && m.content)
+        // Filter out synthetic messages that shouldn't be in API history:
+        // - Module dividers (empty content, UI-only)
+        // - Pause checkpoints (synthetic breather prompts)
+        // - Any message with empty/missing content (Claude API rejects these)
+        .filter(m => !m.isModuleStart && !m.isModuleComplete && !m.isPause && m.content)
         .map((m): ApiMessage => ({ role: m.role, content: m.content })),
-      { role: 'user', content },
+      { role: 'user', content: safeContent },
     ])
 
     // If answering a revealed (temporarily shown) paused question, hide it back
@@ -906,7 +944,9 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     setMessages([...kept, correctionMsg])
 
     const aiHistory = mergeConsecutiveMessages(
-      [...kept, correctionMsg].map((m): ApiMessage => ({ role: m.role, content: m.content }))
+      [...kept, correctionMsg]
+        .filter(m => !m.isModuleStart && !m.isModuleComplete && !m.isPause && m.content)
+        .map((m): ApiMessage => ({ role: m.role, content: m.content }))
     )
 
     await streamAIResponse(aiHistory)
