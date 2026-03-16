@@ -37,6 +37,17 @@ type UpdateProposalInput = {
 
 type ApiMessage = { role: 'user' | 'assistant'; content: string }
 
+// Normalize QR style: the AI (Haiku) sometimes returns pills for 3+ options,
+// violating the prompt rule that pills are only for 2-option yes/no.
+// Force to list when there are 3+ options so the bottom card always renders.
+function normalizeQRStyle(qr: QuickReplies | undefined): QuickReplies | undefined {
+  if (!qr) return qr
+  if (qr.style === 'pills' && Array.isArray(qr.options) && qr.options.length >= 3) {
+    return { ...qr, style: 'list' }
+  }
+  return qr
+}
+
 // Merge consecutive same-role messages into one. This is necessary because
 // bubble_split creates two assistant messages (reaction + transition_text),
 // which are persisted as separate rows in Supabase. The Claude API requires
@@ -345,8 +356,9 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             // module_summaries) are still generating but aren't needed for interactivity.
             const questionText = typeof data.question === 'string' ? data.question.trim() : ''
             const rawQR = data.quick_replies as QuickReplies | undefined
-            const updatedQR =
+            const validQR =
               rawQR && Array.isArray(rawQR.options) && rawQR.options.length > 0 ? rawQR : undefined
+            const updatedQR = normalizeQRStyle(validQR)
 
             if (updatedQR) {
               const isListQR = updatedQR.style === 'list'
@@ -443,9 +455,10 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               // Validate quick_replies — empty options array is as bad as no quick_replies
               // (QuickReplies component would render only "Type something", which is confusing)
               const rawQR = input?.quick_replies
-              const updatedQR = rawQR && Array.isArray(rawQR.options) && rawQR.options.length > 0
+              const validQR = rawQR && Array.isArray(rawQR.options) && rawQR.options.length > 0
                 ? rawQR
                 : undefined
+              const updatedQR = normalizeQRStyle(validQR)
               const isListQR = updatedQR?.style === 'list'
 
               if (isPauseThisTurn) {
