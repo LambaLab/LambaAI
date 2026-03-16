@@ -23,9 +23,10 @@ type Props = {
   onResumeQuestions?: () => void
   onSkipQuestion?: () => void
   confidenceScore?: number
+  emailVerified?: boolean
 }
 
-export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onRequestViewProposal, onSaveLater, constrained = false, theme, isPaused, pausedQuestion, onPauseQuestions, onResumeQuestions, onSkipQuestion, confidenceScore = 0 }: Props) {
+export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onRequestViewProposal, onSaveLater, constrained = false, theme, isPaused, pausedQuestion, onPauseQuestions, onResumeQuestions, onSkipQuestion, confidenceScore = 0, emailVerified }: Props) {
   const [input, setInput] = useState('')
   const [reEditingMessageId, setReEditingMessageId] = useState<string | null>(null)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
@@ -132,6 +133,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
                 onSaveLater={onSaveLater}
                 isLast={i === messages.length - 1}
                 isStreaming={isStreaming && i === messages.length - 1}
+                emailVerified={emailVerified}
               />
             ) : (
               <MessageBubble

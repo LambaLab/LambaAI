@@ -9,19 +9,32 @@ type Props = {
   onSaveLater?: () => void
   isLast: boolean
   isStreaming: boolean
+  emailVerified?: boolean
 }
 
-// Hard-coded pill definitions — keeps the UI stable regardless of what
-// label text the AI returned, and adds "Save for later" as a placeholder.
-const CHECKPOINT_PILLS = [
-  { value: '__continue__',      label: 'Keep going',         icon: '💬', disabled: false, primary: false },
-  { value: '__view_proposal__', label: 'See proposal',       icon: '📋', disabled: false, primary: false },
-  { value: '__submit__',        label: 'Submit proposal',    icon: '✅', disabled: false, primary: true  },
-  { value: '__save_later__',    label: 'Save for later',     icon: '🔖', disabled: false, primary: false },
+type Pill = {
+  value: string
+  label: string
+  icon: string
+  primary: boolean
+}
+
+// Pills when proposal is NOT saved yet — lead with Save for later (primary)
+const UNSAVED_PILLS: Pill[] = [
+  { value: '__save_later__',    label: 'Save for later',     icon: '🔖', primary: true  },
+  { value: '__continue__',      label: 'Keep going',         icon: '💬', primary: false },
+  { value: '__view_proposal__', label: 'View proposal',      icon: '📋', primary: false },
 ]
 
-export default function PauseCheckpoint({ message, onSend, onRequestViewProposal, onSaveLater, isLast, isStreaming }: Props) {
+// Pills when proposal IS saved — lead with View proposal (primary)
+const SAVED_PILLS: Pill[] = [
+  { value: '__view_proposal__', label: 'View proposal',      icon: '📋', primary: true  },
+  { value: '__continue__',      label: 'Keep going',         icon: '💬', primary: false },
+]
+
+export default function PauseCheckpoint({ message, onSend, onRequestViewProposal, onSaveLater, isLast, isStreaming, emailVerified }: Props) {
   const showActions = isLast && !isStreaming
+  const pills = emailVerified ? SAVED_PILLS : UNSAVED_PILLS
 
   function handleSelect(value: string, label: string) {
     if (value === '__view_proposal__' || value === '__submit__') {
@@ -58,19 +71,16 @@ export default function PauseCheckpoint({ message, onSend, onRequestViewProposal
       {/* ── Compact inline pill buttons ── */}
       {showActions && (
         <div className="flex flex-wrap gap-2">
-          {CHECKPOINT_PILLS.map((pill) => (
+          {pills.map((pill) => (
             <button
               key={pill.value}
               type="button"
-              onClick={() => !pill.disabled && handleSelect(pill.value, pill.label)}
-              disabled={pill.disabled}
+              onClick={() => handleSelect(pill.value, pill.label)}
               className={[
-                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-colors',
+                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-colors cursor-pointer',
                 pill.primary
-                  ? 'bg-brand-yellow border border-brand-yellow text-brand-dark hover:bg-brand-yellow/90 cursor-pointer font-medium'
-                  : pill.disabled
-                    ? 'border border-[var(--ov-border,rgba(255,255,255,0.06))] text-[var(--ov-text-muted,#727272)] opacity-40 cursor-not-allowed'
-                    : 'border border-[var(--ov-border,rgba(255,255,255,0.12))] text-[var(--ov-text,#ffffff)] hover:border-[var(--ov-accent-border,rgba(255,252,0,0.50))] hover:text-[var(--ov-accent-strong,#fffc00)] cursor-pointer',
+                  ? 'bg-brand-yellow border border-brand-yellow text-brand-dark hover:bg-brand-yellow/90 font-medium'
+                  : 'border border-[var(--ov-border,rgba(255,255,255,0.12))] text-[var(--ov-text,#ffffff)] hover:border-[var(--ov-accent-border,rgba(255,252,0,0.50))] hover:text-[var(--ov-accent-strong,#fffc00)]',
               ].join(' ')}
             >
               <span className="leading-none text-base">{pill.icon}</span>

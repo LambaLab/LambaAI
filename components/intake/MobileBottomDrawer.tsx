@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react'
 import { ChevronUp } from 'lucide-react'
 import ModulesPanel from './ModulesPanel'
 
@@ -26,7 +26,9 @@ const CLOSE_THRESHOLD = 0.35
 // Velocity threshold (px/ms) — a fast flick always triggers open/close
 const VELOCITY_THRESHOLD = 0.4
 
-export default function MobileBottomDrawer({
+export type MobileBottomDrawerHandle = { open: () => void }
+
+const MobileBottomDrawer = forwardRef<MobileBottomDrawerHandle, Props>(function MobileBottomDrawer({
   summary,
   activeModules,
   confidenceScore,
@@ -37,13 +39,17 @@ export default function MobileBottomDrawer({
   moduleSummaries = {},
   onReset,
   onSaveLater,
-}: Props) {
+}, ref) {
   const [open, setOpen] = useState(false)
   // dragOffset: how many px above collapsed position the drawer currently sits.
   // null = not dragging, let CSS handle position via `open` state.
   const [dragOffset, setDragOffset] = useState<number | null>(null)
   // Whether CSS transition should be active (disabled during drag for 1:1 tracking)
   const [animating, setAnimating] = useState(false)
+
+  useImperativeHandle(ref, () => ({
+    open: () => { setAnimating(true); setOpen(true) },
+  }), [])
 
   const drawerRef = useRef<HTMLDivElement>(null)
   const touchStartY = useRef<number>(0)
@@ -215,4 +221,6 @@ export default function MobileBottomDrawer({
       </div>
     </>
   )
-}
+})
+
+export default MobileBottomDrawer

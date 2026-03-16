@@ -46,6 +46,7 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
   const cachedEmailRef = useRef<string | null>(null)
   const [showSaved, setShowSaved] = useState(false)
   const lastSyncedAtRef = useRef<number | null>(null)
+  const [switchingProposal, setSwitchingProposal] = useState(false)
 
   const updateSlug = useCallback(async (proposalId: string, name: string) => {
     try {
@@ -173,13 +174,29 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
   const switchToProposal = useCallback(async (targetId: string) => {
     if (!session) return
     setDrawerOpen(false)
+    // Show loader immediately — don't stay on old proposal
+    setSwitchingProposal(true)
     try {
+      // Preserve local messages — they have full fidelity (QR, isPause, question fields)
+      // that the API restore doesn't carry. Only fall back to API messages if no local data.
+      const existingLocalMsgs = localStorage.getItem(`lamba_msgs_${targetId}`)
+      const existingProposalState = localStorage.getItem(`lamba_proposal_${targetId}`)
+
       const res = await fetch(`/api/proposals/${targetId}/restore`)
       if (!res.ok) throw new Error('Failed to restore')
       const data = await res.json()
 
       // Hydrate all localStorage keys for the target proposal
       hydrateProposalFromRestore(data)
+
+      // If we had local messages with richer data (QR, isPause, etc.), restore them
+      // over the degraded API data
+      if (existingLocalMsgs) {
+        localStorage.setItem(`lamba_msgs_${targetId}`, existingLocalMsgs)
+      }
+      if (existingProposalState) {
+        localStorage.setItem(`lamba_proposal_${targetId}`, existingProposalState)
+      }
 
       // Read restored project name
       const meta = data.metadata && typeof data.metadata === 'object' ? data.metadata : {}
@@ -234,6 +251,8 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
       setSession(newSession)
     } catch (err) {
       console.error('Failed to switch proposal:', err)
+    } finally {
+      setSwitchingProposal(false)
     }
   }, [session])
 
@@ -536,6 +555,16 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
             </div>
           </div>
 
+          {/* Loading overlay when switching proposals */}
+          {switchingProposal && (
+            <div className="absolute inset-0 z-30 flex items-center justify-center bg-[var(--ov-bg,#1d1d1d)]/80 backdrop-blur-sm">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-6 h-6 border-2 border-[var(--ov-text-muted,#727272)] border-t-[var(--ov-accent-strong,#fffc00)] rounded-full animate-spin" />
+                <span className="text-xs text-[var(--ov-text-muted,#727272)]">Loading proposal…</span>
+              </div>
+            </div>
+          )}
+
           {/* Main content — key change forces clean remount when switching proposals */}
           <IntakeLayout
             key={session.proposalId}
@@ -548,6 +577,7 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
             proposalOpen={proposalOpen}
             onProposalToggle={() => setProposalOpen(p => !p)}
             onSaveLater={() => setSaveModalOpen(true)}
+            emailVerified={emailVerified}
           />
 
           {/* Proposal Drawer */}

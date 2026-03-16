@@ -17,9 +17,10 @@ type Props = {
   onProposalToggle: () => void
   onReset?: () => void
   onSaveLater?: () => void
+  emailVerified?: boolean
 }
 
-export default function IntakeLayout({ proposalId, initialMessage, onStateChange, onResetRef, theme, proposalOpen, onProposalToggle, onReset, onSaveLater }: Props) {
+export default function IntakeLayout({ proposalId, initialMessage, onStateChange, onResetRef, theme, proposalOpen, onProposalToggle, onReset, onSaveLater, emailVerified }: Props) {
   const {
     messages,
     activeModules,
@@ -91,9 +92,15 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
     document.addEventListener('mouseup', onMouseUp)
   }, [])
 
-  // Opens the proposal panel if it isn't already open (used by PauseCheckpoint)
+  // Ref to programmatically open MobileBottomDrawer
+  const mobileDrawerRef = useRef<{ open: () => void }>(null)
+
+  // Opens the proposal panel (used by PauseCheckpoint "View proposal" pill)
   const openProposal = useCallback(() => {
+    // Desktop: toggle the side panel
     if (!proposalOpen) onProposalToggle()
+    // Mobile: open the bottom drawer
+    mobileDrawerRef.current?.open()
   }, [proposalOpen, onProposalToggle])
 
   const onStateChangeRef = useRef(onStateChange)
@@ -141,6 +148,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             onResumeQuestions={resumeQuestions}
             onSkipQuestion={skipQuestion}
             confidenceScore={confidenceScore}
+            emailVerified={emailVerified}
           />
         </div>
 
@@ -196,9 +204,11 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             onResumeQuestions={resumeQuestions}
             onSkipQuestion={skipQuestion}
             confidenceScore={confidenceScore}
+            emailVerified={emailVerified}
           />
         </div>
         <MobileBottomDrawer
+          ref={mobileDrawerRef}
           summary={summaryText}
           activeModules={activeModules}
           confidenceScore={confidenceScore}
