@@ -15,56 +15,61 @@ type RestoreData = {
   [key: string]: unknown
 }
 
+// Check localStorage synchronously during initial render so returning users
+// never see a flash of the homepage before the chat overlay appears.
+function getInitialState(): { open: boolean; message: string } {
+  if (typeof window === 'undefined') return { open: false, message: '' }
+  try {
+    const params = new URLSearchParams(window.location.search)
+    const c = params.get('c')
+    if (c) {
+      const storedSession = getStoredSession()
+      const idea = storedSession?.proposalId === c ? getIdeaForSession(c) : null
+      if (idea) return { open: true, message: idea }
+      // Cross-device restore handled in useEffect (needs async fetch)
+      return { open: false, message: '' }
+    }
+    const storedSession = getStoredSession()
+    if (storedSession) {
+      const idea = getIdeaForSession(storedSession.proposalId)
+      if (idea) return { open: true, message: idea }
+    }
+  } catch { /* SSR or localStorage error — fall through */ }
+  return { open: false, message: '' }
+}
+
 export default function HeroSection() {
-  const [intakeOpen, setIntakeOpen] = useState(false)
-  const [initialMessage, setInitialMessage] = useState('')
+  const initial = getInitialState()
+  const [intakeOpen, setIntakeOpen] = useState(initial.open)
+  const [initialMessage, setInitialMessage] = useState(initial.message)
   const [heroInputResetKey, setHeroInputResetKey] = useState(0)
   // Restore gate: holds the restore data while waiting for email verification
   const [restoreGate, setRestoreGate] = useState<RestoreData | null>(null)
 
-  // Restore conversation from localStorage/URL on mount
+  // Handle cross-device restore (async fetch) — same-device restore is handled
+  // synchronously above in getInitialState so there's no flash.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const c = params.get('c')
+    if (!c) return // Same-device already handled in getInitialState
 
-    if (c) {
-      // Same-device: localStorage matches the URL param
-      const storedSession = getStoredSession()
-      const idea = storedSession?.proposalId === c ? getIdeaForSession(c) : null
-      if (idea) {
-        setInitialMessage(idea)
-        setIntakeOpen(true)
-        return
-      }
+    // If already open (same-device match found synchronously), skip fetch
+    if (intakeOpen) return
 
-      // Cross-device: no localStorage match — fetch from Supabase
-      fetch(`/api/proposals/${c}/restore`)
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
-          if (!data) {
-            // API error — show not-saved gate
-            setRestoreGate({ proposalId: c, sessionId: '' })
-            return
-          }
-          // Show restore gate modal — either email verification or "not saved"
-          setRestoreGate(data)
-        })
-        .catch(() => {
+    // Cross-device: no localStorage match — fetch from Supabase
+    fetch(`/api/proposals/${c}/restore`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) {
           setRestoreGate({ proposalId: c, sessionId: '' })
-        })
-      return
-    }
-
-    // No URL param — check localStorage for any active session with a real idea
-    const storedSession = getStoredSession()
-    if (storedSession) {
-      const idea = getIdeaForSession(storedSession.proposalId)
-      if (idea) {
-        setInitialMessage(idea)
-        setIntakeOpen(true)
-      }
-    }
-  }, [])
+          return
+        }
+        setRestoreGate(data)
+      })
+      .catch(() => {
+        setRestoreGate({ proposalId: c, sessionId: '' })
+      })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleFirstMessage(message: string) {
     setInitialMessage(message)
