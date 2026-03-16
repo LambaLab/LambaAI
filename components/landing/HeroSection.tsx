@@ -3,13 +3,24 @@
 import { useState, useEffect } from 'react'
 import HeroInput from './HeroInput'
 import IntakeOverlay from '@/components/intake/IntakeOverlay'
+import RestoreGateModal from './RestoreGateModal'
 import { getStoredSession, getIdeaForSession, hydrateProposalFromRestore } from '@/lib/session'
+
+type RestoreData = {
+  proposalId: string
+  sessionId: string
+  email?: string | null
+  brief?: string
+  messages?: { role: string; content: string }[]
+  [key: string]: unknown
+}
 
 export default function HeroSection() {
   const [intakeOpen, setIntakeOpen] = useState(false)
   const [initialMessage, setInitialMessage] = useState('')
   const [heroInputResetKey, setHeroInputResetKey] = useState(0)
-  const [expiredLink, setExpiredLink] = useState(false)
+  // Restore gate: holds the restore data while waiting for email verification
+  const [restoreGate, setRestoreGate] = useState<RestoreData | null>(null)
 
   // Restore conversation from localStorage/URL on mount
   useEffect(() => {
@@ -30,19 +41,16 @@ export default function HeroSection() {
       fetch(`/api/proposals/${c}/restore`)
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          // Treat as expired if no data OR if the response has no meaningful content
-          // (API returns 200 with empty fields for proposals that were never saved)
-          const hasContent = data && (data.brief || (data.messages && data.messages.length > 0))
-          if (!hasContent) {
-            setExpiredLink(true)
+          if (!data) {
+            // API error — show not-saved gate
+            setRestoreGate({ proposalId: c, sessionId: '' })
             return
           }
-          hydrateProposalFromRestore(data)
-          setInitialMessage(data.brief || data.messages?.[0]?.content || '')
-          setIntakeOpen(true)
+          // Show restore gate modal — either email verification or "not saved"
+          setRestoreGate(data)
         })
         .catch(() => {
-          setExpiredLink(true)
+          setRestoreGate({ proposalId: c, sessionId: '' })
         })
       return
     }
@@ -74,6 +82,21 @@ export default function HeroSection() {
     setHeroInputResetKey((k) => k + 1)
   }
 
+  // Called after email/OTP verification succeeds — hydrate and open
+  function handleRestoreSuccess(data: RestoreData) {
+    hydrateProposalFromRestore(data)
+    setInitialMessage(data.brief || data.messages?.[0]?.content || '')
+    setRestoreGate(null)
+    setIntakeOpen(true)
+  }
+
+  // Called when user clicks "Start new proposal" from the gate modal
+  function handleStartNew() {
+    setRestoreGate(null)
+    // Clear the ?c= param from URL
+    window.history.replaceState(null, '', '/')
+  }
+
   return (
     <>
       <section className="min-h-screen flex flex-col items-center justify-center px-4 py-20 relative">
@@ -97,16 +120,18 @@ export default function HeroSection() {
             estimates the cost, and delivers a real proposal — in minutes.
           </p>
 
-          {expiredLink && (
-            <div className="bg-white/5 border border-white/10 rounded-xl px-5 py-4 max-w-md mx-auto text-sm text-brand-gray-mid space-y-1">
-              <p className="text-brand-white font-medium">This conversation link has expired</p>
-              <p>The session was not saved. Start a new conversation below, or use &ldquo;Save for Later&rdquo; next time to access it from any device.</p>
-            </div>
-          )}
-
           <HeroInput key={heroInputResetKey} onFirstMessage={handleFirstMessage} />
         </div>
       </section>
+
+      {/* Restore gate modal — shown when opening a shared link on a new device */}
+      {restoreGate && (
+        <RestoreGateModal
+          restoreData={restoreGate}
+          onRestoreSuccess={handleRestoreSuccess}
+          onStartNew={handleStartNew}
+        />
+      )}
 
       {intakeOpen && (
         <IntakeOverlay
