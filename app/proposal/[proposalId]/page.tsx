@@ -1,6 +1,30 @@
+import { redirect, notFound } from 'next/navigation'
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export default async function ProposalPage({ params }: { params: Promise<{ proposalId: string }> }) {
   const { proposalId } = await params
 
+  // --- Slug path: resolve via API and redirect ---
+  if (!UUID_RE.test(proposalId)) {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
+    const res = await fetch(`${appUrl}/api/proposals/by-slug/${proposalId}`, {
+      cache: 'no-store',
+    })
+
+    if (!res.ok) notFound()
+
+    const data = await res.json()
+
+    if (data.redirect && data.currentSlug) {
+      redirect(`/proposal/${data.currentSlug}`)
+    }
+
+    redirect(`/?c=${data.proposalId}`)
+  }
+
+  // --- UUID path: show "in review" page ---
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="max-w-md w-full text-center space-y-6">
