@@ -56,6 +56,7 @@ export default function ProposalDrawer({
 }: Props) {
   const drawerRef = useRef<HTMLDivElement>(null)
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   // Close on Escape
   useEffect(() => {
@@ -85,8 +86,8 @@ export default function ProposalDrawer({
     return () => window.removeEventListener('click', handleClick)
   }, [menuOpenId])
 
-  // Close menu when drawer closes
-  useEffect(() => { if (!open) setMenuOpenId(null) }, [open])
+  // Close menu and confirmation when drawer closes
+  useEffect(() => { if (!open) { setMenuOpenId(null); setConfirmDeleteId(null) } }, [open])
 
   const isLight = theme === 'light'
 
@@ -244,8 +245,8 @@ export default function ProposalDrawer({
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
-                                    onDeleteProposal(p.id)
                                     setMenuOpenId(null)
+                                    setConfirmDeleteId(p.id)
                                   }}
                                   className={`w-full text-left px-3 py-1.5 text-sm flex items-center gap-2 transition-colors cursor-pointer
                                     ${isLight ? 'text-red-600 hover:bg-red-50' : 'text-red-400 hover:bg-white/5'}`}
@@ -267,6 +268,45 @@ export default function ProposalDrawer({
         </div>
 
       </div>
+
+      {/* Delete confirmation modal */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center px-4" onClick={() => setConfirmDeleteId(null)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div
+            className={`relative z-10 w-full max-w-[320px] rounded-xl p-5 space-y-4 shadow-xl
+              ${isLight ? 'bg-white' : 'bg-[#1e1e1e] border border-white/10'}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="space-y-2">
+              <h3 className={`text-base font-semibold ${isLight ? 'text-[#1a1a1a]' : 'text-white'}`}>
+                Delete proposal?
+              </h3>
+              <p className={`text-sm leading-relaxed ${isLight ? 'text-[#666]' : 'text-[#999]'}`}>
+                This will permanently delete this proposal and all its saved data. This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors cursor-pointer
+                  ${isLight ? 'bg-[rgba(0,0,0,0.05)] text-[#1a1a1a] hover:bg-[rgba(0,0,0,0.08)]' : 'bg-white/10 text-white hover:bg-white/15'}`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  onDeleteProposal(confirmDeleteId)
+                  setConfirmDeleteId(null)
+                }}
+                className="flex-1 py-2 px-3 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
