@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
 import { ArrowRight, ArrowDown, Pause, Play } from 'lucide-react'
 import MessageBubble from './MessageBubble'
+import ModuleDivider from './ModuleDivider'
 import PauseCheckpoint from './PauseCheckpoint'
 import QuickReplies from './QuickReplies'
 import type { ChatMessage } from '@/hooks/useIntakeChat'
@@ -107,11 +108,11 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
       : null
   const questionText = listQR ? (lastMsg?.question ?? undefined) : undefined
 
-  // Compute question number: count non-pause assistant messages after the first one.
+  // Compute question number: count non-pause, non-divider assistant messages after the first one.
   // The first assistant message is the reaction to the user's initial idea (not a numbered
   // question). Each subsequent one represents a Q&A turn. We can't count by m.question
   // because that field gets cleared when the user answers.
-  const assistantTurns = messages.filter(m => m.role === 'assistant' && !m.isPause)
+  const assistantTurns = messages.filter(m => m.role === 'assistant' && !m.isPause && !m.isModuleStart && !m.isModuleComplete)
   const questionNumber = Math.max(0, assistantTurns.length - 1)
 
   // Re-editing: user tapped edit on a past row-selection bubble
@@ -134,7 +135,16 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
           style={{ maxWidth: '760px' }}
         >
           {messages.map((msg, i) => (
-            msg.isPause ? (
+            (msg.isModuleStart || msg.isModuleComplete) ? (
+              <ModuleDivider
+                key={msg.id}
+                message={msg}
+                onSend={(val, display) => onSend(val, display)}
+                onRequestViewProposal={onRequestViewProposal}
+                isLast={i === messages.length - 1}
+                isStreaming={isStreaming && i === messages.length - 1}
+              />
+            ) : msg.isPause ? (
               // Hide breather checkpoint while a paused question is temporarily revealed
               questionRevealed ? null : <PauseCheckpoint
                 key={msg.id}

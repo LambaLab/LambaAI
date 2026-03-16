@@ -112,7 +112,26 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
           'Optional. Only include entries for modules that were newly detected or had their scope meaningfully clarified this turn. Previously established summaries are preserved automatically, omit unchanged modules. Keys are module IDs (e.g. "auth", "payments"). Values are 1-2 plain sentences specific to this product, no markdown.',
         additionalProperties: { type: 'string' as const },
       },
+      // Phase tracking fields — drive the 3-phase conversation structure
+      current_phase: {
+        type: 'string' as const,
+        enum: ['discovery', 'deep_dive', 'wrap_up'],
+        description: 'Current conversation phase. discovery = broad questions (turns 1-5). deep_dive = focused per-module questions. wrap_up = final recap.',
+      },
+      current_module: {
+        type: 'string',
+        description: 'Module ID currently being deep-dived (e.g. "mobile_app"). Empty string in discovery and wrap_up phases.',
+      },
+      module_complete: {
+        type: 'boolean' as const,
+        description: 'Set to true on the turn that finishes a module deep-dive. Triggers a module-complete divider with summary and action pills in the UI.',
+      },
+      modules_queue: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Ordered list of module IDs remaining to deep-dive (current module at index 0). Updated each turn during deep_dive phase. Empty in discovery and wrap_up.',
+      },
     },
-    required: ['follow_up_question', 'detected_modules', 'confidence_score_delta', 'question'],
+    required: ['follow_up_question', 'detected_modules', 'confidence_score_delta', 'question', 'current_phase'],
   },
 }

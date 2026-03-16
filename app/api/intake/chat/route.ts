@@ -13,9 +13,21 @@ const anthropic = new Anthropic()
 const MAX_MESSAGES = 50
 
 export async function POST(req: NextRequest) {
-  const { messages, paused, confidenceScore: clientConfidence } = await req.json()
+  const {
+    messages,
+    paused,
+    confidenceScore: clientConfidence,
+    currentPhase: clientPhase,
+    currentModule: clientModule,
+    modulesQueue: clientQueue,
+    completedModules: clientCompleted,
+  } = await req.json()
   const isPaused = paused === true
   const currentConfidence = typeof clientConfidence === 'number' ? clientConfidence : 0
+  const phase = typeof clientPhase === 'string' ? clientPhase : 'discovery'
+  const currentModule = typeof clientModule === 'string' ? clientModule : ''
+  const queue = Array.isArray(clientQueue) ? clientQueue : []
+  const completed = Array.isArray(clientCompleted) ? clientCompleted : []
 
   if (!Array.isArray(messages) || messages.length === 0 || messages.length > MAX_MESSAGES) {
     return new Response(JSON.stringify({ error: 'Invalid messages' }), { status: 400 })
@@ -29,6 +41,12 @@ export async function POST(req: NextRequest) {
         type: 'text' as const,
         text: SYSTEM_PROMPT,
         cache_control: { type: 'ephemeral' as const },
+      },
+      // Inject current phase state so the AI knows where it is across turns
+      // (it can't see its own tool outputs in message history).
+      {
+        type: 'text' as const,
+        text: `\n## Current Conversation State\nPhase: ${phase}\nCurrent module: ${currentModule || 'none'}\nModules queue: ${queue.length > 0 ? queue.join(', ') : 'empty'}\nCompleted modules: ${completed.length > 0 ? completed.join(', ') : 'none'}\nConfidence: ${currentConfidence}%`,
       },
       ...(isPaused ? [{
         type: 'text' as const,

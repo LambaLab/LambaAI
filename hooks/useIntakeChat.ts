@@ -18,6 +18,13 @@ export type ChatMessage = {
   sourceQuestion?: string            // The question text that was shown when this row was selected
   isPause?: boolean                  // true = this turn is a conversation checkpoint (breather)
   createdAt?: number                 // Date.now() when the message was created
+  // Module divider fields
+  isModuleStart?: boolean            // true = module-start divider (📱 MOBILE APP 1 of 4)
+  isModuleComplete?: boolean         // true = module-complete divider (✓ MOBILE APP COMPLETE)
+  moduleId?: string                  // which module this divider is for
+  modulePosition?: number            // 1-based position in queue
+  modulesTotal?: number              // total modules in queue
+  moduleSummary?: string             // completion summary text
 }
 
 type UpdateProposalInput = {
@@ -34,6 +41,11 @@ type UpdateProposalInput = {
   suggest_pause?: boolean
   suggest_resume?: boolean
   project_name?: string
+  // Phase tracking
+  current_phase?: 'discovery' | 'deep_dive' | 'wrap_up'
+  current_module?: string
+  module_complete?: boolean
+  modules_queue?: string[]
 }
 
 type ApiMessage = { role: 'user' | 'assistant'; content: string }
@@ -77,6 +89,7 @@ const EMAIL_VERIFIED_KEY = (pid: string) => `lamba_email_verified_${pid}`
 const SYNCED_COUNT_KEY   = (pid: string) => `lamba_synced_count_${pid}`
 const PAUSED_KEY = (pid: string) => `lamba_paused_${pid}`
 const PAUSED_QR_KEY = (pid: string) => `lamba_paused_qr_${pid}`
+const PHASE_KEY = (pid: string) => `lamba_phase_${pid}`
 
 export function useIntakeChat({ proposalId, idea }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -90,6 +103,12 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   const [projectName, setProjectName] = useState('')
   const [isPaused, setIsPaused] = useState(false)
   const [pausedQuestion, setPausedQuestion] = useState<string | null>(null)
+  // Phase tracking for 3-phase conversation flow
+  const [currentPhase, setCurrentPhase] = useState<'discovery' | 'deep_dive' | 'wrap_up'>('discovery')
+  const [currentModule, setCurrentModule] = useState('')
+  const [modulesQueue, setModulesQueue] = useState<string[]>([])
+  const [completedModules, setCompletedModules] = useState<string[]>([])
+  const prevModuleRef = useRef('')
   // When true, the paused question's QR card is temporarily revealed (user tapped peek card)
   // This stays true until the user answers, then auto-hides back to paused state
   const [questionRevealed, setQuestionRevealed] = useState(false)
@@ -106,6 +125,10 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   const lastPauseTurn = useRef(-999)  // turn index of the last checkpoint (-999 = never)
   const turnCount = useRef(0)         // increments each time a tool_result is processed
   const isPausedRef = useRef(false)
+  const currentPhaseRef = useRef<'discovery' | 'deep_dive' | 'wrap_up'>('discovery')
+  const currentModuleRef = useRef('')
+  const modulesQueueRef = useRef<string[]>([])
+  const completedModulesRef = useRef<string[]>([])
   const streamIdRef = useRef<string>('')  // ID of the currently-active stream; used to prevent
                                           // stale streams from clobbering newer state
 
@@ -116,6 +139,10 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   useEffect(() => { productOverviewRef.current = productOverview }, [productOverview])
   useEffect(() => { moduleSummariesRef.current = moduleSummaries }, [moduleSummaries])
   useEffect(() => { isPausedRef.current = isPaused }, [isPaused])
+  useEffect(() => { currentPhaseRef.current = currentPhase }, [currentPhase])
+  useEffect(() => { currentModuleRef.current = currentModule }, [currentModule])
+  useEffect(() => { modulesQueueRef.current = modulesQueue }, [modulesQueue])
+  useEffect(() => { completedModulesRef.current = completedModules }, [completedModules])
 
   // Persist messages to localStorage after every update.
   // Also auto-saves to Supabase when email is verified and streaming is complete.
@@ -225,6 +252,31 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             }
           }
 
+          // Restore phase state from localStorage
+          const storedPhase = localStorage.getItem(PHASE_KEY(proposalId))
+          if (storedPhase) {
+            try {
+              const ph = JSON.parse(storedPhase)
+              if (ph.currentPhase) {
+                setCurrentPhase(ph.currentPhase)
+                currentPhaseRef.current = ph.currentPhase
+              }
+              if (typeof ph.currentModule === 'string') {
+                setCurrentModule(ph.currentModule)
+                currentModuleRef.current = ph.currentModule
+                prevModuleRef.current = ph.currentModule
+              }
+              if (Array.isArray(ph.modulesQueue)) {
+                setModulesQueue(ph.modulesQueue)
+                modulesQueueRef.current = ph.modulesQueue
+              }
+              if (Array.isArray(ph.completedModules)) {
+                setCompletedModules(ph.completedModules)
+                completedModulesRef.current = ph.completedModules
+              }
+            } catch { /* ignore */ }
+          }
+
           // Restore turnCount and lastPauseTurn from message history so the
           // checkpoint logic doesn't immediately trigger after a page refresh.
           // Each non-pause assistant message roughly corresponds to one tool_result turn.
@@ -317,6 +369,10 @@ export function useIntakeChat({ proposalId, idea }: Props) {
           currentModules: activeModulesRef.current,
           confidenceScore: confidenceRef.current,
           paused: isPausedRef.current,
+          currentPhase: currentPhaseRef.current,
+          currentModule: currentModuleRef.current,
+          modulesQueue: modulesQueueRef.current,
+          completedModules: completedModulesRef.current,
         }),
       })
 
@@ -485,14 +541,15 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               }, 100)
             }
 
-            // Checkpoint (breather) — client owns the decision.
-            // The AI's suggest_pause is unreliable: Haiku skips optional boolean
-            // fields and can't track cumulative confidence (it only sends deltas).
-            // Client-side trigger: confidence >= 50% AND >= 5 turns since last pause.
+            // Checkpoint (breather) — hybrid client + AI decision.
+            // In discovery phase: client triggers at confidence >= 60% as safety net.
+            // In deep_dive phase: AI drives checkpoints via suggest_pause on module_complete turns.
+            // In wrap_up phase: AI sets suggest_pause for the final checkpoint.
             turnCount.current++
             const turnsSinceLast = turnCount.current - lastPauseTurn.current
             const aiWantsPause = input?.suggest_pause === true
-            const clientWantsPause = newScore >= 50 && turnsSinceLast >= 5
+            const phase = input?.current_phase || currentPhaseRef.current
+            const clientWantsPause = phase === 'discovery' && newScore >= 60 && turnsSinceLast >= 6
             const isPauseThisTurn = (aiWantsPause || clientWantsPause) && turnsSinceLast >= 4
             if (isPauseThisTurn) lastPauseTurn.current = turnCount.current
 
@@ -585,6 +642,57 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               }
             }
 
+            // ── Phase tracking: update state from AI's phase fields ──
+            if (input?.current_phase) setCurrentPhase(input.current_phase)
+            if (typeof input?.current_module === 'string') setCurrentModule(input.current_module)
+            if (Array.isArray(input?.modules_queue)) setModulesQueue(input.modules_queue)
+
+            // Module-start divider: insert when AI moves to a new module
+            const newMod = typeof input?.current_module === 'string' ? input.current_module : ''
+            if (newMod && newMod !== prevModuleRef.current && !input?.module_complete) {
+              const queueArr = Array.isArray(input?.modules_queue) ? input.modules_queue : []
+              const pos = queueArr.indexOf(newMod)
+              const totalModules = queueArr.length + completedModules.length
+              const moduleStartMsg: ChatMessage = {
+                id: crypto.randomUUID(),
+                role: 'assistant',
+                content: '',
+                isModuleStart: true,
+                moduleId: newMod,
+                modulePosition: completedModules.length + 1,
+                modulesTotal: totalModules || (queueArr.length > 0 ? queueArr.length + completedModules.length : undefined),
+                createdAt: Date.now(),
+              }
+              setMessages(prev => {
+                // Insert before the current assistant bubble (the reaction text for this module)
+                const bubbleIdx = prev.findIndex(m => m.id === activeBubbleId)
+                if (bubbleIdx > 0) {
+                  return [...prev.slice(0, bubbleIdx), moduleStartMsg, ...prev.slice(bubbleIdx)]
+                }
+                return [...prev.slice(0, -1), moduleStartMsg, prev[prev.length - 1]]
+              })
+              prevModuleRef.current = newMod
+            }
+
+            // Module-complete divider: insert when AI signals a module is done
+            if (input?.module_complete === true && newMod) {
+              setCompletedModules(prev => prev.includes(newMod) ? prev : [...prev, newMod])
+              // The module-complete message doubles as a checkpoint (isPause: true)
+              // so the PauseCheckpoint component renders the pills.
+              const moduleCompleteMsg: ChatMessage = {
+                id: crypto.randomUUID(),
+                role: 'assistant',
+                content: '', // ModuleDivider renders its own content from moduleId + moduleSummary
+                isModuleComplete: true,
+                isPause: true,
+                moduleId: newMod,
+                moduleSummary: typeof input?.question === 'string' ? input.question.trim() : '',
+                createdAt: Date.now(),
+              }
+              setMessages(prev => [...prev, moduleCompleteMsg])
+              prevModuleRef.current = newMod
+            }
+
             // Mark streaming done — the QR card and question are ready to show.
             // The Anthropic stream may still be open (consuming message_delta / message_stop)
             // but there's nothing left to display; we don't need to wait for it.
@@ -618,6 +726,16 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                   projectName: savedProjectName || undefined,
                   brief: savedBrief,
                 }))
+                // Persist phase state for cross-refresh restoration
+                const phaseState = {
+                  currentPhase: input?.current_phase || 'discovery',
+                  currentModule: typeof input?.current_module === 'string' ? input.current_module : '',
+                  modulesQueue: Array.isArray(input?.modules_queue) ? input.modules_queue : [],
+                  completedModules: input?.module_complete && newMod
+                    ? [...completedModules.filter(m => m !== newMod), newMod]
+                    : completedModules,
+                }
+                localStorage.setItem(PHASE_KEY(proposalId), JSON.stringify(phaseState))
               } catch { /* Ignore QuotaExceededError */ }
             }
           }
@@ -829,6 +947,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
       localStorage.removeItem(PROPOSAL_KEY(proposalId))
       localStorage.removeItem(PAUSED_KEY(proposalId))
       localStorage.removeItem(PAUSED_QR_KEY(proposalId))
+      localStorage.removeItem(PHASE_KEY(proposalId))
     }
     // Reset refs synchronously
     messagesRef.current = []
@@ -837,6 +956,11 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     complexityRef.current = 1.0
     lastPauseTurn.current = -999
     turnCount.current = 0
+    currentPhaseRef.current = 'discovery'
+    currentModuleRef.current = ''
+    modulesQueueRef.current = []
+    completedModulesRef.current = []
+    prevModuleRef.current = ''
     // Reset state — blank slate
     setMessages([])
     setActiveModules([])
@@ -851,7 +975,11 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     isPausedRef.current = false
     setPausedQuestion(null)
     pausedQRRef.current = null
+    setCurrentPhase('discovery')
+    setCurrentModule('')
+    setModulesQueue([])
+    setCompletedModules([])
   }, [proposalId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, editMessage, reset, moduleSummaries, projectName, isPaused, pausedQuestion, questionRevealed, pauseQuestions, resumeQuestions, revealPausedQuestion, skipQuestion, lastSyncedAt }
+  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, editMessage, reset, moduleSummaries, projectName, isPaused, pausedQuestion, questionRevealed, pauseQuestions, resumeQuestions, revealPausedQuestion, skipQuestion, lastSyncedAt, currentPhase, currentModule, modulesQueue, completedModules }
 }
