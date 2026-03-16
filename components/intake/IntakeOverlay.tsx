@@ -407,11 +407,11 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Save for later — hidden when email is already verified or proposal panel is open */}
+              {/* Save for later — hidden on mobile (available in drawer), hidden when email verified or proposal panel open */}
               {!proposalOpen && !emailVerified && (
                 <button
                   type="button"
-                  className="text-xs text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors cursor-pointer px-2 py-1.5"
+                  className="hidden md:block text-xs text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors cursor-pointer px-2 py-1.5"
                   title="Save for later"
                   onClick={() => setSaveModalOpen(true)}
                 >
@@ -419,10 +419,10 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
                 </button>
               )}
 
-              {/* View / Hide Proposal button — no yellow fill when open */}
+              {/* View / Hide Proposal button */}
               <button
                 onClick={() => setProposalOpen(p => !p)}
-                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border border-white/10 hover:border-white/20 bg-transparent text-[var(--ov-text,#ffffff)]"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border border-[var(--ov-border,rgba(255,255,255,0.10))] hover:border-[var(--ov-text-muted,rgba(255,255,255,0.20))] bg-transparent text-[var(--ov-text,#ffffff)]"
               >
                 {proposalOpen ? (
                   'Hide proposal'
