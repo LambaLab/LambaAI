@@ -25,6 +25,10 @@ export type ChatMessage = {
   modulePosition?: number            // 1-based position in queue
   modulesTotal?: number              // total modules in queue
   moduleSummary?: string             // completion summary text
+  // Checklist card data (for ModuleProgressCard)
+  checklistCompleted?: string[]      // IDs of completed modules at this point
+  checklistCurrent?: string          // ID of module currently being probed
+  checklistQueue?: string[]          // IDs of remaining modules in order
 }
 
 type UpdateProposalInput = {
@@ -761,6 +765,9 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                 modulePosition: completedModulesRef.current.length + 1,
                 modulesTotal: totalModules || undefined,
                 createdAt: Date.now(),
+                checklistCompleted: [...completedModulesRef.current],
+                checklistCurrent: newMod,
+                checklistQueue: queueArr.filter(id => id !== newMod && !completedModulesRef.current.includes(id)),
               }
               setMessages(prev => {
                 // Insert before the current assistant bubble (the reaction text for this module)
@@ -776,15 +783,24 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             // Module-complete divider: insert when AI signals a module is done
             if (input?.module_complete === true && newMod) {
               setCompletedModules(prev => prev.includes(newMod) ? prev : [...prev, newMod])
+              // Build the completed list including this module that just finished
+              const newCompleted = completedModulesRef.current.includes(newMod)
+                ? [...completedModulesRef.current]
+                : [...completedModulesRef.current, newMod]
+              const remainingQueue = effectiveQueue.filter(id => id !== newMod && !newCompleted.includes(id))
+              const nextModule = remainingQueue[0] || ''
               const moduleCompleteMsg: ChatMessage = {
                 id: crypto.randomUUID(),
                 role: 'assistant',
-                content: '', // ModuleDivider renders its own content from moduleId + moduleSummary
+                content: '', // ModuleProgressCard renders its own content
                 isModuleComplete: true,
                 isPause: true,
                 moduleId: newMod,
                 moduleSummary: typeof input?.question === 'string' ? input.question.trim() : '',
                 createdAt: Date.now(),
+                checklistCompleted: newCompleted,
+                checklistCurrent: nextModule,
+                checklistQueue: remainingQueue,
               }
               setMessages(prev => [...prev, moduleCompleteMsg])
               prevModuleRef.current = newMod

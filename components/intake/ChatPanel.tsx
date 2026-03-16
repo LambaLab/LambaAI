@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
 import { ArrowRight, ArrowDown, Pause, Play } from 'lucide-react'
 import MessageBubble from './MessageBubble'
-import ModuleDivider from './ModuleDivider'
+import ModuleProgressCard from './ModuleProgressCard'
 import PauseCheckpoint from './PauseCheckpoint'
 import QuickReplies from './QuickReplies'
 import type { ChatMessage } from '@/hooks/useIntakeChat'
@@ -139,7 +139,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
         >
           {messages.map((msg, i) => (
             (msg.isModuleStart || msg.isModuleComplete) ? (
-              <ModuleDivider
+              <ModuleProgressCard
                 key={msg.id}
                 message={msg}
                 onSend={(val, display) => onSend(val, display)}
