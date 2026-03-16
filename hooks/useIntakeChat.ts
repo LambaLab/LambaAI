@@ -222,6 +222,18 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             }
           }
 
+          // Restore turnCount and lastPauseTurn from message history so the
+          // checkpoint logic doesn't immediately trigger after a page refresh.
+          // Each non-pause assistant message roughly corresponds to one tool_result turn.
+          let restoredTurnCount = 0
+          let restoredLastPauseTurn = -999
+          for (const m of parsed) {
+            if (m.role === 'assistant' && !m.isPause) restoredTurnCount++
+            if (m.isPause) restoredLastPauseTurn = restoredTurnCount
+          }
+          turnCount.current = restoredTurnCount
+          lastPauseTurn.current = restoredLastPauseTurn
+
           // Restore paused state
           if (localStorage.getItem(PAUSED_KEY(proposalId)) === 'true') {
             setIsPaused(true)
