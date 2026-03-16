@@ -392,10 +392,15 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               setProjectName(input.project_name.trim())
             }
 
-            // Checkpoint (breather) — allow recurring pauses, min 4 turns apart
+            // Checkpoint (breather) — client owns the decision.
+            // The AI's suggest_pause is unreliable: Haiku skips optional boolean
+            // fields and can't track cumulative confidence (it only sends deltas).
+            // Client-side trigger: confidence >= 50% AND >= 5 turns since last pause.
             turnCount.current++
             const turnsSinceLast = turnCount.current - lastPauseTurn.current
-            const isPauseThisTurn = input?.suggest_pause === true && turnsSinceLast >= 4
+            const aiWantsPause = input?.suggest_pause === true
+            const clientWantsPause = newScore >= 50 && turnsSinceLast >= 5
+            const isPauseThisTurn = (aiWantsPause || clientWantsPause) && turnsSinceLast >= 4
             if (isPauseThisTurn) lastPauseTurn.current = turnCount.current
 
             setMessages((prev) => {
@@ -424,11 +429,18 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                   quickReplies: undefined,
                   isPause: undefined,
                 }
-                // 2. Pause checkpoint — friendly intro from the `question` field + hardcoded CTAs
+                // 2. Pause checkpoint — friendly intro + hardcoded CTAs.
+                // When the AI prepared a checkpoint (suggest_pause: true), its question
+                // field has a summary of what's been established. When the client
+                // triggered the pause, the question is a regular follow-up — use a
+                // generic warm message instead.
+                const checkpointContent = aiWantsPause && questionText
+                  ? questionText
+                  : 'Good progress so far. Your proposal is shaping up nicely. Want to take a look at what we\'ve built, keep going to sharpen the details, or save this for later?'
                 const checkpointMsg: ChatMessage = {
                   id: crypto.randomUUID(),
                   role: 'assistant',
-                  content: questionText || 'Good progress. Want to take a look at what we\'ve built, keep going, or save this for later?',
+                  content: checkpointContent,
                   isPause: true,
                 }
                 return [...prev.slice(0, -1), reactionBubble, checkpointMsg]
