@@ -102,6 +102,17 @@ export default function HeroSection() {
     window.history.replaceState(null, '', '/')
   }
 
+  // When intake is open, skip rendering the homepage entirely — prevents any flash
+  if (intakeOpen) {
+    return (
+      <IntakeOverlay
+        initialMessage={initialMessage}
+        onReset={handleReset}
+        onClose={handleClose}
+      />
+    )
+  }
+
   return (
     <>
       <section className="min-h-screen flex flex-col items-center justify-center px-4 py-20 relative">
@@ -138,13 +149,6 @@ export default function HeroSection() {
         />
       )}
 
-      {intakeOpen && (
-        <IntakeOverlay
-          initialMessage={initialMessage}
-          onReset={handleReset}
-          onClose={handleClose}
-        />
-      )}
     </>
   )
 }

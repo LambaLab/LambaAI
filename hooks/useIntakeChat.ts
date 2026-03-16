@@ -408,7 +408,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               setMessages((prev) => {
                 const last = prev[prev.length - 1]
                 if (last?.id !== activeBubbleId) return prev  // user already moved on
-                const base = last.content  // follow_up_question text already streamed in
+                const base = (last.content || '').replace(/"+\s*$/, '')  // strip trailing quotes
                 const bubbleContent =
                   !isListQR && questionText
                     ? base ? `${base}\n\n${questionText}` : questionText
@@ -493,9 +493,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
 
             setMessages((prev) => {
               const last = prev[prev.length - 1]
-              // Guard: if the user already responded (after a partial_result), last.id will
-              // be a different message and we must not overwrite the new stream's state.
-              if (last?.id !== activeBubbleId) return prev
+              const userAlreadyResponded = last?.id !== activeBubbleId
               const followUp = typeof input?.follow_up_question === 'string' ? input.follow_up_question : ''
               const questionText = typeof input?.question === 'string' ? input.question.trim() : ''
               // Validate quick_replies — empty options array is as bad as no quick_replies
@@ -505,24 +503,16 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                 ? rawQR
                 : undefined
               const updatedQR = normalizeQRStyle(validQR)
-              const isListQR = updatedQR?.style === 'list'
 
               if (isPauseThisTurn) {
-                // PAUSE TURN: split into two separate messages so the reaction appears
-                // as a standard MessageBubble before the checkpoint divider.
-                // 1. Reaction bubble — normal MessageBubble (follow_up_question streamed live)
-                const reactionBubble: ChatMessage = {
-                  ...last,
-                  content: last.content || followUp,
-                  question: undefined,
-                  quickReplies: undefined,
-                  isPause: undefined,
-                }
-                // 2. Pause checkpoint — friendly intro + hardcoded CTAs.
-                // When the AI prepared a checkpoint (suggest_pause: true), its question
-                // field has a summary of what's been established. When the client
-                // triggered the pause, the question is a regular follow-up — use a
-                // generic warm message instead.
+                // PAUSE TURN: always create the checkpoint, even if the user responded
+                // before tool_result arrived (after partial_result set isStreaming=false).
+                // Find the original assistant bubble to use as the reaction bubble.
+                const bubbleIdx = prev.findIndex(m => m.id === activeBubbleId)
+                const bubble = bubbleIdx !== -1 ? prev[bubbleIdx] : null
+                const reactionBubble: ChatMessage = bubble
+                  ? { ...bubble, content: (bubble.content || followUp).replace(/"+\s*$/, ''), question: undefined, quickReplies: undefined, isPause: undefined }
+                  : { id: crypto.randomUUID(), role: 'assistant' as const, content: followUp.replace(/"+\s*$/, ''), createdAt: Date.now() }
                 const checkpointContent = aiWantsPause && questionText
                   ? questionText
                   : 'Good progress so far. Your proposal is shaping up nicely. Want to take a look at what we\'ve built, keep going to sharpen the details, or save this for later?'
@@ -533,8 +523,17 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                   isPause: true,
                   createdAt: Date.now(),
                 }
-                return [...prev.slice(0, -1), reactionBubble, checkpointMsg]
+                if (bubbleIdx !== -1) {
+                  // Replace the original bubble with reaction + checkpoint
+                  return [...prev.slice(0, bubbleIdx), reactionBubble, checkpointMsg, ...prev.slice(bubbleIdx + 1)]
+                }
+                // Bubble not found (shouldn't happen) — just append
+                return [...prev, checkpointMsg]
               }
+
+              // Guard: if the user already responded (after a partial_result), don't
+              // overwrite the new stream's state.
+              if (userAlreadyResponded) return prev
 
               // Normal turn
               // When paused, strip list QR and question — but allow pills through (intent actions)
@@ -547,7 +546,10 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               // For list QR: question goes in the rows card header (message.question), not in the bubble
               // For no QR or pills QR: question is appended to bubble content so it's visible
               // Skip appending if partial_result already built the content (avoids duplicate question)
-              const base = last.content || followUp
+              // Strip trailing quotes — the AI sometimes wraps follow_up_question in
+              // literal escaped quotes which the streaming parser correctly unescapes
+              // but shouldn't be displayed.
+              const base = (last.content || followUp).replace(/"+\s*$/, '')
               const bubbleContent = !isListEffective && effectiveQuestion && !partialResultApplied
                 ? (base ? `${base}\n\n${effectiveQuestion}` : effectiveQuestion)
                 : base

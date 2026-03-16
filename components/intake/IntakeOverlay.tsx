@@ -9,6 +9,7 @@ import SaveForLaterModal from './SaveForLaterModal'
 import ProposalDrawer, { type ProposalSummary } from './ProposalDrawer'
 import {
   getOrCreateSession,
+  getStoredSession,
   storeIdeaForSession,
   storeSession,
   hydrateProposalFromRestore,
@@ -28,7 +29,13 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
   const { theme, toggleTheme } = useTheme()
   const [session, setSession] = useState<SessionData | null>(null)
   const [sessionError, setSessionError] = useState(false)
-  const [mounted, setMounted] = useState(false)
+  // Start mounted=true for returning users so the overlay is opaque on the
+  // very first frame (no flash of the homepage behind the transparent overlay).
+  // New users (no stored session) get the fade-in animation.
+  const [mounted, setMounted] = useState(() => {
+    if (typeof window === 'undefined') return false
+    try { return !!getStoredSession() } catch { return false }
+  })
   const [minimized, setMinimized] = useState(false)
   const [proposalOpen, setProposalOpen] = useState(false)
   const [saveModalOpen, setSaveModalOpen] = useState(false)
