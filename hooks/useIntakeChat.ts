@@ -36,6 +36,23 @@ type UpdateProposalInput = {
 
 type ApiMessage = { role: 'user' | 'assistant'; content: string }
 
+// Merge consecutive same-role messages into one. This is necessary because
+// bubble_split creates two assistant messages (reaction + transition_text),
+// which are persisted as separate rows in Supabase. The Claude API requires
+// strictly alternating user/assistant messages and rejects consecutive same-role.
+function mergeConsecutiveMessages(msgs: ApiMessage[]): ApiMessage[] {
+  const merged: ApiMessage[] = []
+  for (const msg of msgs) {
+    const last = merged[merged.length - 1]
+    if (last && last.role === msg.role) {
+      last.content = last.content + '\n\n' + msg.content
+    } else {
+      merged.push({ ...msg })
+    }
+  }
+  return merged
+}
+
 type Props = {
   proposalId: string
   idea: string
@@ -511,10 +528,10 @@ export function useIntakeChat({ proposalId, idea }: Props) {
       sourceQuestion,
     }
 
-    const apiMessages: ApiMessage[] = [
+    const apiMessages = mergeConsecutiveMessages([
       ...messagesRef.current.map((m): ApiMessage => ({ role: m.role, content: m.content })),
       { role: 'user', content },
-    ]
+    ])
 
     setMessages((prev) => {
       // Clear quickReplies and question from last assistant message
@@ -565,8 +582,8 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     const kept = messagesRef.current.slice(0, msgIndex)
     setMessages([...kept, correctionMsg])
 
-    const aiHistory = [...kept, correctionMsg].map(
-      (m): ApiMessage => ({ role: m.role, content: m.content })
+    const aiHistory = mergeConsecutiveMessages(
+      [...kept, correctionMsg].map((m): ApiMessage => ({ role: m.role, content: m.content }))
     )
 
     await streamAIResponse(aiHistory)
