@@ -105,6 +105,9 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
       : null
   const questionText = listQR ? (lastMsg?.question ?? undefined) : undefined
 
+  // Compute question number: count assistant messages with a question field (structured Q&A turns)
+  const questionNumber = messages.filter(m => m.role === 'assistant' && !m.isPause && m.question).length
+
   // Re-editing: user tapped edit on a past row-selection bubble
   const reEditingMsg = reEditingMessageId ? messages.find(m => m.id === reEditingMessageId) : null
   const reEditingQR = reEditingMsg?.sourceQuickReplies ?? null
@@ -215,6 +218,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
               }}
               disabled={isStreaming}
               question={activeQuestion}
+              questionNumber={!reEditingQR ? questionNumber : undefined}
               onSkipQuestion={!reEditingQR && confidenceScore >= 40 ? onSkipQuestion : undefined}
               onPauseQuestions={!reEditingQR ? onPauseQuestions : undefined}
               onResumeQuestions={!reEditingQR ? onResumeQuestions : undefined}
@@ -230,7 +234,12 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
                 className="w-[calc(100%-16px)] mx-auto block group/peek px-4 py-2.5 rounded-t-xl bg-[var(--ov-surface-subtle,rgba(255,255,255,0.04))] border border-b-0 border-[var(--ov-border,rgba(255,255,255,0.08))] hover:bg-[var(--ov-surface-subtle,rgba(255,255,255,0.08))] transition-colors cursor-pointer text-left"
                 aria-label="Resume auto-questions"
               >
-                <span className="text-xs leading-relaxed text-[var(--ov-text-muted,#727272)] group-hover/peek:text-[var(--ov-text,#ffffff)] transition-colors">
+                {questionNumber > 0 && (
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--ov-text-muted,#727272)]/50 group-hover/peek:text-[var(--ov-text-muted,#727272)] transition-colors">
+                    Question {questionNumber}
+                  </span>
+                )}
+                <span className="text-xs leading-relaxed text-[var(--ov-text-muted,#727272)] group-hover/peek:text-[var(--ov-text,#ffffff)] transition-colors block">
                   {pausedQuestion}
                 </span>
               </button>

@@ -9,13 +9,14 @@ type Props = {
   onSelect: (value: string, label?: string) => void
   disabled?: boolean
   question?: string  // Shown as a header at the top of the list card
+  questionNumber?: number  // e.g. 5 → "QUESTION 5" shown above the question text
   onSkipQuestion?: () => void
   onPauseQuestions?: () => void
   isPaused?: boolean
   onResumeQuestions?: () => void
 }
 
-export default function QuickReplies({ quickReplies, onSelect, disabled, question, onSkipQuestion, onPauseQuestions, isPaused, onResumeQuestions }: Props) {
+export default function QuickReplies({ quickReplies, onSelect, disabled, question, questionNumber, onSkipQuestion, onPauseQuestions, isPaused, onResumeQuestions }: Props) {
   const { style, multiSelect, allowCustom, options } = quickReplies
   // Always show "Type something else..." for list style
   const effectiveAllowCustom = style === 'list' ? true : (allowCustom ?? false)
@@ -150,6 +151,9 @@ export default function QuickReplies({ quickReplies, onSelect, disabled, questio
       <div className="rounded-xl border border-[var(--ov-border,rgba(255,255,255,0.10))] overflow-hidden">
         {question && (
           <div className="px-4 py-3 border-b border-[var(--ov-border,rgba(255,255,255,0.10))]">
+            {questionNumber != null && questionNumber > 0 && (
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--ov-text-muted,#727272)]/50 mb-1">Question {questionNumber}</p>
+            )}
             <p className="text-sm text-[var(--ov-text,#ffffff)] leading-relaxed">{question}</p>
           </div>
         )}
@@ -168,6 +172,9 @@ export default function QuickReplies({ quickReplies, onSelect, disabled, questio
       {/* Question header */}
       {question && (
         <div className="px-4 py-3 border-b border-[var(--ov-border,rgba(255,255,255,0.10))]">
+          {questionNumber != null && questionNumber > 0 && (
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--ov-text-muted,#727272)]/50 mb-1">Question {questionNumber}</p>
+          )}
           <p className="text-sm text-[var(--ov-text,#ffffff)] leading-relaxed">{question}</p>
         </div>
       )}
