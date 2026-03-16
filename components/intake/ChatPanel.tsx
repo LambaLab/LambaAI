@@ -235,7 +235,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
                 </span>
               </button>
             )}
-            <div className={`flex items-center gap-2 bg-[var(--ov-input-bg,rgba(255,255,255,0.05))] border border-[var(--ov-border,rgba(255,255,255,0.10))] p-3 focus-within:border-[var(--ov-focus-ring,rgba(255,252,0,0.30))] transition-colors ${isPaused && pausedQuestion ? 'rounded-b-xl rounded-t-none relative z-[1]' : 'rounded-xl'}`}>
+            <div className="flex items-center gap-2 bg-[var(--ov-input-bg,rgba(255,255,255,0.05))] border border-[var(--ov-border,rgba(255,255,255,0.10))] rounded-xl p-3 focus-within:border-[var(--ov-focus-ring,rgba(255,252,0,0.30))] transition-colors relative z-[1]">
               <textarea
                 ref={textareaRef}
                 value={input}
