@@ -9,6 +9,7 @@ export default function HeroSection() {
   const [intakeOpen, setIntakeOpen] = useState(false)
   const [initialMessage, setInitialMessage] = useState('')
   const [heroInputResetKey, setHeroInputResetKey] = useState(0)
+  const [expiredLink, setExpiredLink] = useState(false)
 
   // Restore conversation from localStorage/URL on mount
   useEffect(() => {
@@ -29,12 +30,17 @@ export default function HeroSection() {
       fetch(`/api/proposals/${c}/restore`)
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          if (!data) return
+          if (!data) {
+            setExpiredLink(true)
+            return
+          }
           hydrateProposalFromRestore(data)
           setInitialMessage(data.brief || data.messages?.[0]?.content || '')
           setIntakeOpen(true)
         })
-        .catch((e) => console.error('Restore error:', e))
+        .catch(() => {
+          setExpiredLink(true)
+        })
       return
     }
 
@@ -87,6 +93,13 @@ export default function HeroSection() {
             Describe your product. Our AI breaks it down into modules,
             estimates the cost, and delivers a real proposal — in minutes.
           </p>
+
+          {expiredLink && (
+            <div className="bg-white/5 border border-white/10 rounded-xl px-5 py-4 max-w-md mx-auto text-sm text-brand-gray-mid space-y-1">
+              <p className="text-brand-white font-medium">This conversation link has expired</p>
+              <p>The session was not saved. Start a new conversation below, or use &ldquo;Save for Later&rdquo; next time to access it from any device.</p>
+            </div>
+          )}
 
           <HeroInput key={heroInputResetKey} onFirstMessage={handleFirstMessage} />
         </div>
