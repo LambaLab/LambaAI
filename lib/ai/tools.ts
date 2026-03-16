@@ -31,6 +31,10 @@ export const UPDATE_PROPOSAL_TOOL: Anthropic.Tool = {
         type: 'boolean' as const,
         description: 'Set to true when confidence is 60%+ and you have covered: platform, target users, core workflow, and rough monetization. Can fire multiple times as the conversation deepens, for example at 60% and again at 80%. Never trigger two checkpoints back-to-back; wait at least 4 turns between them.',
       },
+      suggest_resume: {
+        type: 'boolean' as const,
+        description: 'Only used during paused mode. Set to true when the user has clearly agreed to resume the structured Q&A (e.g. "yes", "sure", "let\'s continue", "ok"). Do NOT set on the turn where you suggest resuming, only on the turn where the user confirms.',
+      },
       // question and quick_replies MUST come after suggest_pause so the server always
       // knows whether this is a pause turn before partial_result fires.
       // They also MUST come before the heavy metadata fields (product_overview,

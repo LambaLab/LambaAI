@@ -31,6 +31,7 @@ type UpdateProposalInput = {
   quick_replies?: QuickReplies
   module_summaries?: { [moduleId: string]: string }
   suggest_pause?: boolean
+  suggest_resume?: boolean
   project_name?: string
 }
 
@@ -405,6 +406,20 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             }
             if (input?.project_name && input.project_name.trim()) {
               setProjectName(input.project_name.trim())
+            }
+
+            // Auto-resume: AI detected user agreed to resume structured Q&A.
+            // Unpause immediately so the NEXT user message triggers normal Q&A flow.
+            // We also fire a synthetic "Continue" message so the user doesn't have
+            // to type anything — the next question appears automatically.
+            if (isPausedRef.current && input?.suggest_resume === true) {
+              setIsPaused(false)
+              isPausedRef.current = false
+              if (proposalId) localStorage.removeItem(PAUSED_KEY(proposalId))
+              // Defer the resume message so this tool_result's state updates settle first
+              setTimeout(() => {
+                sendMessage('Continue with intake questions', 'Resumed auto-questions')
+              }, 100)
             }
 
             // Checkpoint (breather) — client owns the decision.
