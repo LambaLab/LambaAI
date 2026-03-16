@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Check, Menu, Minus, Sun, Moon, X } from 'lucide-react'
+import { CloudCheck, Menu, Minus, Sun, Moon, X } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import IntakeLayout from './IntakeLayout'
 import MinimizedBar from './MinimizedBar'
@@ -480,10 +480,16 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
                     ${appName ? 'opacity-0 group-hover:opacity-100' : 'opacity-60'}`}>✎</span>
                 </button>
               )}
-              {showSaved && emailVerified && (
-                <span className="text-xs text-green-500/80 flex items-center gap-1 animate-fade-in-out ml-2">
-                  <Check className="w-3 h-3" />
-                  Saved
+              {emailVerified && (
+                <span
+                  className={`ml-2 flex items-center transition-colors duration-300 relative group/cloud
+                    ${showSaved ? 'text-green-500' : 'text-[var(--ov-text-muted,#727272)]'}`}
+                  title="Auto-saved"
+                >
+                  <CloudCheck className="w-4 h-4" />
+                  <span className="absolute left-1/2 -translate-x-1/2 top-full mt-1.5 px-2 py-1 rounded text-[10px] whitespace-nowrap opacity-0 group-hover/cloud:opacity-100 transition-opacity pointer-events-none bg-[#333] text-white">
+                    Auto-saved
+                  </span>
                 </span>
               )}
             </div>
