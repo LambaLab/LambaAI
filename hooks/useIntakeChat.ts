@@ -89,6 +89,8 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   const [projectName, setProjectName] = useState('')
   const [isPaused, setIsPaused] = useState(false)
   const [pausedQuestion, setPausedQuestion] = useState<string | null>(null)
+  // Store the stripped QR so we can silently restore it on resume
+  const pausedQRRef = useRef<{ question: string; quickReplies: QuickReplies; messageId: string } | null>(null)
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null)
 
   const messagesRef = useRef<ChatMessage[]>([])
@@ -675,14 +677,17 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     setIsPaused(true)
     isPausedRef.current = true
     if (proposalId) localStorage.setItem(PAUSED_KEY(proposalId), 'true')
-    // Save the current question before stripping it, so we can show a peek card
+    // Save the current question + QR before stripping, so we can restore silently on resume
     setMessages((prev) => {
       const idx = [...prev].reverse().findIndex(m => m.role === 'assistant' && !m.isPause)
       if (idx === -1) return prev
       const realIdx = prev.length - 1 - idx
       const msg = prev[realIdx]
-      // Save the question text for the peek card
+      // Save the question text for the peek card + full QR for silent restore
       if (msg.question) setPausedQuestion(msg.question)
+      if (msg.quickReplies && msg.question) {
+        pausedQRRef.current = { question: msg.question, quickReplies: msg.quickReplies, messageId: msg.id }
+      }
       if (!msg.quickReplies) return prev
       return [
         ...prev.slice(0, realIdx),
@@ -693,18 +698,35 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   }, [proposalId])
 
   const resumeQuestions = useCallback(() => {
-    const savedQuestion = pausedQuestion
     setIsPaused(false)
     isPausedRef.current = false
     setPausedQuestion(null)
     if (proposalId) localStorage.removeItem(PAUSED_KEY(proposalId))
-    // Send a message to trigger the AI's next question, including the paused question
-    // so the AI can decide whether to re-ask or acknowledge it was already answered.
-    const prompt = savedQuestion
-      ? `Continue with intake questions. The last question before pausing was: "${savedQuestion}". If the user has already answered this question in the conversation above, briefly acknowledge that and move to the next question. Otherwise, ask it again.`
-      : 'Continue with intake questions'
-    sendMessage(prompt, 'Resumed auto-questions')
-  }, [proposalId, sendMessage, pausedQuestion])
+
+    const saved = pausedQRRef.current
+    if (saved) {
+      // Silent restore: put the question + QR back on the original message
+      setMessages((prev) => {
+        // Find the message to restore onto — try saved ID first, fall back to last assistant
+        let targetIdx = prev.findIndex(m => m.id === saved.messageId)
+        if (targetIdx === -1) {
+          const revIdx = [...prev].reverse().findIndex(m => m.role === 'assistant' && !m.isPause)
+          if (revIdx !== -1) targetIdx = prev.length - 1 - revIdx
+        }
+        if (targetIdx === -1) return prev
+        const msg = prev[targetIdx]
+        return [
+          ...prev.slice(0, targetIdx),
+          { ...msg, question: saved.question, quickReplies: saved.quickReplies },
+          ...prev.slice(targetIdx + 1),
+        ]
+      })
+      pausedQRRef.current = null
+    } else {
+      // No saved QR (e.g. restored from localStorage paused state) — ask AI to continue
+      sendMessage('Continue with intake questions', 'Continue')
+    }
+  }, [proposalId, sendMessage])
 
   const skipQuestion = useCallback(() => {
     sendMessage('Skip this question and ask the next one', 'Skipped')
@@ -737,6 +759,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     setIsPaused(false)
     isPausedRef.current = false
     setPausedQuestion(null)
+    pausedQRRef.current = null
   }, [proposalId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, editMessage, reset, moduleSummaries, projectName, isPaused, pausedQuestion, pauseQuestions, resumeQuestions, skipQuestion, lastSyncedAt }
