@@ -111,8 +111,8 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
   const aiStarted = confidenceScore > 0
 
   const summaryText = pricingVisible
-    ? `${activeModules.length} modules · ${formatPriceRange(priceRange)}`
-    : `${activeModules.length} modules detected`
+    ? `View proposal · ${formatPriceRange(priceRange)}`
+    : `View proposal ${confidenceScore}%`
 
   return (
     <div className="flex-1 overflow-hidden flex">
@@ -203,6 +203,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
           onToggle={toggleModule}
           moduleSummaries={moduleSummaries}
           onReset={onReset}
+          onSaveLater={onSaveLater}
         />
       </div>
     </div>

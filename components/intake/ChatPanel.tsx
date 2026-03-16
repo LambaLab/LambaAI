@@ -1,7 +1,7 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
-import { ArrowRight, Pause, Play } from 'lucide-react'
+import { useRef, useEffect, useState, useCallback } from 'react'
+import { ArrowRight, ArrowDown, Pause, Play } from 'lucide-react'
 import MessageBubble from './MessageBubble'
 import PauseCheckpoint from './PauseCheckpoint'
 import QuickReplies from './QuickReplies'
@@ -27,21 +27,40 @@ type Props = {
 export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onRequestViewProposal, onSaveLater, constrained = false, theme, isPaused, onPauseQuestions, onResumeQuestions, onSkipQuestion, confidenceScore = 0 }: Props) {
   const [input, setInput] = useState('')
   const [reEditingMessageId, setReEditingMessageId] = useState<string | null>(null)
+  const [showScrollBtn, setShowScrollBtn] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    bottomRef.current?.scrollIntoView({ behavior })
+  }, [])
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    scrollToBottom('smooth')
+  }, [messages, scrollToBottom])
+
+  // Track scroll position to show/hide scroll-to-bottom button
+  useEffect(() => {
+    const container = scrollContainerRef.current
+    if (!container) return
+    function handleScroll() {
+      if (!container) return
+      const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight
+      setShowScrollBtn(distFromBottom > 150)
+    }
+    container.addEventListener('scroll', handleScroll, { passive: true })
+    return () => container.removeEventListener('scroll', handleScroll)
+  }, [])
 
   // After the panel open/close animation completes, snap to bottom so
   // the latest message is always in view regardless of reflow from width change
   useEffect(() => {
     const timer = setTimeout(() => {
-      bottomRef.current?.scrollIntoView({ behavior: 'instant' })
+      scrollToBottom('instant')
     }, 320) // just after the 300ms CSS transition
     return () => clearTimeout(timer)
-  }, [constrained])
+  }, [constrained, scrollToBottom])
 
   // Clear re-edit mode when AI starts streaming (edit was confirmed)
   useEffect(() => {
@@ -97,7 +116,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
   return (
     <div className="flex flex-col h-full">
       {/* Messages — scroll container stays full-width always; content div handles centering */}
-      <div className="flex-1 overflow-y-auto py-4 scrollbar-hide">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto py-4 scrollbar-hide relative">
         <div
           className="px-6 space-y-4 mx-auto w-full"
           style={{ maxWidth: '760px' }}
@@ -139,6 +158,19 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
           <div ref={bottomRef} />
         </div>
       </div>
+
+      {/* Scroll-to-bottom button */}
+      {showScrollBtn && (
+        <div className="flex-shrink-0 flex justify-center -mt-5 mb-1 relative z-10">
+          <button
+            onClick={() => scrollToBottom('smooth')}
+            className="w-8 h-8 rounded-full bg-[var(--ov-surface-subtle,rgba(255,255,255,0.10))] border border-[var(--ov-border,rgba(255,255,255,0.10))] flex items-center justify-center text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] hover:bg-[var(--ov-input-bg,rgba(255,255,255,0.15))] transition-all shadow-lg cursor-pointer"
+            aria-label="Scroll to bottom"
+          >
+            <ArrowDown className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Bottom area: list rows card (new question OR re-edit) OR regular textarea */}
       <div className="flex-shrink-0 px-6 pb-4">
@@ -187,39 +219,48 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
             />
           </>
         ) : (
-          <div className="flex items-center gap-2 bg-[var(--ov-input-bg,rgba(255,255,255,0.05))] border border-[var(--ov-border,rgba(255,255,255,0.10))] rounded-xl p-3 focus-within:border-brand-yellow/30 transition-colors">
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={handleTextareaChange}
-              onKeyDown={handleKeyDown}
-              placeholder={isPaused ? "Ask anything or share your thoughts..." : (messages.length === 0 ? "Describe the idea you want to build..." : "Tell me more...")}
-              rows={1}
-              disabled={isStreaming}
-              aria-label="Chat input"
-              className="flex-1 bg-transparent text-[var(--ov-text,#ffffff)] placeholder:text-[var(--ov-text-muted,#727272)] resize-none outline-none text-sm leading-relaxed min-h-[20px] max-h-[120px] overflow-y-auto disabled:opacity-50"
-            />
-            {/* Pause/Play toggle — only visible after conversation has started */}
-            {messages.length > 1 && (onPauseQuestions || onResumeQuestions) && (
-              <button
-                onClick={() => isPaused ? onResumeQuestions?.() : onPauseQuestions?.()}
+          <>
+            <div className="flex items-center gap-2 bg-[var(--ov-input-bg,rgba(255,255,255,0.05))] border border-[var(--ov-border,rgba(255,255,255,0.10))] rounded-xl p-3 focus-within:border-brand-yellow/30 transition-colors">
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={handleTextareaChange}
+                onKeyDown={handleKeyDown}
+                placeholder={isPaused ? "Ask anything or share your thoughts..." : (messages.length === 0 ? "Describe the idea you want to build..." : "Tell me more...")}
+                rows={1}
                 disabled={isStreaming}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--ov-text-muted,#727272)] hover:text-brand-yellow hover:bg-[var(--ov-surface-subtle,rgba(255,255,255,0.08))] transition-all flex-shrink-0 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                aria-label={isPaused ? 'Resume Auto-questions' : 'Pause Auto-questions'}
-                title={isPaused ? 'Resume Auto-questions' : 'Pause Auto-questions'}
+                aria-label="Chat input"
+                className="flex-1 bg-transparent text-[var(--ov-text,#ffffff)] placeholder:text-[var(--ov-text-muted,#727272)] resize-none outline-none text-sm leading-relaxed min-h-[20px] max-h-[120px] overflow-y-auto disabled:opacity-50"
+              />
+              {/* Pause/Play toggle — only visible after conversation has started */}
+              {messages.length > 1 && (onPauseQuestions || onResumeQuestions) && (
+                <button
+                  onClick={() => isPaused ? onResumeQuestions?.() : onPauseQuestions?.()}
+                  disabled={isStreaming}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--ov-text-muted,#727272)] hover:text-brand-yellow hover:bg-[var(--ov-surface-subtle,rgba(255,255,255,0.08))] transition-all flex-shrink-0 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                  aria-label={isPaused ? 'Resume Auto-questions' : 'Pause Auto-questions'}
+                  title={isPaused ? 'Resume Auto-questions' : 'Pause Auto-questions'}
+                >
+                  {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+                </button>
+              )}
+              <button
+                onClick={handleSubmit}
+                disabled={!input.trim() || isStreaming}
+                className="w-8 h-8 bg-brand-yellow rounded-lg flex items-center justify-center disabled:opacity-30 hover:bg-brand-yellow/90 transition-all active:scale-95 flex-shrink-0 cursor-pointer disabled:cursor-not-allowed"
+                aria-label="Send message"
               >
-                {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+                <ArrowRight className="w-4 h-4 text-brand-dark" />
               </button>
+            </div>
+            {/* Paused indicator — shown below input when auto-questions are paused */}
+            {isPaused && messages.length > 1 && (
+              <div className="flex items-center justify-center gap-1.5 mt-2">
+                <Pause className="w-3 h-3 text-[var(--ov-text-muted,#727272)]" />
+                <span className="text-xs text-[var(--ov-text-muted,#727272)]">Auto-questions paused</span>
+              </div>
             )}
-            <button
-              onClick={handleSubmit}
-              disabled={!input.trim() || isStreaming}
-              className="w-8 h-8 bg-brand-yellow rounded-lg flex items-center justify-center disabled:opacity-30 hover:bg-brand-yellow/90 transition-all active:scale-95 flex-shrink-0 cursor-pointer disabled:cursor-not-allowed"
-              aria-label="Send message"
-            >
-              <ArrowRight className="w-4 h-4 text-brand-dark" />
-            </button>
-          </div>
+          </>
         )}
         </div>
       </div>

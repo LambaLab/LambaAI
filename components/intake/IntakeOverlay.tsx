@@ -411,7 +411,7 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
               {!proposalOpen && !emailVerified && (
                 <button
                   type="button"
-                  className="hidden md:flex text-xs text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors cursor-pointer px-2 py-1.5"
+                  className="text-xs text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors cursor-pointer px-2 py-1.5"
                   title="Save for later"
                   onClick={() => setSaveModalOpen(true)}
                 >

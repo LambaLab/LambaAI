@@ -91,7 +91,7 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
               <div className="flex gap-2 justify-end">
                 <button
                   onClick={handleEditCancel}
-                  className="flex items-center gap-1 text-xs text-brand-gray-mid hover:text-brand-white transition-colors px-2 py-1 rounded-lg hover:bg-white/5 cursor-pointer"
+                  className="flex items-center gap-1 text-xs text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors px-2 py-1 rounded-lg hover:bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] cursor-pointer"
                 >
                   <X className="w-3 h-3" /> Cancel
                 </button>
@@ -142,7 +142,7 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
                   setIsEditing(true)
                 }
               }}
-              className="absolute -top-2 -left-8 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center cursor-pointer"
+              className="absolute -top-2 -left-8 opacity-0 group-hover:opacity-100 transition-opacity w-6 h-6 rounded-full bg-[var(--ov-surface-subtle,rgba(255,255,255,0.10))] hover:bg-[var(--ov-input-bg,rgba(255,255,255,0.20))] flex items-center justify-center cursor-pointer"
               aria-label="Edit message"
             >
               <Pencil className="w-3 h-3 text-brand-gray-mid" />

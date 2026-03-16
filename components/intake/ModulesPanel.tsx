@@ -110,7 +110,7 @@ export default function ModulesPanel({
           <button
             type="button"
             onClick={() => setProductOpen(o => !o)}
-            className="w-full flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors"
+            className="w-full flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-[var(--ov-hover-bg,rgba(255,255,255,0.02))] transition-colors"
           >
             <h2 className="font-bebas text-xs tracking-[0.15em] text-[var(--ov-text-muted,#727272)]">
               PRODUCT OVERVIEW
@@ -144,7 +144,7 @@ export default function ModulesPanel({
           <button
             type="button"
             onClick={() => setModulesOpen(o => !o)}
-            className="w-full flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors"
+            className="w-full flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-[var(--ov-hover-bg,rgba(255,255,255,0.02))] transition-colors"
           >
             <div className="flex items-center gap-2">
               <h2 className="font-bebas text-xs tracking-[0.15em] text-[var(--ov-text-muted,#727272)]">
@@ -239,14 +239,14 @@ export default function ModulesPanel({
               <button
                 type="button"
                 onClick={handleResetConfirm}
-                className="text-xs text-red-400 hover:text-red-300 transition-colors px-2 py-1 rounded-lg hover:bg-white/5 cursor-pointer"
+                className="text-xs text-red-400 hover:text-red-300 transition-colors px-2 py-1 rounded-lg hover:bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] cursor-pointer"
               >
                 Yes
               </button>
               <button
                 type="button"
                 onClick={handleResetCancel}
-                className="text-xs text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors px-2 py-1 rounded-lg hover:bg-white/5 cursor-pointer"
+                className="text-xs text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors px-2 py-1 rounded-lg hover:bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] cursor-pointer"
               >
                 No
               </button>
@@ -255,7 +255,7 @@ export default function ModulesPanel({
             <button
               type="button"
               onClick={handleResetClick}
-              className="text-xs text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors px-2 py-1 rounded-lg hover:bg-white/5 cursor-pointer"
+              className="text-xs text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors px-2 py-1 rounded-lg hover:bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] cursor-pointer"
             >
               ↺ Reset
             </button>

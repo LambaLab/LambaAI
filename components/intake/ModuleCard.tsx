@@ -44,7 +44,7 @@ export default function ModuleCard({ moduleId, isActive, activeModules, onToggle
         className={`w-full p-3 text-left ${
           isActive
             ? summary
-              ? 'cursor-pointer hover:bg-white/[0.03]'
+              ? 'cursor-pointer hover:bg-[var(--ov-hover-bg,rgba(255,255,255,0.03))]'
               : 'cursor-default'
             : 'cursor-default'
         }`}

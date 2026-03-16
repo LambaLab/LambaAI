@@ -47,4 +47,7 @@ body {
   --ov-bubble-ai-bg: #FFFFFF;
   --ov-bubble-ai-border: rgba(0, 0, 0, 0.08);
   --ov-track: rgba(0, 0, 0, 0.1);
+  --ov-hover-bg: rgba(0, 0, 0, 0.03);
+  --ov-danger: #dc2626;
+  --ov-danger-hover: #b91c1c;
 }
