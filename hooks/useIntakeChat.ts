@@ -393,6 +393,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
           currentModule: currentModuleRef.current,
           modulesQueue: modulesQueueRef.current,
           completedModules: completedModulesRef.current,
+          turnCount: turnCount.current,
         }),
       })
 
@@ -679,12 +680,32 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             }
 
             // ── Phase tracking: update state from AI's phase fields ──
-            if (input?.current_phase) setCurrentPhase(input.current_phase)
-            if (typeof input?.current_module === 'string') setCurrentModule(input.current_module)
-            if (Array.isArray(input?.modules_queue)) setModulesQueue(input.modules_queue)
+            // Client-side enforcement: if AI stays in discovery past turn 7,
+            // force transition to deep_dive using detected modules.
+            let effectivePhase = input?.current_phase || currentPhaseRef.current
+            let effectiveModule = typeof input?.current_module === 'string' ? input.current_module : ''
+            let effectiveQueue = Array.isArray(input?.modules_queue) ? input.modules_queue : modulesQueueRef.current
+
+            if (effectivePhase === 'discovery' && turnCount.current >= 7 && activeModulesRef.current.length >= 2) {
+              console.log('[Phase] Client forcing transition to deep_dive after', turnCount.current, 'turns')
+              effectivePhase = 'deep_dive'
+              // Build queue from detected modules, prioritizing mobile_app/web_app first
+              const mods = [...activeModulesRef.current]
+              const coreFirst = ['mobile_app', 'web_app']
+              const sorted = [
+                ...mods.filter(m => coreFirst.includes(m)),
+                ...mods.filter(m => !coreFirst.includes(m)),
+              ]
+              effectiveQueue = sorted
+              effectiveModule = sorted[0] || ''
+            }
+
+            if (effectivePhase) setCurrentPhase(effectivePhase as 'discovery' | 'deep_dive' | 'wrap_up')
+            if (effectiveModule) setCurrentModule(effectiveModule)
+            if (effectiveQueue.length > 0) setModulesQueue(effectiveQueue)
 
             // Module-start divider: insert when AI moves to a new module
-            const newMod = typeof input?.current_module === 'string' ? input.current_module : ''
+            const newMod = effectiveModule
             if (newMod && newMod !== prevModuleRef.current && !input?.module_complete) {
               const queueArr = Array.isArray(input?.modules_queue) ? input.modules_queue : []
               const pos = queueArr.indexOf(newMod)
@@ -763,10 +784,11 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                   brief: savedBrief,
                 }))
                 // Persist phase state for cross-refresh restoration
+                // Use effective values (which may have been overridden by client-side enforcement)
                 const phaseState = {
-                  currentPhase: input?.current_phase || 'discovery',
-                  currentModule: typeof input?.current_module === 'string' ? input.current_module : '',
-                  modulesQueue: Array.isArray(input?.modules_queue) ? input.modules_queue : [],
+                  currentPhase: effectivePhase || 'discovery',
+                  currentModule: effectiveModule,
+                  modulesQueue: effectiveQueue,
                   completedModules: input?.module_complete && newMod
                     ? [...completedModules.filter(m => m !== newMod), newMod]
                     : completedModules,
@@ -817,7 +839,11 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     }
 
     const apiMessages = mergeConsecutiveMessages([
-      ...messagesRef.current.map((m): ApiMessage => ({ role: m.role, content: m.content })),
+      ...messagesRef.current
+        // Filter out module dividers and any messages with empty content
+        // (the Claude API rejects messages where content is missing/empty)
+        .filter(m => !m.isModuleStart && !m.isModuleComplete && m.content)
+        .map((m): ApiMessage => ({ role: m.role, content: m.content })),
       { role: 'user', content },
     ])
 

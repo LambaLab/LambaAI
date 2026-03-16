@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
     currentModule: clientModule,
     modulesQueue: clientQueue,
     completedModules: clientCompleted,
+    turnCount: clientTurnCount,
   } = await req.json()
   const isPaused = paused === true
   const currentConfidence = typeof clientConfidence === 'number' ? clientConfidence : 0
@@ -28,6 +29,7 @@ export async function POST(req: NextRequest) {
   const currentModule = typeof clientModule === 'string' ? clientModule : ''
   const queue = Array.isArray(clientQueue) ? clientQueue : []
   const completed = Array.isArray(clientCompleted) ? clientCompleted : []
+  const turns = typeof clientTurnCount === 'number' ? clientTurnCount : 0
 
   if (!Array.isArray(messages) || messages.length === 0 || messages.length > MAX_MESSAGES) {
     return new Response(JSON.stringify({ error: 'Invalid messages' }), { status: 400 })
@@ -46,7 +48,22 @@ export async function POST(req: NextRequest) {
       // (it can't see its own tool outputs in message history).
       {
         type: 'text' as const,
-        text: `\n## Current Conversation State\nPhase: ${phase}\nCurrent module: ${currentModule || 'none'}\nModules queue: ${queue.length > 0 ? queue.join(', ') : 'empty'}\nCompleted modules: ${completed.length > 0 ? completed.join(', ') : 'none'}\nConfidence: ${currentConfidence}%`,
+        text: [
+          `\n## Current Conversation State`,
+          `Phase: ${phase}`,
+          `Discovery turn: ${phase === 'discovery' ? turns + 1 : 'N/A (already in ' + phase + ')'}`,
+          `Current module: ${currentModule || 'none'}`,
+          `Modules queue: ${queue.length > 0 ? queue.join(', ') : 'empty'}`,
+          `Completed modules: ${completed.length > 0 ? completed.join(', ') : 'none'}`,
+          `Confidence: ${currentConfidence}%`,
+          // Force transition when discovery has gone too long
+          ...(phase === 'discovery' && turns >= 4 ? [
+            `\n⚠️ IMPORTANT: You are on discovery turn ${turns + 1}. Discovery MUST end by turn 5-6. You have enough information to transition. On THIS turn, set current_phase: "deep_dive", set current_module to the first detected module, and set modules_queue to the full ordered list of detected modules. In follow_up_question, react to the user's last answer, then announce: "Here's what we need to scope out: [list modules]. Let's start with [first module]."`,
+          ] : []),
+          ...(phase === 'discovery' && turns >= 6 ? [
+            `\n🚨 MANDATORY: You have exceeded the maximum discovery turns. You MUST set current_phase to "deep_dive" NOW. Do NOT set current_phase to "discovery". This is turn ${turns + 1} — discovery should have ended at turn 5.`,
+          ] : []),
+        ].join('\n'),
       },
       ...(isPaused ? [{
         type: 'text' as const,
