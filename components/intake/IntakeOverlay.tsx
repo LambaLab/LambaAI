@@ -427,7 +427,7 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
                 {proposalOpen ? (
                   'Hide proposal'
                 ) : (
-                  <>View Proposal <span className="text-brand-yellow">{liveConfidenceScore}%</span></>
+                  <>View Proposal <span className="text-[var(--ov-accent-strong,#fffc00)]">{liveConfidenceScore}%</span></>
                 )}
               </button>
 

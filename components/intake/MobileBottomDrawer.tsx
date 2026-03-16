@@ -18,7 +18,7 @@ type Props = {
 }
 
 // Collapsed handle height (swipe bar + button row)
-const HANDLE_HEIGHT = 56
+const HANDLE_HEIGHT = 68
 // How far from top of viewport the drawer can reach when fully open
 const TOP_INSET = 80
 // If user drags below this fraction of max height, snap closed
@@ -173,17 +173,17 @@ export default function MobileBottomDrawer({
           className="touch-none"
         >
           {/* Swipe bar indicator */}
-          <div className="flex justify-center pt-2.5 pb-1">
+          <div className="flex justify-center pt-2 pb-0.5">
             <div className="w-9 h-1 rounded-full bg-[var(--ov-text-muted,#727272)]/40" />
           </div>
 
           <button
             onClick={handleTap}
-            className="w-full flex items-center justify-between px-4 h-10"
+            className="w-full flex items-center justify-between px-4 h-12"
             aria-label={open ? 'Close proposal' : 'Open proposal'}
           >
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium border border-[var(--ov-border,rgba(255,255,255,0.10))] text-[var(--ov-text,#ffffff)]">
-              View Proposal <span className="text-brand-yellow">{confidenceScore}%</span>
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium border border-[var(--ov-border,rgba(255,255,255,0.10))] text-[var(--ov-text,#ffffff)]">
+              View Proposal <span className="text-[var(--ov-accent-strong,#fffc00)]">{confidenceScore}%</span>
             </span>
             <ChevronUp
               className={`w-4 h-4 text-[var(--ov-text,#ffffff)] transition-transform duration-200 ${
