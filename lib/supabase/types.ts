@@ -32,6 +32,7 @@ export type Database = {
           brief: string
           email: string | null
           saved_at: string | null
+          slug: string | null
           admin_notes: string | null
           prd: string | null
           technical_architecture: string | null
@@ -54,6 +55,7 @@ export type Database = {
           brief?: string
           email?: string | null
           saved_at?: string | null
+          slug?: string | null
           admin_notes?: string | null
           prd?: string | null
           technical_architecture?: string | null
@@ -107,6 +109,20 @@ export type Database = {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['otp_codes']['Insert']>
+        Relationships: []
+      }
+      proposal_slug_history: {
+        Row: {
+          slug: string
+          proposal_id: string
+          created_at: string
+        }
+        Insert: {
+          slug: string
+          proposal_id: string
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['proposal_slug_history']['Insert']>
         Relationships: []
       }
     }
