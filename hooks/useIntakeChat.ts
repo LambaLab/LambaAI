@@ -366,8 +366,8 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               })
             }
           } else if (event === 'partial_result') {
-            // When paused, skip — no QR card should appear
-            if (isPausedRef.current) continue
+            // When paused, only allow pills-style QR through (for intent-based action buttons)
+            if (isPausedRef.current && (data.quick_replies as QuickReplies | undefined)?.style !== 'pills') continue
             // question + quick_replies are now complete in the server's JSON buffer.
             // Show the QR card immediately — the heavy metadata fields (product_overview,
             // module_summaries) are still generating but aren't needed for interactivity.
@@ -508,8 +508,10 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               }
 
               // Normal turn
-              // When paused, strip question and QR — user should see only the reaction text
-              const effectiveQR = isPausedRef.current ? undefined : updatedQR
+              // When paused, strip list QR and question — but allow pills through (intent actions)
+              const effectiveQR = isPausedRef.current
+                ? (updatedQR?.style === 'pills' ? updatedQR : undefined)
+                : updatedQR
               const effectiveQuestion = isPausedRef.current ? undefined : questionText
               const isListEffective = effectiveQR?.style === 'list'
 

@@ -34,7 +34,18 @@ export async function POST(req: NextRequest) {
         type: 'text' as const,
         text: `OVERRIDE: The user has paused auto-questions. They want to chat freely. Current proposal confidence: ${currentConfidence}%.
 
-Still call update_proposal with all metadata fields (detected_modules, confidence_score_delta, updated_brief, product_overview, module_summaries, project_name). Set follow_up_question to your full conversational response. Set question to "" (empty string). Do NOT include quick_replies. Do NOT set suggest_pause.
+Still call update_proposal with all metadata fields (detected_modules, confidence_score_delta, updated_brief, product_overview, module_summaries, project_name). Set follow_up_question to your full conversational response. Set question to "" (empty string). Do NOT set suggest_pause.
+
+## Intent Detection & Action Pills (IMPORTANT)
+
+When the user asks something while paused, detect their INTENT. If the intent maps to a clear action, include quick_replies with style: "pills" so the user gets clickable action buttons. Set question to "" still.
+
+Intent patterns:
+- WANTS TO SEE PROGRESS / PROPOSAL (e.g. "what have we agreed on?", "show me what we have", "what does the proposal look like?", "how far along are we?", "what's been decided?"): Acknowledge warmly, then include pills: [{ label: "View Proposal", value: "__view_proposal__", icon: "📋" }, { label: "Keep going", value: "__continue__", icon: "💬" }]
+- WANTS TO RESUME (e.g. "let's continue", "back to questions", "ready to keep going"): Set suggest_resume: true
+- UNCLEAR INTENT (e.g. vague or ambiguous message): Acknowledge politely, ask a clarifying question, and include 2-3 pills with likely actions
+
+For ALL other intents (pricing, timeline, tech, feasibility, product questions): respond helpfully with NO quick_replies.
 
 ## How to handle questions while paused
 
@@ -373,7 +384,7 @@ When suggesting to resume, always frame it as an invitation, not a demand. "Want
       }
 
       function tryEmitPartialResult() {
-        if (isPaused) return  // No QR when paused
+        // Allow pills-style QR through when paused (for intent-based action buttons)
         if (partialResultSent || fupState !== 'done') return
         // Block until transition_text is resolved — QR card must not appear while
         // the second bubble is still streaming (it would flash in mid-sentence)
