@@ -20,9 +20,12 @@ type Props = {
   onSaveLater?: () => void
 }
 
-// Renders product overview text — supports labeled sections and plain paragraphs
+// Renders product overview text — supports labeled sections and plain paragraphs.
+// The AI sometimes outputs literal "\n" sequences instead of actual newline characters
+// in JSON string fields — normalize them before splitting.
 function ProductOverview({ text }: { text: string }) {
-  const paragraphs = text.split('\n\n').filter(Boolean)
+  const normalized = text.replace(/\\n/g, '\n')
+  const paragraphs = normalized.split('\n\n').filter(Boolean)
   return (
     <div className="space-y-3">
       {paragraphs.map((para, i) => {
