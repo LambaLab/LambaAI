@@ -38,7 +38,12 @@ function getInitialState(): { open: boolean; message: string } {
   return { open: false, message: '' }
 }
 
-export default function HeroSection() {
+type HeroProps = {
+  onIntakeChange?: () => void
+  onIntakeClose?: () => void
+}
+
+export default function HeroSection({ onIntakeChange, onIntakeClose }: HeroProps) {
   const initial = getInitialState()
   const [intakeOpen, setIntakeOpen] = useState(initial.open)
   const [initialMessage, setInitialMessage] = useState(initial.message)
@@ -74,6 +79,7 @@ export default function HeroSection() {
   function handleFirstMessage(message: string) {
     setInitialMessage(message)
     setIntakeOpen(true)
+    onIntakeChange?.()
   }
 
   function handleReset() {
@@ -85,6 +91,7 @@ export default function HeroSection() {
     setIntakeOpen(false)
     setInitialMessage('')
     setHeroInputResetKey((k) => k + 1)
+    onIntakeClose?.()
   }
 
   // Called after email/OTP verification succeeds — hydrate and open
@@ -93,6 +100,7 @@ export default function HeroSection() {
     setInitialMessage(data.brief || data.messages?.[0]?.content || '')
     setRestoreGate(null)
     setIntakeOpen(true)
+    onIntakeChange?.()
   }
 
   // Called when user clicks "Start new proposal" from the gate modal
