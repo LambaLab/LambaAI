@@ -40,8 +40,9 @@ export default function ModuleProgressCard({
   isLast,
   isStreaming,
 }: Props) {
+  const isOverview = message.isOverview ?? false
   const completed = message.checklistCompleted ?? []
-  const current = message.checklistCurrent ?? message.moduleId ?? ''
+  const current = isOverview ? '' : (message.checklistCurrent ?? message.moduleId ?? '')
   const queue = message.checklistQueue ?? []
   const isAllComplete = message.isModuleComplete && queue.length === 0
 
@@ -49,6 +50,7 @@ export default function ModuleProgressCard({
   const hasChecklistData = (completed.length + queue.length) > 0 || message.checklistCurrent
 
   // Build ordered list: completed first, then current, then queue
+  // For overview cards, all modules are in the queue
   const allModules = hasChecklistData
     ? [...completed, ...(current && !completed.includes(current) ? [current] : []), ...queue.filter(id => id !== current && !completed.includes(id))]
     : current ? [current] : []
@@ -64,11 +66,13 @@ export default function ModuleProgressCard({
   const showActions = isLast && !isStreaming && message.isModuleComplete
 
   // Header text
-  const headerText = isAllComplete
-    ? 'All Modules Complete'
-    : message.isModuleComplete
-      ? 'Module Complete'
-      : 'Module Deep-Dives'
+  const headerText = isOverview
+    ? 'What We\'ll Cover'
+    : isAllComplete
+      ? 'All Modules Complete'
+      : message.isModuleComplete
+        ? 'Module Complete'
+        : 'Module Deep-Dives'
 
   return (
     <div className="w-full py-2">
@@ -93,16 +97,20 @@ export default function ModuleProgressCard({
                 key={moduleId}
                 className={[
                   'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
-                  status === 'current'
-                    ? 'bg-[var(--ov-accent-bg,rgba(255,252,0,0.06))] border-l-2 border-[var(--ov-accent-strong,#fffc00)]'
-                    : status === 'done'
-                      ? 'opacity-60'
-                      : 'opacity-40',
+                  isOverview
+                    ? ''
+                    : status === 'current'
+                      ? 'bg-[var(--ov-accent-bg,rgba(255,252,0,0.06))] border-l-2 border-[var(--ov-accent-strong,#fffc00)]'
+                      : status === 'done'
+                        ? 'opacity-60'
+                        : 'opacity-40',
                 ].join(' ')}
               >
                 {/* Status indicator */}
                 <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
-                  {status === 'done' ? (
+                  {isOverview ? (
+                    <Circle className="w-3.5 h-3.5 text-[var(--ov-text-muted,#727272)]" />
+                  ) : status === 'done' ? (
                     <Check className="w-4 h-4 text-green-400" />
                   ) : status === 'current' ? (
                     <ArrowRight className="w-4 h-4 text-[var(--ov-accent-strong,#fffc00)]" />
@@ -114,28 +122,34 @@ export default function ModuleProgressCard({
                 {/* Module icon */}
                 <div className={[
                   'w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0',
-                  status === 'current'
-                    ? 'bg-[var(--ov-accent-bg,rgba(255,252,0,0.15))]'
-                    : 'bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))]',
+                  isOverview
+                    ? 'bg-[var(--ov-surface-subtle,rgba(255,255,255,0.08))]'
+                    : status === 'current'
+                      ? 'bg-[var(--ov-accent-bg,rgba(255,252,0,0.15))]'
+                      : 'bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))]',
                 ].join(' ')}>
                   <IconComponent className={[
                     'w-3.5 h-3.5',
-                    status === 'current'
-                      ? 'text-[var(--ov-accent-strong,#fffc00)]'
-                      : status === 'done'
-                        ? 'text-green-400'
-                        : 'text-[var(--ov-text-muted,#727272)]',
+                    isOverview
+                      ? 'text-[var(--ov-text,#ffffff)]/70'
+                      : status === 'current'
+                        ? 'text-[var(--ov-accent-strong,#fffc00)]'
+                        : status === 'done'
+                          ? 'text-green-400'
+                          : 'text-[var(--ov-text-muted,#727272)]',
                   ].join(' ')} />
                 </div>
 
                 {/* Module name */}
                 <span className={[
                   'text-sm',
-                  status === 'current'
-                    ? 'text-[var(--ov-text,#ffffff)] font-medium'
-                    : status === 'done'
-                      ? 'text-[var(--ov-text-muted,#727272)] line-through decoration-[var(--ov-text-muted,#727272)]/30'
-                      : 'text-[var(--ov-text-muted,#727272)]',
+                  isOverview
+                    ? 'text-[var(--ov-text,#ffffff)]/80'
+                    : status === 'current'
+                      ? 'text-[var(--ov-text,#ffffff)] font-medium'
+                      : status === 'done'
+                        ? 'text-[var(--ov-text-muted,#727272)] line-through decoration-[var(--ov-text-muted,#727272)]/30'
+                        : 'text-[var(--ov-text-muted,#727272)]',
                 ].join(' ')}>
                   {mod.name}
                 </span>

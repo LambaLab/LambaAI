@@ -137,7 +137,7 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
           className="px-6 space-y-4 mx-auto w-full"
           style={{ maxWidth: '760px' }}
         >
-          {messages.map((msg, i) => (
+          {messages.filter(m => !m.hidden).map((msg, i) => (
             (msg.isModuleStart || msg.isModuleComplete) ? (
               <ModuleProgressCard
                 key={msg.id}

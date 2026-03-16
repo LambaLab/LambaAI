@@ -57,11 +57,11 @@ export async function POST(req: NextRequest) {
           `Completed modules: ${completed.length > 0 ? completed.join(', ') : 'none'}`,
           `Confidence: ${currentConfidence}%`,
           // Force transition when discovery has gone too long
-          ...(phase === 'discovery' && turns >= 4 ? [
-            `\n⚠️ IMPORTANT: You are on discovery turn ${turns + 1}. Discovery MUST end by turn 5-6. You have enough information to transition. On THIS turn, set current_phase: "deep_dive", set current_module to the first detected module, and set modules_queue to the full ordered list of detected modules. In follow_up_question, react to the user's last answer, then announce: "Here's what we need to scope out: [list modules]. Let's start with [first module]."`,
+          ...(phase === 'discovery' && turns >= 2 ? [
+            `\n⚠️ IMPORTANT: You are on discovery turn ${turns + 1}. Discovery MUST end by turn 3. On THIS turn, set current_phase: "deep_dive", set current_module to the first detected module, and set modules_queue to the full ordered list. Do NOT list module names in follow_up_question — the UI shows a visual checklist card automatically.`,
           ] : []),
-          ...(phase === 'discovery' && turns >= 6 ? [
-            `\n🚨 MANDATORY: You have exceeded the maximum discovery turns. You MUST set current_phase to "deep_dive" NOW. Do NOT set current_phase to "discovery". This is turn ${turns + 1} — discovery should have ended at turn 5.`,
+          ...(phase === 'discovery' && turns >= 3 ? [
+            `\n🚨 MANDATORY: You have exceeded the maximum discovery turns. You MUST set current_phase to "deep_dive" NOW. Do NOT set current_phase to "discovery".`,
           ] : []),
         ].join('\n'),
       },

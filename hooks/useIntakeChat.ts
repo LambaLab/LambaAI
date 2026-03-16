@@ -29,6 +29,8 @@ export type ChatMessage = {
   checklistCompleted?: string[]      // IDs of completed modules at this point
   checklistCurrent?: string          // ID of module currently being probed
   checklistQueue?: string[]          // IDs of remaining modules in order
+  hidden?: boolean                   // true = don't render (e.g. auto-continue messages)
+  isOverview?: boolean               // true = stage-setting card (all modules shown, none active yet)
 }
 
 type UpdateProposalInput = {
@@ -120,6 +122,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   const [modulesQueue, setModulesQueue] = useState<string[]>([])
   const [completedModules, setCompletedModules] = useState<string[]>([])
   const prevModuleRef = useRef('')
+  const sendMessageRef = useRef<((content: string, displayContent?: string) => void) | null>(null)
   // When true, the paused question's QR card is temporarily revealed (user tapped peek card)
   // This stays true until the user answers, then auto-hides back to paused state
   const [questionRevealed, setQuestionRevealed] = useState(false)
@@ -652,7 +655,15 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               // Strip trailing quotes — the AI sometimes wraps follow_up_question in
               // literal escaped quotes which the streaming parser correctly unescapes
               // but shouldn't be displayed.
-              const base = (last.content || followUp).replace(/"+\s*$/, '')
+              let base = (last.content || followUp).replace(/"+\s*$/, '')
+              // Defense: when a list QR is shown, the question lives in the card header.
+              // Strip any question sentences (ending with ?) from the bubble to avoid
+              // showing a question in both the bubble and the card — even if the AI
+              // rephrased the question differently in follow_up_question.
+              if (isListFinal && finalQuestion) {
+                // Remove sentences ending with ? (handles both exact match and rephrased questions)
+                base = base.replace(/[^.!?\n]*\?/g, '').replace(/\n\n\s*$/, '').replace(/\s{2,}/g, ' ').trim()
+              }
               const bubbleContent = !isListFinal && finalQuestion && !partialResultApplied
                 ? (base ? `${base}\n\n${finalQuestion}` : finalQuestion)
                 : base
@@ -680,6 +691,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             if (!isStaleStream) setIsStreaming(false)
 
             if (isStaleStream) {
+
               // Still persist proposal data (modules, score, overview) since those are
               // cumulative and safe to apply from any stream. But skip everything else.
               if (proposalId) {
@@ -734,7 +746,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             let effectiveModule = typeof input?.current_module === 'string' ? input.current_module : ''
             let effectiveQueue = Array.isArray(input?.modules_queue) ? input.modules_queue : modulesQueueRef.current
 
-            if (effectivePhase === 'discovery' && turnCount.current >= 7 && activeModulesRef.current.length >= 2) {
+            if (effectivePhase === 'discovery' && turnCount.current >= 4 && activeModulesRef.current.length >= 2) {
               console.log('[Phase] Client forcing transition to deep_dive after', turnCount.current, 'turns')
               effectivePhase = 'deep_dive'
               const mods = [...activeModulesRef.current]
@@ -751,27 +763,45 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             if (effectiveModule) setCurrentModule(effectiveModule)
             if (effectiveQueue.length > 0) setModulesQueue(effectiveQueue)
 
+            // Extract question/followUp for stage-setting detection (used by both
+            // module-start insertion and auto-continue below)
+            const stageQuestionText = typeof input?.question === 'string' ? input.question.trim() : ''
+            const stageFollowUp = typeof input?.follow_up_question === 'string' ? input.follow_up_question : ''
+
             // Module-start divider: insert when AI moves to a new module
             const newMod = effectiveModule
+
             if (newMod && newMod !== prevModuleRef.current && !input?.module_complete) {
               const queueArr = Array.isArray(input?.modules_queue) ? input.modules_queue : effectiveQueue
               const totalModules = queueArr.length + completedModulesRef.current.length
+              // Stage-setting turn: first module transition with no question = overview card
+              const isStageSettingTurn = completedModulesRef.current.length === 0 && !stageQuestionText
               const moduleStartMsg: ChatMessage = {
                 id: crypto.randomUUID(),
                 role: 'assistant',
                 content: '',
                 isModuleStart: true,
+                isOverview: isStageSettingTurn,
                 moduleId: newMod,
                 modulePosition: completedModulesRef.current.length + 1,
                 modulesTotal: totalModules || undefined,
                 createdAt: Date.now(),
                 checklistCompleted: [...completedModulesRef.current],
-                checklistCurrent: newMod,
-                checklistQueue: queueArr.filter(id => id !== newMod && !completedModulesRef.current.includes(id)),
+                checklistCurrent: isStageSettingTurn ? '' : newMod,
+                checklistQueue: isStageSettingTurn
+                  ? [newMod, ...queueArr.filter(id => id !== newMod && !completedModulesRef.current.includes(id))]
+                  : queueArr.filter(id => id !== newMod && !completedModulesRef.current.includes(id)),
               }
               setMessages(prev => {
-                // Insert before the current assistant bubble (the reaction text for this module)
                 const bubbleIdx = prev.findIndex(m => m.id === activeBubbleId)
+                if (isStageSettingTurn) {
+                  // Stage-setting: insert card AFTER the intro bubble
+                  if (bubbleIdx >= 0) {
+                    return [...prev.slice(0, bubbleIdx + 1), moduleStartMsg, ...prev.slice(bubbleIdx + 1)]
+                  }
+                  return [...prev, moduleStartMsg]
+                }
+                // Normal module transition: insert card BEFORE the bubble
                 if (bubbleIdx > 0) {
                   return [...prev.slice(0, bubbleIdx), moduleStartMsg, ...prev.slice(bubbleIdx)]
                 }
@@ -842,6 +872,22 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                 }
                 localStorage.setItem(PHASE_KEY(proposalId), JSON.stringify(phaseState))
               } catch { /* Ignore QuotaExceededError */ }
+            }
+
+            // Stage-setting auto-continue: if AI transitioned to deep_dive with
+            // an empty question (stage-setting turn), auto-trigger the first
+            // deep-dive question after a brief delay.
+            if (effectivePhase === 'deep_dive' && newMod && !stageQuestionText && !input?.module_complete) {
+              // Build complete message history: original messages + this assistant response + continue
+              const assistantContent = stageFollowUp || 'Here is what we will scope out.'
+              const autoMessages: ApiMessage[] = [
+                ...apiMessages,
+                { role: 'assistant', content: assistantContent },
+                { role: 'user', content: 'Continue' },
+              ]
+              setTimeout(() => {
+                streamAIResponse(autoMessages)
+              }, 1500)
             }
           }
         }
@@ -919,6 +965,9 @@ export function useIntakeChat({ proposalId, idea }: Props) {
 
     await streamAIResponse(apiMessages)
   }, [isStreaming, questionRevealed, proposalId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Keep ref in sync so the stage-setting auto-continue can call sendMessage
+  sendMessageRef.current = sendMessage
 
   function toggleModule(moduleId: string) {
     const newModules = activeModules.includes(moduleId)
