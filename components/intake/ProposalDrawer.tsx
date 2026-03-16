@@ -153,6 +153,14 @@ export default function ProposalDrawer({
           ) : (
             /* ── Verified state — proposal list ── */
             <div className="p-2">
+              <button
+                onClick={onNewProposal}
+                className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-colors cursor-pointer mb-1
+                  ${isLight ? 'text-[#727272] hover:bg-black/[0.03] hover:text-[#1a1a1a]' : 'text-[#888] hover:bg-white/5 hover:text-white'}`}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                New Proposal
+              </button>
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className={`w-5 h-5 animate-spin ${isLight ? 'text-[#727272]' : 'text-[#727272]'}`} />
@@ -211,22 +219,6 @@ export default function ProposalDrawer({
           )}
         </div>
 
-        {/* Footer — New Proposal button (verified state only) */}
-        {emailVerified && (
-          <div className={`px-3 py-3 border-t flex-shrink-0 ${isLight ? 'border-[rgba(0,0,0,0.08)]' : 'border-white/5'}`}>
-            <button
-              onClick={onNewProposal}
-              className={`w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-medium transition-colors cursor-pointer
-                ${isLight
-                  ? 'bg-[#1a1a1a] text-white hover:bg-[#333]'
-                  : 'bg-white/10 text-white hover:bg-white/15'
-                }`}
-            >
-              <Plus className="w-4 h-4" />
-              New Proposal
-            </button>
-          </div>
-        )}
       </div>
     </>
   )
