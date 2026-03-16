@@ -253,8 +253,14 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
     nameManuallyEditedRef.current = false
     localStorage.removeItem('lamba_app_name')
 
+    // ② Temporary session — triggers immediate remount with blank chat
+    const tempId = crypto.randomUUID()
+    const tempSession: SessionData = { proposalId: tempId, sessionId: tempId, userId: '' }
+    window.history.replaceState(null, '', '?c=' + tempId)
+    setSession(tempSession)
+
+    // ③ Real session creation in background
     try {
-      // ② Single API call — use cached email instead of fetching
       const email = cachedEmailRef.current || undefined
       const res = await fetch('/api/intake/session', {
         method: 'POST',
@@ -265,10 +271,21 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
       const newSessionData: SessionData = await res.json()
       storeSession(newSessionData)
 
-      // ③ On success
       if (email) {
         localStorage.setItem(`lamba_email_verified_${newSessionData.proposalId}`, '1')
         setEmailVerified(true)
+      }
+
+      // Swap temp → real (move any localStorage data the hook may have stored under tempId)
+      const tempMsgs = localStorage.getItem(`lamba_msgs_${tempId}`)
+      if (tempMsgs) {
+        localStorage.setItem(`lamba_msgs_${newSessionData.proposalId}`, tempMsgs)
+        localStorage.removeItem(`lamba_msgs_${tempId}`)
+      }
+      const tempProposal = localStorage.getItem(`lamba_proposal_${tempId}`)
+      if (tempProposal) {
+        localStorage.setItem(`lamba_proposal_${newSessionData.proposalId}`, tempProposal)
+        localStorage.removeItem(`lamba_proposal_${tempId}`)
       }
 
       window.history.replaceState(null, '', '?c=' + newSessionData.proposalId)

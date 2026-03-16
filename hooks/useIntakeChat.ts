@@ -230,8 +230,20 @@ export function useIntakeChat({ proposalId, idea }: Props) {
       }
     }
 
-    // No stored messages — auto-send the idea
-    if (!idea.trim()) return
+    // No stored messages — auto-send the idea or show welcome message
+    if (!idea.trim()) {
+      // New empty proposal — show a welcome message after a brief delay
+      const timer = setTimeout(() => {
+        const welcome: ChatMessage = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: "What would you like to build? Describe your idea in the chat below and I'll break it down into modules with cost estimates.",
+        }
+        messagesRef.current = [welcome]
+        setMessages([welcome])
+      }, 10)
+      return () => clearTimeout(timer)
+    }
 
     const userMessage: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: idea }
     messagesRef.current = [userMessage]
