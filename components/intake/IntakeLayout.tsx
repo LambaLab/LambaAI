@@ -175,9 +175,10 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
         </div>
       </div>
 
-      {/* Mobile: full chat + bottom drawer */}
+      {/* Mobile: full chat + fixed bottom drawer */}
       <div className="md:hidden flex-1 overflow-hidden flex flex-col">
-        <div className="flex-1 overflow-hidden">
+        {/* pb-14 compensates for the fixed drawer handle height (56px) */}
+        <div className="flex-1 overflow-hidden pb-14">
           <ChatPanel
             messages={messages}
             isStreaming={isStreaming}
