@@ -18,6 +18,19 @@
   --foreground: #ffffff;
 }
 
+/* Anti-flash: hide ALL page content when a session exists.
+   The blocking script in layout.tsx adds .has-session on <html> before
+   first paint. React hydration will immediately render IntakeOverlay
+   which removes the class isn't needed — the overlay is fixed/z-50
+   and covers everything once mounted. We just need to hide the
+   server-rendered homepage HTML in the gap before React hydrates. */
+html.has-session body > main {
+  visibility: hidden !important;
+}
+html.has-session body {
+  overflow: hidden;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
