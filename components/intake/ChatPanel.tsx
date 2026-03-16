@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useEffect, useState } from 'react'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Pause, Play } from 'lucide-react'
 import MessageBubble from './MessageBubble'
 import PauseCheckpoint from './PauseCheckpoint'
 import QuickReplies from './QuickReplies'
@@ -17,9 +17,13 @@ type Props = {
   onSaveLater?: () => void
   constrained?: boolean
   theme?: 'dark' | 'light'
+  isPaused?: boolean
+  onPauseQuestions?: () => void
+  onResumeQuestions?: () => void
+  onSkipQuestion?: () => void
 }
 
-export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onRequestViewProposal, onSaveLater, constrained = false, theme }: Props) {
+export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onRequestViewProposal, onSaveLater, constrained = false, theme, isPaused, onPauseQuestions, onResumeQuestions, onSkipQuestion }: Props) {
   const [input, setInput] = useState('')
   const [reEditingMessageId, setReEditingMessageId] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -84,8 +88,9 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
   const reEditingQR = reEditingMsg?.sourceQuickReplies ?? null
   const reEditingQuestion = reEditingMsg?.sourceQuestion
 
-  // Active QR at bottom: re-edit takes priority over new question QR
-  const activeQR = reEditingQR ?? listQR
+  // Active QR at bottom: re-edit takes priority over new question QR.
+  // When paused, force to null so the textarea always shows.
+  const activeQR = isPaused ? (reEditingQR ?? null) : (reEditingQR ?? listQR)
   const activeQuestion = reEditingQR ? reEditingQuestion : questionText
 
   return (
@@ -174,6 +179,8 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
               }}
               disabled={isStreaming}
               question={activeQuestion}
+              onSkipQuestion={!reEditingQR ? onSkipQuestion : undefined}
+              onPauseQuestions={!reEditingQR ? onPauseQuestions : undefined}
             />
           </>
         ) : (
@@ -183,12 +190,24 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
               value={input}
               onChange={handleTextareaChange}
               onKeyDown={handleKeyDown}
-              placeholder={messages.length === 0 ? "Describe the idea you want to build..." : "Tell me more..."}
+              placeholder={isPaused ? "Ask anything or share your thoughts..." : (messages.length === 0 ? "Describe the idea you want to build..." : "Tell me more...")}
               rows={1}
               disabled={isStreaming}
               aria-label="Chat input"
               className="flex-1 bg-transparent text-[var(--ov-text,#ffffff)] placeholder:text-[var(--ov-text-muted,#727272)] resize-none outline-none text-sm leading-relaxed min-h-[20px] max-h-[120px] overflow-y-auto disabled:opacity-50"
             />
+            {/* Pause/Play toggle — only visible after conversation has started */}
+            {messages.length > 1 && (onPauseQuestions || onResumeQuestions) && (
+              <button
+                onClick={() => isPaused ? onResumeQuestions?.() : onPauseQuestions?.()}
+                disabled={isStreaming}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--ov-text-muted,#727272)] hover:text-brand-yellow hover:bg-[var(--ov-surface-subtle,rgba(255,255,255,0.08))] transition-all flex-shrink-0 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label={isPaused ? 'Resume auto-questions' : 'Pause auto-questions'}
+                title={isPaused ? 'Resume auto-questions' : 'Pause auto-questions'}
+              >
+                {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+              </button>
+            )}
             <button
               onClick={handleSubmit}
               disabled={!input.trim() || isStreaming}

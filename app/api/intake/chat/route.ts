@@ -13,7 +13,8 @@ const anthropic = new Anthropic()
 const MAX_MESSAGES = 50
 
 export async function POST(req: NextRequest) {
-  const { messages } = await req.json()
+  const { messages, paused } = await req.json()
+  const isPaused = paused === true
 
   if (!Array.isArray(messages) || messages.length === 0 || messages.length > MAX_MESSAGES) {
     return new Response(JSON.stringify({ error: 'Invalid messages' }), { status: 400 })
@@ -28,6 +29,10 @@ export async function POST(req: NextRequest) {
         text: SYSTEM_PROMPT,
         cache_control: { type: 'ephemeral' as const },
       },
+      ...(isPaused ? [{
+        type: 'text' as const,
+        text: 'OVERRIDE: The user has paused auto-questions. They want to chat freely. Still call update_proposal with all metadata fields (detected_modules, confidence_score_delta, updated_brief, product_overview, module_summaries, project_name). Set follow_up_question to your full conversational response. Set question to "" (empty string). Do NOT include quick_replies. Do NOT set suggest_pause.',
+      }] : []),
     ],
     tools: [UPDATE_PROPOSAL_TOOL],
     tool_choice: { type: 'any' },
@@ -180,6 +185,7 @@ export async function POST(req: NextRequest) {
       }
 
       function tryEmitPartialQuestion() {
+        if (isPaused) return  // No QR when paused
         if (partialQuestionSent || partialResultSent) return
         if (fupState !== 'done') return
         if (txState !== 'done' && txState !== 'empty') return
@@ -338,6 +344,7 @@ export async function POST(req: NextRequest) {
       }
 
       function tryEmitPartialResult() {
+        if (isPaused) return  // No QR when paused
         if (partialResultSent || fupState !== 'done') return
         // Block until transition_text is resolved — QR card must not appear while
         // the second bubble is still streaming (it would flash in mid-sentence)

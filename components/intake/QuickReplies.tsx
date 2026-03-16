@@ -8,9 +8,11 @@ type Props = {
   onSelect: (value: string, label?: string) => void
   disabled?: boolean
   question?: string  // Shown as a header at the top of the list card
+  onSkipQuestion?: () => void
+  onPauseQuestions?: () => void
 }
 
-export default function QuickReplies({ quickReplies, onSelect, disabled, question }: Props) {
+export default function QuickReplies({ quickReplies, onSelect, disabled, question, onSkipQuestion, onPauseQuestions }: Props) {
   const { style, multiSelect, allowCustom, options } = quickReplies
   // Always show "Type something else..." for list style
   const effectiveAllowCustom = style === 'list' ? true : (allowCustom ?? false)
@@ -250,6 +252,33 @@ export default function QuickReplies({ quickReplies, onSelect, disabled, questio
           >
             Continue →
           </button>
+        </div>
+      )}
+
+      {/* Skip / Pause footer links */}
+      {(onSkipQuestion || onPauseQuestions) && (
+        <div className="flex items-center justify-center gap-4 px-4 py-2.5 border-t border-[var(--ov-border,rgba(255,255,255,0.06))]">
+          {onSkipQuestion && (
+            <button
+              onClick={onSkipQuestion}
+              disabled={disabled}
+              className="text-xs text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Skip this question
+            </button>
+          )}
+          {onSkipQuestion && onPauseQuestions && (
+            <span className="text-xs text-[var(--ov-border,rgba(255,255,255,0.12))]">·</span>
+          )}
+          {onPauseQuestions && (
+            <button
+              onClick={onPauseQuestions}
+              disabled={disabled}
+              className="text-xs text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Pause auto-questions
+            </button>
+          )}
         </div>
       )}
     </div>

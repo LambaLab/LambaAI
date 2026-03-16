@@ -33,6 +33,10 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
     reset,
     moduleSummaries,
     projectName,
+    isPaused,
+    pauseQuestions,
+    resumeQuestions,
+    skipQuestion,
   } = useIntakeChat({ proposalId, idea: initialMessage })
 
   const [chatWidthPct, setChatWidthPct] = useState(55)
@@ -129,6 +133,10 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             onSaveLater={onSaveLater}
             constrained={chatConstrained}
             theme={theme}
+            isPaused={isPaused}
+            onPauseQuestions={pauseQuestions}
+            onResumeQuestions={resumeQuestions}
+            onSkipQuestion={skipQuestion}
           />
         </div>
 
@@ -177,6 +185,10 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             onRequestViewProposal={openProposal}
             onSaveLater={onSaveLater}
             theme={theme}
+            isPaused={isPaused}
+            onPauseQuestions={pauseQuestions}
+            onResumeQuestions={resumeQuestions}
+            onSkipQuestion={skipQuestion}
           />
         </div>
         <MobileBottomDrawer

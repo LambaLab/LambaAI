@@ -62,6 +62,7 @@ const MSGS_KEY = (pid: string) => `lamba_msgs_${pid}`
 const PROPOSAL_KEY = (pid: string) => `lamba_proposal_${pid}`
 const EMAIL_VERIFIED_KEY = (pid: string) => `lamba_email_verified_${pid}`
 const SYNCED_COUNT_KEY   = (pid: string) => `lamba_synced_count_${pid}`
+const PAUSED_KEY = (pid: string) => `lamba_paused_${pid}`
 
 export function useIntakeChat({ proposalId, idea }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -73,6 +74,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   const [productOverview, setProductOverview] = useState('')
   const [moduleSummaries, setModuleSummaries] = useState<{ [moduleId: string]: string }>({})
   const [projectName, setProjectName] = useState('')
+  const [isPaused, setIsPaused] = useState(false)
 
   const messagesRef = useRef<ChatMessage[]>([])
   const confidenceRef = useRef(0)
@@ -82,6 +84,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   const moduleSummariesRef = useRef<{ [moduleId: string]: string }>({})
   const lastPauseTurn = useRef(-999)  // turn index of the last checkpoint (-999 = never)
   const turnCount = useRef(0)         // increments each time a tool_result is processed
+  const isPausedRef = useRef(false)
   const streamIdRef = useRef<string>('')  // ID of the currently-active stream; used to prevent
                                           // stale streams from clobbering newer state
 
@@ -91,6 +94,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   useEffect(() => { complexityRef.current = complexityMultiplier }, [complexityMultiplier])
   useEffect(() => { productOverviewRef.current = productOverview }, [productOverview])
   useEffect(() => { moduleSummariesRef.current = moduleSummaries }, [moduleSummaries])
+  useEffect(() => { isPausedRef.current = isPaused }, [isPaused])
 
   // Persist messages to localStorage after every update.
   // Also auto-saves to Supabase when email is verified and streaming is complete.
@@ -199,6 +203,12 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             }
           }
 
+          // Restore paused state
+          if (localStorage.getItem(PAUSED_KEY(proposalId)) === 'true') {
+            setIsPaused(true)
+            isPausedRef.current = true
+          }
+
           return // Skip auto-send — conversation already exists
         }
       } catch {
@@ -248,6 +258,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
           messages: apiMessages,
           currentModules: activeModulesRef.current,
           confidenceScore: confidenceRef.current,
+          paused: isPausedRef.current,
         }),
       })
 
@@ -309,6 +320,8 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             activeBubbleId = bubble2.id
             setMessages((prev) => [...prev, bubble2])
           } else if (event === 'partial_question') {
+            // When paused, skip — no QR skeleton should flash
+            if (isPausedRef.current) continue
             // question field is complete but quick_replies is still generating.
             // Show the QR card skeleton immediately so the user sees something.
             const questionText = typeof data.question === 'string' ? data.question.trim() : ''
@@ -324,6 +337,8 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               })
             }
           } else if (event === 'partial_result') {
+            // When paused, skip — no QR card should appear
+            if (isPausedRef.current) continue
             // question + quick_replies are now complete in the server's JSON buffer.
             // Show the QR card immediately — the heavy metadata fields (product_overview,
             // module_summaries) are still generating but aren't needed for interactivity.
@@ -447,19 +462,24 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               }
 
               // Normal turn
+              // When paused, strip question and QR — user should see only the reaction text
+              const effectiveQR = isPausedRef.current ? undefined : updatedQR
+              const effectiveQuestion = isPausedRef.current ? undefined : questionText
+              const isListEffective = effectiveQR?.style === 'list'
+
               // For list QR: question goes in the rows card header (message.question), not in the bubble
               // For no QR or pills QR: question is appended to bubble content so it's visible
               // Skip appending if partial_result already built the content (avoids duplicate question)
               const base = last.content || followUp
-              const bubbleContent = !isListQR && questionText && !partialResultApplied
-                ? (base ? `${base}\n\n${questionText}` : questionText)
+              const bubbleContent = !isListEffective && effectiveQuestion && !partialResultApplied
+                ? (base ? `${base}\n\n${effectiveQuestion}` : effectiveQuestion)
                 : base
 
               return [...prev.slice(0, -1), {
                 ...last,
                 content: bubbleContent,
-                question: isListQR ? (questionText || undefined) : undefined,
-                quickReplies: updatedQR,
+                question: isListEffective ? (effectiveQuestion || undefined) : undefined,
+                quickReplies: effectiveQR,
                 isPause: undefined,
               }]
             })
@@ -601,11 +621,43 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     await streamAIResponse(aiHistory)
   }, [isStreaming]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const pauseQuestions = useCallback(() => {
+    setIsPaused(true)
+    isPausedRef.current = true
+    if (proposalId) localStorage.setItem(PAUSED_KEY(proposalId), 'true')
+    // Clear QR from last assistant message so textarea shows
+    setMessages((prev) => {
+      const idx = [...prev].reverse().findIndex(m => m.role === 'assistant' && !m.isPause)
+      if (idx === -1) return prev
+      const realIdx = prev.length - 1 - idx
+      const msg = prev[realIdx]
+      if (!msg.quickReplies) return prev
+      return [
+        ...prev.slice(0, realIdx),
+        { ...msg, quickReplies: undefined, question: undefined },
+        ...prev.slice(realIdx + 1),
+      ]
+    })
+  }, [proposalId])
+
+  const resumeQuestions = useCallback(() => {
+    setIsPaused(false)
+    isPausedRef.current = false
+    if (proposalId) localStorage.removeItem(PAUSED_KEY(proposalId))
+    // Send a hidden message to trigger the AI's next question
+    sendMessage('Continue with intake questions', 'Resumed auto-questions')
+  }, [proposalId, sendMessage])
+
+  const skipQuestion = useCallback(() => {
+    sendMessage('Skip this question and ask the next one', 'Skipped')
+  }, [sendMessage])
+
   const reset = useCallback(() => {
     // Clear stored messages and proposal state for this proposal
     if (proposalId) {
       localStorage.removeItem(MSGS_KEY(proposalId))
       localStorage.removeItem(PROPOSAL_KEY(proposalId))
+      localStorage.removeItem(PAUSED_KEY(proposalId))
     }
     // Reset refs synchronously
     messagesRef.current = []
@@ -624,7 +676,9 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     setProductOverview('')
     setModuleSummaries({})
     setProjectName('')
+    setIsPaused(false)
+    isPausedRef.current = false
   }, [proposalId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, editMessage, reset, moduleSummaries, projectName }
+  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, editMessage, reset, moduleSummaries, projectName, isPaused, pauseQuestions, resumeQuestions, skipQuestion }
 }
