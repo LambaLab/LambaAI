@@ -19,10 +19,6 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: 'Lamba Lab — Build Something',
   description: 'Tell us your idea. Get a real proposal.',
-  icons: {
-    icon: '/icon.png',
-    apple: '/apple-icon.png',
-  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
