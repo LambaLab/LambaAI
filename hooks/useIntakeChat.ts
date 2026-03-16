@@ -826,7 +826,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                 isModuleComplete: true,
                 isPause: true,
                 moduleId: newMod,
-                moduleSummary: typeof input?.question === 'string' ? input.question.trim() : '',
+                moduleSummary: stageFollowUp.replace(/[^.!?\n]*\?/g, '').trim() || '',
                 createdAt: Date.now(),
                 checklistCompleted: newCompleted,
                 checklistCurrent: nextModule,
