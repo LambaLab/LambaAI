@@ -34,6 +34,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
     moduleSummaries,
     projectName,
     isPaused,
+    pausedQuestion,
     pauseQuestions,
     resumeQuestions,
     skipQuestion,
@@ -135,6 +136,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             constrained={chatConstrained}
             theme={theme}
             isPaused={isPaused}
+            pausedQuestion={pausedQuestion}
             onPauseQuestions={pauseQuestions}
             onResumeQuestions={resumeQuestions}
             onSkipQuestion={skipQuestion}
@@ -189,6 +191,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             onSaveLater={onSaveLater}
             theme={theme}
             isPaused={isPaused}
+            pausedQuestion={pausedQuestion}
             onPauseQuestions={pauseQuestions}
             onResumeQuestions={resumeQuestions}
             onSkipQuestion={skipQuestion}

@@ -17,6 +17,7 @@ export type ChatMessage = {
   sourceQuickReplies?: QuickReplies  // For user messages created by row selection: the original QR offered
   sourceQuestion?: string            // The question text that was shown when this row was selected
   isPause?: boolean                  // true = this turn is a conversation checkpoint (breather)
+  createdAt?: number                 // Date.now() when the message was created
 }
 
 type UpdateProposalInput = {
@@ -87,6 +88,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   const [moduleSummaries, setModuleSummaries] = useState<{ [moduleId: string]: string }>({})
   const [projectName, setProjectName] = useState('')
   const [isPaused, setIsPaused] = useState(false)
+  const [pausedQuestion, setPausedQuestion] = useState<string | null>(null)
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null)
 
   const messagesRef = useRef<ChatMessage[]>([])
@@ -238,6 +240,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
           id: crypto.randomUUID(),
           role: 'assistant',
           content: "What would you like to build? Describe your idea in the chat below and I'll help you shape it into a proposal.",
+          createdAt: Date.now(),
         }
         messagesRef.current = [welcome]
         setMessages([welcome])
@@ -245,7 +248,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
       return () => clearTimeout(timer)
     }
 
-    const userMessage: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: idea }
+    const userMessage: ChatMessage = { id: crypto.randomUUID(), role: 'user', content: idea, createdAt: Date.now() }
     messagesRef.current = [userMessage]
     setMessages([userMessage])
 
@@ -267,7 +270,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     const myStreamId = crypto.randomUUID()
     streamIdRef.current = myStreamId
     setIsStreaming(true)
-    const assistantMessage: ChatMessage = { id: crypto.randomUUID(), role: 'assistant', content: '' }
+    const assistantMessage: ChatMessage = { id: crypto.randomUUID(), role: 'assistant', content: '', createdAt: Date.now() }
     // activeBubbleId tracks the ID of the assistant message currently receiving text events.
     // It starts as bubble 1 and is reassigned to bubble 2 when a bubble_split event arrives
     // (i.e. when the AI produces transition_text for a topic pivot). All setMessages guards
@@ -342,7 +345,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             // The stale-stream guard prevents an old stream from injecting a spurious
             // second bubble into a newer stream's conversation.
             if (streamIdRef.current !== myStreamId) continue
-            const bubble2: ChatMessage = { id: crypto.randomUUID(), role: 'assistant', content: '' }
+            const bubble2: ChatMessage = { id: crypto.randomUUID(), role: 'assistant', content: '', createdAt: Date.now() }
             activeBubbleId = bubble2.id
             setMessages((prev) => [...prev, bubble2])
           } else if (event === 'partial_question') {
@@ -499,6 +502,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                   role: 'assistant',
                   content: checkpointContent,
                   isPause: true,
+                  createdAt: Date.now(),
                 }
                 return [...prev.slice(0, -1), reactionBubble, checkpointMsg]
               }
@@ -600,6 +604,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
       displayContent: displayContent && displayContent !== content ? displayContent : undefined,
       sourceQuickReplies,
       sourceQuestion,
+      createdAt: Date.now(),
     }
 
     const apiMessages = mergeConsecutiveMessages([
@@ -651,6 +656,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
       role: 'user',
       content: `Actually, let me clarify my earlier answer: ${newContent}`,
       displayContent,  // Clean display (question + new answer) for row re-selections
+      createdAt: Date.now(),
     }
 
     const kept = messagesRef.current.slice(0, msgIndex)
@@ -667,12 +673,14 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     setIsPaused(true)
     isPausedRef.current = true
     if (proposalId) localStorage.setItem(PAUSED_KEY(proposalId), 'true')
-    // Clear QR from last assistant message so textarea shows
+    // Save the current question before stripping it, so we can show a peek card
     setMessages((prev) => {
       const idx = [...prev].reverse().findIndex(m => m.role === 'assistant' && !m.isPause)
       if (idx === -1) return prev
       const realIdx = prev.length - 1 - idx
       const msg = prev[realIdx]
+      // Save the question text for the peek card
+      if (msg.question) setPausedQuestion(msg.question)
       if (!msg.quickReplies) return prev
       return [
         ...prev.slice(0, realIdx),
@@ -683,12 +691,18 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   }, [proposalId])
 
   const resumeQuestions = useCallback(() => {
+    const savedQuestion = pausedQuestion
     setIsPaused(false)
     isPausedRef.current = false
+    setPausedQuestion(null)
     if (proposalId) localStorage.removeItem(PAUSED_KEY(proposalId))
-    // Send a hidden message to trigger the AI's next question
-    sendMessage('Continue with intake questions', 'Resumed auto-questions')
-  }, [proposalId, sendMessage])
+    // Send a message to trigger the AI's next question, including the paused question
+    // so the AI can decide whether to re-ask or acknowledge it was already answered.
+    const prompt = savedQuestion
+      ? `Continue with intake questions. The last question before pausing was: "${savedQuestion}". If the user has already answered this question in the conversation above, briefly acknowledge that and move to the next question. Otherwise, ask it again.`
+      : 'Continue with intake questions'
+    sendMessage(prompt, 'Resumed auto-questions')
+  }, [proposalId, sendMessage, pausedQuestion])
 
   const skipQuestion = useCallback(() => {
     sendMessage('Skip this question and ask the next one', 'Skipped')
@@ -720,7 +734,8 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     setProjectName('')
     setIsPaused(false)
     isPausedRef.current = false
+    setPausedQuestion(null)
   }, [proposalId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, editMessage, reset, moduleSummaries, projectName, isPaused, pauseQuestions, resumeQuestions, skipQuestion, lastSyncedAt }
+  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, editMessage, reset, moduleSummaries, projectName, isPaused, pausedQuestion, pauseQuestions, resumeQuestions, skipQuestion, lastSyncedAt }
 }

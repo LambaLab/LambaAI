@@ -18,6 +18,19 @@ type Props = {
   theme?: 'dark' | 'light'
 }
 
+function formatMessageTime(ts?: number): string | null {
+  if (!ts) return null
+  const now = Date.now()
+  const diff = now - ts
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  // Show time for older messages
+  return new Date(ts).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+}
+
 export default function MessageBubble({ message, isStreaming, onQuickReply, isLastMessage, onEdit, onStartRowEdit, isBeingReEdited, theme }: Props) {
   const isUser = message.role === 'user'
   const iconSrc = theme === 'light' ? '/light icon.png' : '/dark icon.jpg'
@@ -149,6 +162,17 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
             </button>
           )}
         </div>
+
+        {/* Timestamp */}
+        {message.createdAt && !isEditing && (
+          <p className={`text-[10px] mt-1 px-1 select-none ${
+            isUser ? 'text-right' : ''
+          } ${
+            theme === 'light' ? 'text-[#b0b0b0]' : 'text-[#555]'
+          }`}>
+            {formatMessageTime(message.createdAt)}
+          </p>
+        )}
 
         {/* Inline quick replies — pills only; list style is handled at ChatPanel bottom */}
         {showInlineQR && (

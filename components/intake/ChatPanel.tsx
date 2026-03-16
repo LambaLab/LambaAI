@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useEffect, useState, useCallback } from 'react'
-import { ArrowRight, ArrowDown, Pause, Play } from 'lucide-react'
+import { ArrowRight, ArrowDown, Pause, Play, ChevronUp } from 'lucide-react'
 import MessageBubble from './MessageBubble'
 import PauseCheckpoint from './PauseCheckpoint'
 import QuickReplies from './QuickReplies'
@@ -18,13 +18,14 @@ type Props = {
   constrained?: boolean
   theme?: 'dark' | 'light'
   isPaused?: boolean
+  pausedQuestion?: string | null
   onPauseQuestions?: () => void
   onResumeQuestions?: () => void
   onSkipQuestion?: () => void
   confidenceScore?: number
 }
 
-export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onRequestViewProposal, onSaveLater, constrained = false, theme, isPaused, onPauseQuestions, onResumeQuestions, onSkipQuestion, confidenceScore = 0 }: Props) {
+export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onRequestViewProposal, onSaveLater, constrained = false, theme, isPaused, pausedQuestion, onPauseQuestions, onResumeQuestions, onSkipQuestion, confidenceScore = 0 }: Props) {
   const [input, setInput] = useState('')
   const [reEditingMessageId, setReEditingMessageId] = useState<string | null>(null)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
@@ -220,6 +221,20 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
           </>
         ) : (
           <>
+            {/* Peek card — shows the paused question peeking above the input */}
+            {isPaused && pausedQuestion && onResumeQuestions && (
+              <button
+                onClick={onResumeQuestions}
+                className="w-full mb-2 group/peek flex items-center gap-2 px-3 py-2 rounded-t-xl rounded-b-lg bg-[var(--ov-surface-subtle,rgba(255,255,255,0.04))] border border-[var(--ov-border,rgba(255,255,255,0.08))] border-b-0 hover:bg-[var(--ov-surface-subtle,rgba(255,255,255,0.08))] transition-colors cursor-pointer text-left"
+                aria-label="Resume auto-questions"
+              >
+                <ChevronUp className="w-3.5 h-3.5 text-[var(--ov-text-muted,#727272)] group-hover/peek:text-[var(--ov-accent-strong,#fffc00)] transition-colors flex-shrink-0" />
+                <span className="text-xs text-[var(--ov-text-muted,#727272)] group-hover/peek:text-[var(--ov-text,#ffffff)] transition-colors truncate flex-1">
+                  {pausedQuestion}
+                </span>
+                <Play className="w-3 h-3 text-[var(--ov-text-muted,#727272)] group-hover/peek:text-[var(--ov-accent-strong,#fffc00)] transition-colors flex-shrink-0 opacity-0 group-hover/peek:opacity-100" />
+              </button>
+            )}
             <div className="flex items-center gap-2 bg-[var(--ov-input-bg,rgba(255,255,255,0.05))] border border-[var(--ov-border,rgba(255,255,255,0.10))] rounded-xl p-3 focus-within:border-[var(--ov-focus-ring,rgba(255,252,0,0.30))] transition-colors">
               <textarea
                 ref={textareaRef}
@@ -253,12 +268,16 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
                 <ArrowRight className="w-4 h-4 text-brand-dark" />
               </button>
             </div>
-            {/* Paused indicator — shown below input when auto-questions are paused */}
+            {/* Paused indicator — shown below input when auto-questions are paused; tappable to resume */}
             {isPaused && messages.length > 1 && (
-              <div className="flex items-center justify-center gap-1.5 mt-2">
+              <button
+                onClick={onResumeQuestions}
+                className="w-full flex items-center justify-center gap-1.5 mt-2 cursor-pointer hover:opacity-80 transition-opacity"
+                aria-label="Resume auto-questions"
+              >
                 <Pause className="w-3 h-3 text-[var(--ov-text-muted,#727272)]" />
                 <span className="text-xs text-[var(--ov-text-muted,#727272)]">Auto-questions paused</span>
-              </div>
+              </button>
             )}
           </>
         )}
