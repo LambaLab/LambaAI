@@ -10,7 +10,7 @@ export async function GET(
 
   const { data: proposal, error: proposalError } = await supabase
     .from('proposals')
-    .select('id, session_id, user_id, brief, email, modules, confidence_score, metadata')
+    .select('id, session_id, user_id, brief, email, modules, confidence_score, metadata, slug')
     .eq('id', proposalId)
     .single()
 
@@ -57,5 +57,6 @@ export async function GET(
     confidenceScore: typeof proposal.confidence_score === 'number' ? proposal.confidence_score : 0,
     messages,
     metadata: meta ?? null,
+    slug: (proposal as Record<string, unknown>).slug ?? null,
   })
 }
