@@ -41,6 +41,24 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
   const [nameInputValue, setNameInputValue] = useState('')
   // Track whether the user has manually edited the name — if so, don't overwrite with AI suggestions
   const nameManuallyEditedRef = useRef(false)
+  const [currentSlug, setCurrentSlug] = useState<string | null>(null)
+
+  const updateSlug = useCallback(async (proposalId: string, name: string) => {
+    try {
+      const res = await fetch(`/api/proposals/${proposalId}/slug`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      })
+      if (!res.ok) return null
+      const { slug } = await res.json()
+      setCurrentSlug(slug)
+      window.history.replaceState(null, '', `/proposal/${slug}`)
+      return slug
+    } catch {
+      return null
+    }
+  }, [])
 
   // ── Drawer state ──
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -83,6 +101,9 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
     setAppName(trimmed)
     setNameInputValue(trimmed)
     localStorage.setItem('lamba_app_name', trimmed)
+    if (session) {
+      updateSlug(session.proposalId, trimmed)
+    }
     setEditingName(false)
   }
 
@@ -168,7 +189,9 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
       storeSession(newSession)
 
       // Update URL
-      window.history.replaceState(null, '', `?c=${targetId}`)
+      const targetSlug = (data as Record<string, unknown>).slug as string | null
+      setCurrentSlug(targetSlug ?? null)
+      window.history.replaceState(null, '', targetSlug ? `/proposal/${targetSlug}` : `?c=${targetId}`)
 
       // Update app name
       nameManuallyEditedRef.current = false
@@ -259,6 +282,7 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
       }
 
       // Update URL
+      setCurrentSlug(null)
       window.history.replaceState(null, '', `?c=${newSessionData.proposalId}`)
 
       // Trigger remount
@@ -281,8 +305,12 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
     if (pName && pName.trim() && !nameManuallyEditedRef.current) {
       setAppName(pName.trim())
       setNameInputValue(pName.trim())
+      // Generate/update slug when AI provides a project name
+      if (session) {
+        updateSlug(session.proposalId, pName.trim())
+      }
     }
-  }, [])
+  }, [session, updateSlug])
 
   const resetRef = useRef<(() => void) | null>(null)
 
