@@ -13,6 +13,7 @@ import {
   storeSession,
   hydrateProposalFromRestore,
   getIdeaForSession,
+  clearProposalData,
   type SessionData,
 } from '@/lib/session'
 import SessionLoadingScreen from './SessionLoadingScreen'
@@ -280,6 +281,36 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
     }
   }, [session, fetchProposals])
 
+  // ── Delete a proposal ──
+  const handleDeleteProposal = useCallback(async (targetId: string) => {
+    if (!session) return
+    try {
+      const res = await fetch(`/api/proposals/${targetId}/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: session.sessionId }),
+      })
+      if (!res.ok) throw new Error('Delete failed')
+
+      // Remove from local state
+      setProposals(prev => prev.filter(p => p.id !== targetId))
+      // Clear localStorage for deleted proposal
+      clearProposalData(targetId)
+
+      // If we deleted the current proposal, switch to first remaining or create new
+      if (targetId === session.proposalId) {
+        const remaining = proposals.filter(p => p.id !== targetId)
+        if (remaining.length > 0) {
+          switchToProposal(remaining[0].id)
+        } else {
+          handleNewProposal()
+        }
+      }
+    } catch (err) {
+      console.error('Failed to delete proposal:', err)
+    }
+  }, [session, proposals, switchToProposal, handleNewProposal])
+
   const handleStateChange = useCallback((m: number, c: number, pName?: string) => {
     setLiveModuleCount(m)
     setLiveConfidenceScore(c)
@@ -490,6 +521,7 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
             loading={loadingProposals}
             onSwitchProposal={switchToProposal}
             onNewProposal={handleNewProposal}
+            onDeleteProposal={handleDeleteProposal}
             onSaveEmail={() => {
               setDrawerOpen(false)
               setSaveModalOpen(true)

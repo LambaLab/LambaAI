@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
-import { X, Plus, Loader2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { X, Plus, Loader2, MoreHorizontal, Trash2 } from 'lucide-react'
 
 export type ProposalSummary = {
   id: string
@@ -21,6 +21,7 @@ type Props = {
   loading: boolean
   onSwitchProposal: (id: string) => void
   onNewProposal: () => void
+  onDeleteProposal: (id: string) => void
   onSaveEmail: () => void
   theme: 'dark' | 'light'
 }
@@ -49,10 +50,12 @@ export default function ProposalDrawer({
   loading,
   onSwitchProposal,
   onNewProposal,
+  onDeleteProposal,
   onSaveEmail,
   theme,
 }: Props) {
   const drawerRef = useRef<HTMLDivElement>(null)
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
 
   // Close on Escape
   useEffect(() => {
@@ -73,6 +76,17 @@ export default function ProposalDrawer({
       document.body.style.overflow = ''
     }
   }, [open])
+
+  // Close overflow menu on outside click
+  useEffect(() => {
+    if (!menuOpenId) return
+    function handleClick() { setMenuOpenId(null) }
+    window.addEventListener('click', handleClick)
+    return () => window.removeEventListener('click', handleClick)
+  }, [menuOpenId])
+
+  // Close menu when drawer closes
+  useEffect(() => { if (!open) setMenuOpenId(null) }, [open])
 
   const isLight = theme === 'light'
 
@@ -174,13 +188,13 @@ export default function ProposalDrawer({
                   {proposals.map((p) => {
                     const isActive = p.id === currentProposalId
                     return (
-                      <li key={p.id}>
+                      <li key={p.id} className="relative group">
                         <button
                           onClick={() => {
                             if (!isActive) onSwitchProposal(p.id)
                           }}
                           disabled={isActive}
-                          className={`w-full text-left rounded-lg px-3 py-2.5 transition-colors cursor-pointer group
+                          className={`w-full text-left rounded-lg px-3 py-2.5 transition-colors cursor-pointer
                             ${isActive
                               ? isLight
                                 ? 'bg-[rgba(0,0,0,0.04)] border-l-2 border-[#1A1A1A]'
@@ -190,7 +204,7 @@ export default function ProposalDrawer({
                                 : 'hover:bg-white/5 border-l-2 border-transparent'
                             }`}
                         >
-                          <p className={`text-sm font-medium truncate ${isLight ? 'text-[#1a1a1a]' : 'text-white'}`}>
+                          <p className={`text-sm font-medium truncate pr-6 ${isLight ? 'text-[#1a1a1a]' : 'text-white'}`}>
                             {p.projectName || 'Untitled Proposal'}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
@@ -210,6 +224,39 @@ export default function ProposalDrawer({
                             )}
                           </div>
                         </button>
+                        {!isActive && (
+                          <div className="absolute right-2 top-2.5" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setMenuOpenId(menuOpenId === p.id ? null : p.id)
+                              }}
+                              className={`w-6 h-6 rounded flex items-center justify-center transition-opacity
+                                ${menuOpenId === p.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100'}
+                                ${isLight ? 'hover:bg-black/5 text-[#999]' : 'hover:bg-white/10 text-[#666]'}`}
+                              aria-label="More options"
+                            >
+                              <MoreHorizontal className="w-3.5 h-3.5" />
+                            </button>
+                            {menuOpenId === p.id && (
+                              <div className={`absolute right-0 top-7 z-10 rounded-lg shadow-lg py-1 min-w-[120px]
+                                ${isLight ? 'bg-white border border-[rgba(0,0,0,0.08)]' : 'bg-[#2a2a2a] border border-white/10'}`}>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    onDeleteProposal(p.id)
+                                    setMenuOpenId(null)
+                                  }}
+                                  className={`w-full text-left px-3 py-1.5 text-sm flex items-center gap-2 transition-colors cursor-pointer
+                                    ${isLight ? 'text-red-600 hover:bg-red-50' : 'text-red-400 hover:bg-white/5'}`}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  Delete
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </li>
                     )
                   })}
