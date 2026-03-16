@@ -50,4 +50,12 @@ body {
   --ov-hover-bg: rgba(0, 0, 0, 0.03);
   --ov-danger: #dc2626;
   --ov-danger-hover: #b91c1c;
+  /* Light mode accent: dark instead of yellow for borders/highlights */
+  --ov-bubble-user-bg: #1A1A1A;
+  --ov-bubble-user-border: #1A1A1A;
+  --ov-bubble-user-text: #FFFFFF;
+  --ov-accent-bg: rgba(0, 0, 0, 0.04);
+  --ov-accent-border: rgba(0, 0, 0, 0.15);
+  --ov-accent-strong: #1A1A1A;
+  --ov-focus-ring: rgba(0, 0, 0, 0.20);
 }

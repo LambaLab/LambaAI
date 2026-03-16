@@ -134,13 +134,17 @@ export default function ProposalDrawer({
               </div>
 
               {/* CTA to save email */}
-              <div className={`rounded-lg p-4 text-center ${isLight ? 'bg-brand-yellow/10 border border-brand-yellow/20' : 'bg-brand-yellow/5 border border-brand-yellow/10'}`}>
+              <div className={`rounded-lg p-4 text-center ${isLight ? 'bg-[rgba(0,0,0,0.03)] border border-[rgba(0,0,0,0.08)]' : 'bg-brand-yellow/5 border border-brand-yellow/10'}`}>
                 <p className={`text-xs mb-3 ${isLight ? 'text-[#1a1a1a]/70' : 'text-white/60'}`}>
                   Save your email to unlock all your proposals and pick up where you left off on any device.
                 </p>
                 <button
                   onClick={onSaveEmail}
-                  className="w-full py-2 px-3 rounded-lg text-sm font-medium bg-brand-yellow text-brand-dark hover:bg-brand-yellow/90 transition-colors cursor-pointer"
+                  className={`w-full py-2 px-3 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                    isLight
+                      ? 'bg-[#1A1A1A] text-white hover:bg-[#333]'
+                      : 'bg-brand-yellow text-brand-dark hover:bg-brand-yellow/90'
+                  }`}
                 >
                   Save & unlock proposals
                 </button>
@@ -171,7 +175,7 @@ export default function ProposalDrawer({
                           className={`w-full text-left rounded-lg px-3 py-2.5 transition-colors cursor-pointer group
                             ${isActive
                               ? isLight
-                                ? 'bg-brand-yellow/10 border-l-2 border-brand-yellow'
+                                ? 'bg-[rgba(0,0,0,0.04)] border-l-2 border-[#1A1A1A]'
                                 : 'bg-brand-yellow/10 border-l-2 border-brand-yellow'
                               : isLight
                                 ? 'hover:bg-black/[0.03] border-l-2 border-transparent'

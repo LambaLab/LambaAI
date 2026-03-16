@@ -62,8 +62,8 @@ export default function AuthGateModal({ proposalId, onClose, theme }: Props) {
 
         {step === 'sent' ? (
           <div className="text-center space-y-4 py-2">
-            <div className="w-12 h-12 bg-brand-yellow/10 rounded-full flex items-center justify-center mx-auto">
-              <CheckCircle className="w-6 h-6 text-brand-yellow" />
+            <div className="w-12 h-12 bg-[var(--ov-accent-bg,rgba(255,252,0,0.10))] rounded-full flex items-center justify-center mx-auto">
+              <CheckCircle className="w-6 h-6 text-[var(--ov-accent-strong,#fffc00)]" />
             </div>
             <div>
               <h2 className="font-bold text-[var(--ov-text,#ffffff)] text-lg">Check your inbox</h2>
@@ -72,11 +72,11 @@ export default function AuthGateModal({ proposalId, onClose, theme }: Props) {
                 Click it to view your full proposal.
               </p>
             </div>
-            <p className="text-brand-gray-mid/60 text-xs">
+            <p className="text-[var(--ov-text-muted,#727272)]/60 text-xs">
               Didn&apos;t receive it?{' '}
               <button
                 onClick={() => setStep('email')}
-                className="text-brand-yellow hover:underline"
+                className="text-[var(--ov-accent-strong,#fffc00)] hover:underline"
               >
                 Try again
               </button>
@@ -85,8 +85,8 @@ export default function AuthGateModal({ proposalId, onClose, theme }: Props) {
         ) : (
           <>
             <div className="mb-6">
-              <div className="w-10 h-10 bg-brand-yellow/10 rounded-xl flex items-center justify-center mb-4">
-                <Mail className="w-5 h-5 text-brand-yellow" />
+              <div className="w-10 h-10 bg-[var(--ov-accent-bg,rgba(255,252,0,0.10))] rounded-xl flex items-center justify-center mb-4">
+                <Mail className="w-5 h-5 text-[var(--ov-accent-strong,#fffc00)]" />
               </div>
               <h2 className="font-bold text-[var(--ov-text,#ffffff)] text-lg">View your proposal</h2>
               <p className="text-[var(--ov-text-muted,#727272)] text-sm mt-1">
@@ -105,7 +105,7 @@ export default function AuthGateModal({ proposalId, onClose, theme }: Props) {
                 required
                 autoFocus
                 disabled={step === 'loading'}
-                className="w-full bg-[var(--ov-input-bg,rgba(255,255,255,0.05))] border border-[var(--ov-border,rgba(255,255,255,0.10))] rounded-xl px-4 py-3 text-[var(--ov-text,#ffffff)] placeholder:text-[var(--ov-text-muted,#727272)] outline-none focus:border-brand-yellow/50 transition-colors text-sm disabled:opacity-50"
+                className="w-full bg-[var(--ov-input-bg,rgba(255,255,255,0.05))] border border-[var(--ov-border,rgba(255,255,255,0.10))] rounded-xl px-4 py-3 text-[var(--ov-text,#ffffff)] placeholder:text-[var(--ov-text-muted,#727272)] outline-none focus:border-[var(--ov-focus-ring,rgba(255,252,0,0.50))] transition-colors text-sm disabled:opacity-50"
               />
               <button
                 type="submit"

@@ -392,7 +392,7 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
                     if (e.key === 'Escape') { setNameInputValue(appName); setEditingName(false) }
                   }}
                   maxLength={20}
-                  className="font-bebas text-xl tracking-widest text-[var(--ov-text,#ffffff)] bg-transparent border-b border-brand-yellow/50 outline-none uppercase w-36"
+                  className="font-bebas text-xl tracking-widest text-[var(--ov-text,#ffffff)] bg-transparent border-b border-[var(--ov-accent-border,rgba(255,252,0,0.50))] outline-none uppercase w-36"
                 />
               ) : (
                 <button

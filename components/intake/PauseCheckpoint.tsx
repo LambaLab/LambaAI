@@ -70,7 +70,7 @@ export default function PauseCheckpoint({ message, onSend, onRequestViewProposal
                   ? 'bg-brand-yellow border border-brand-yellow text-brand-dark hover:bg-brand-yellow/90 cursor-pointer font-medium'
                   : pill.disabled
                     ? 'border border-[var(--ov-border,rgba(255,255,255,0.06))] text-[var(--ov-text-muted,#727272)] opacity-40 cursor-not-allowed'
-                    : 'border border-[var(--ov-border,rgba(255,255,255,0.12))] text-[var(--ov-text,#ffffff)] hover:border-brand-yellow/50 hover:text-brand-yellow cursor-pointer',
+                    : 'border border-[var(--ov-border,rgba(255,255,255,0.12))] text-[var(--ov-text,#ffffff)] hover:border-[var(--ov-accent-border,rgba(255,252,0,0.50))] hover:text-[var(--ov-accent-strong,#fffc00)] cursor-pointer',
               ].join(' ')}
             >
               <span className="leading-none text-base">{pill.icon}</span>

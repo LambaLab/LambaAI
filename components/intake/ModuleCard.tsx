@@ -32,7 +32,7 @@ export default function ModuleCard({ moduleId, isActive, activeModules, onToggle
     <div
       className={`w-full rounded-xl border transition-all text-left overflow-hidden ${
         isActive
-          ? 'bg-brand-yellow/5 border-brand-yellow/30'
+          ? 'bg-[var(--ov-accent-bg,rgba(255,252,0,0.05))] border-[var(--ov-accent-border,rgba(255,252,0,0.30))]'
           : 'bg-[var(--ov-surface-subtle,rgba(255,255,255,0.02))] border-[var(--ov-border,rgba(255,255,255,0.05))] opacity-50'
       }`}
     >
@@ -53,10 +53,10 @@ export default function ModuleCard({ moduleId, isActive, activeModules, onToggle
           <div className="flex items-center gap-2.5 min-w-0">
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
               isActive
-                ? 'bg-brand-yellow/15'
+                ? 'bg-[var(--ov-accent-bg,rgba(255,252,0,0.15))]'
                 : 'bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))]'
             }`}>
-              <IconComponent className={`w-4 h-4 ${isActive ? 'text-brand-yellow' : 'text-brand-gray-mid'}`} />
+              <IconComponent className={`w-4 h-4 ${isActive ? 'text-[var(--ov-accent-strong,#fffc00)]' : 'text-[var(--ov-text-muted,#727272)]'}`} />
             </div>
             <p className={`text-sm font-medium truncate ${
               isActive ? 'text-[var(--ov-text,#ffffff)]' : 'text-[var(--ov-text-muted,#727272)]'

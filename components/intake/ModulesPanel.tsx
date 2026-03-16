@@ -151,7 +151,7 @@ export default function ModulesPanel({
                 TECHNICAL MODULES
               </h2>
               {activeModules.length > 0 && (
-                <span className="text-[10px] bg-brand-yellow/15 text-brand-yellow px-1.5 py-0.5 rounded-full font-medium">
+                <span className="text-[10px] bg-[var(--ov-accent-bg,rgba(255,252,0,0.15))] text-[var(--ov-accent-strong,#fffc00)] px-1.5 py-0.5 rounded-full font-medium">
                   {activeModules.length}
                 </span>
               )}
@@ -214,7 +214,7 @@ export default function ModulesPanel({
           <button
             type="button"
             onClick={onSaveLater}
-            className="w-full py-2.5 rounded-xl border border-[var(--ov-border,rgba(255,255,255,0.10))] text-[var(--ov-text,#ffffff)] text-sm font-medium hover:bg-white/[0.03] transition-colors cursor-pointer"
+            className="w-full py-2.5 rounded-xl border border-[var(--ov-border,rgba(255,255,255,0.10))] text-[var(--ov-text,#ffffff)] text-sm font-medium hover:bg-[var(--ov-hover-bg,rgba(255,255,255,0.03))] transition-colors cursor-pointer"
           >
             Save proposal for Later
           </button>
