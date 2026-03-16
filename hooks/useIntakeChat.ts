@@ -237,7 +237,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
         const welcome: ChatMessage = {
           id: crypto.randomUUID(),
           role: 'assistant',
-          content: "What would you like to build? Describe your idea in the chat below and I'll break it down into modules with cost estimates.",
+          content: "What would you like to build? Describe your idea in the chat below and I'll help you shape it into a proposal.",
         }
         messagesRef.current = [welcome]
         setMessages([welcome])
