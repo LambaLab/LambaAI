@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   // Fetch all proposals for that email
   const { data: proposals, error } = await supabase
     .from('proposals')
-    .select('id, confidence_score, saved_at, metadata, slug')
+    .select('id, confidence_score, saved_at, metadata, slug, brief')
     .eq('email', anchor.email)
     .order('saved_at', { ascending: false, nullsFirst: false })
 
@@ -31,9 +31,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 
+  const meaningful = (proposals ?? []).filter(p =>
+    (p.confidence_score ?? 0) > 0 || (typeof p.brief === 'string' && p.brief.trim().length > 0)
+  )
+
   return NextResponse.json({
     email: anchor.email,
-    proposals: (proposals ?? []).map((p) => {
+    proposals: meaningful.map((p) => {
       const meta = (p.metadata && typeof p.metadata === 'object' && !Array.isArray(p.metadata))
         ? (p.metadata as Record<string, unknown>)
         : null

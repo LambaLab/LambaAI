@@ -425,11 +425,16 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
               ) : (
                 <button
                   onClick={() => { setNameInputValue(appName); setEditingName(true) }}
-                  className="font-bebas text-xl tracking-widest text-[var(--ov-text,#ffffff)] hover:opacity-75 transition-opacity cursor-pointer group flex items-center gap-1.5"
+                  className={`font-bebas text-xl tracking-widest cursor-pointer group flex items-center gap-1.5 transition-all
+                    ${appName
+                      ? 'text-[var(--ov-text,#ffffff)] hover:opacity-75'
+                      : 'text-[var(--ov-text-muted,#727272)] border-b border-dashed border-[var(--ov-text-muted,rgba(114,114,114,0.4))] pb-0.5'
+                    }`}
                   title="Click to rename"
                 >
-                  {appName ? appName.toUpperCase() : <span className="text-[var(--ov-text-muted,#727272)]">YOUR APP</span>}
-                  <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-[var(--ov-text-muted,#727272)] font-sans tracking-normal normal-case leading-none">✎</span>
+                  {appName ? appName.toUpperCase() : 'UNTITLED PROPOSAL'}
+                  <span className={`transition-opacity text-[10px] text-[var(--ov-text-muted,#727272)] font-sans tracking-normal normal-case leading-none
+                    ${appName ? 'opacity-0 group-hover:opacity-100' : 'opacity-60'}`}>✎</span>
                 </button>
               )}
             </div>
