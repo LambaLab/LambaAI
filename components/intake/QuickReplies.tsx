@@ -152,17 +152,78 @@ export default function QuickReplies({ quickReplies, onSelect, disabled, questio
 
   // style === 'list' — rendered at the bottom of ChatPanel
   // Loading skeleton: question is ready but options are still generating
+  // (only show skeleton if no question yet — otherwise it's a fallback card with free-text only)
   if (style === 'list' && options.length === 0) {
-    return (
-      <div className="rounded-xl border border-[var(--ov-border,rgba(255,255,255,0.10))] overflow-hidden">
-        {question && (
+    // Fallback card: AI sent a question but no predefined options.
+    // Show the question header + only the free-text input row.
+    if (question) {
+      return (
+        <div className="rounded-xl border border-[var(--ov-border,rgba(255,255,255,0.10))] overflow-hidden">
           <div className="px-4 py-3 border-b border-[var(--ov-border,rgba(255,255,255,0.10))]">
             {questionNumber != null && questionNumber > 0 && (
               <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--ov-text-muted,#727272)]/50 mb-1">Question {questionNumber}</p>
             )}
             <p className="text-sm text-[var(--ov-text,#ffffff)] leading-relaxed">{question}</p>
           </div>
-        )}
+          <div className="border-t border-[var(--ov-border,rgba(255,255,255,0.10))] first:border-t-0">
+            {showCustomInput ? (
+              <div className="flex gap-2 p-3">
+                <input
+                  autoFocus
+                  value={customValue}
+                  onChange={(e) => setCustomValue(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleCustomSubmit()}
+                  placeholder="Type your answer..."
+                  className="flex-1 bg-[var(--ov-input-bg,rgba(255,255,255,0.05))] border border-[var(--ov-border,rgba(255,255,255,0.10))] rounded-lg px-3 py-2 text-sm text-[var(--ov-text,#ffffff)] placeholder:text-[var(--ov-text-muted,#727272)] outline-none focus:border-brand-yellow/50"
+                />
+                <button
+                  onClick={handleCustomSubmit}
+                  disabled={disabled || !customValue.trim()}
+                  className="px-3 py-2 bg-brand-yellow text-brand-dark rounded-lg text-sm font-medium disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  Send
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowCustomInput(true)}
+                disabled={disabled}
+                className="w-full flex items-center justify-between px-4 py-3 hover:bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))] transition-colors text-left disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+              >
+                <span className="text-sm text-[var(--ov-text-muted,#727272)]">Type your answer...</span>
+              </button>
+            )}
+          </div>
+          {/* Skip / Pause footer */}
+          {(onSkipQuestion || onPauseQuestions || onResumeQuestions) && (
+            <div className="flex items-center justify-between px-4 py-2.5 border-t border-[var(--ov-border,rgba(255,255,255,0.06))]">
+              <div>
+                {onSkipQuestion && (
+                  <button onClick={onSkipQuestion} disabled={disabled} className="text-xs text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50">
+                    Skip this question
+                  </button>
+                )}
+              </div>
+              <div>
+                {(onPauseQuestions || onResumeQuestions) && (
+                  <button
+                    onClick={() => isPaused ? onResumeQuestions?.() : onPauseQuestions?.()}
+                    disabled={disabled}
+                    className="inline-flex items-center gap-1.5 text-xs text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-accent-strong,#fffc00)] transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isPaused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
+                    {isPaused ? 'Resume Auto-questions' : 'Pause Auto-questions'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )
+    }
+    // No question yet — show loading skeleton
+    return (
+      <div className="rounded-xl border border-[var(--ov-border,rgba(255,255,255,0.10))] overflow-hidden">
         {[1, 2, 3].map((i) => (
           <div key={i} className="px-4 py-3.5 border-t border-[var(--ov-border,rgba(255,255,255,0.10))] first:border-t-0 animate-pulse">
             <div className="h-4 bg-[var(--ov-surface-subtle,rgba(255,255,255,0.08))] rounded w-2/5 mb-2" />

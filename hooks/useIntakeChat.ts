@@ -623,7 +623,23 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                 ? (updatedQR?.style === 'pills' ? updatedQR : undefined)
                 : updatedQR
               const effectiveQuestion = isPausedRef.current ? undefined : questionText
-              const isListEffective = effectiveQR?.style === 'list'
+
+              // Preserve partial_result's QR if tool_result has no valid QR.
+              // The full JSON parse can sometimes lose quick_replies (e.g. model
+              // generates an invalid structure, or the options array is empty in the
+              // final parse even though partial extraction found valid options).
+              let finalQR = effectiveQR ?? (partialResultApplied ? last.quickReplies : undefined)
+              const finalQuestion = effectiveQuestion || (partialResultApplied ? last.question : undefined)
+
+              // Fallback: AI provided a question but no quick_replies. Create a minimal
+              // list QR so the question shows in the card header with a free-text input,
+              // instead of being buried as a paragraph in the bubble.
+              if (!finalQR && finalQuestion && !isPausedRef.current) {
+                finalQR = { style: 'list' as const, options: [], allowCustom: true } as QuickReplies
+              }
+
+              const isListFinal = finalQR?.style === 'list' ||
+                (finalQR && Array.isArray(finalQR.options) && finalQR.options.length >= 3)
 
               // For list QR: question goes in the rows card header (message.question), not in the bubble
               // For no QR or pills QR: question is appended to bubble content so it's visible
@@ -632,15 +648,15 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               // literal escaped quotes which the streaming parser correctly unescapes
               // but shouldn't be displayed.
               const base = (last.content || followUp).replace(/"+\s*$/, '')
-              const bubbleContent = !isListEffective && effectiveQuestion && !partialResultApplied
-                ? (base ? `${base}\n\n${effectiveQuestion}` : effectiveQuestion)
+              const bubbleContent = !isListFinal && finalQuestion && !partialResultApplied
+                ? (base ? `${base}\n\n${finalQuestion}` : finalQuestion)
                 : base
 
               return [...prev.slice(0, -1), {
                 ...last,
                 content: bubbleContent,
-                question: isListEffective ? (effectiveQuestion || undefined) : undefined,
-                quickReplies: effectiveQR,
+                question: isListFinal ? (finalQuestion || undefined) : undefined,
+                quickReplies: finalQR,
                 isPause: undefined,
               }]
             })
