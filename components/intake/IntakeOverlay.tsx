@@ -42,6 +42,7 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
   // Track whether the user has manually edited the name — if so, don't overwrite with AI suggestions
   const nameManuallyEditedRef = useRef(false)
   const [currentSlug, setCurrentSlug] = useState<string | null>(null)
+  const cachedEmailRef = useRef<string | null>(null)
 
   const updateSlug = useCallback(async (proposalId: string, name: string) => {
     try {
@@ -141,6 +142,7 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
         return
       }
       const data = await res.json()
+      cachedEmailRef.current = data.email ?? null
       setProposals(data.proposals ?? [])
       fetchedForProposalRef.current = proposalId
     } catch {
@@ -235,27 +237,22 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
   // ── Create a new proposal ──
   const handleNewProposal = useCallback(async () => {
     if (!session) return
+
+    // ① Instant UI reset — synchronous, before any await
     setDrawerOpen(false)
+    setAppName('')
+    setNameInputValue('')
+    setLiveConfidenceScore(0)
+    setLiveModuleCount(0)
+    setCurrentIdea('')
+    setProposalOpen(false)
+    setCurrentSlug(null)
+    nameManuallyEditedRef.current = false
+    localStorage.removeItem('lamba_app_name')
+
     try {
-      // Get the email from the current proposal's verified state
-      const currentEmail = emailVerified
-        ? proposals.length > 0
-          ? undefined // email will be determined from the proposalId on the server
-          : undefined
-        : undefined
-
-      // We need to get the email. Fetch it from the by-email endpoint data or localStorage
-      let email: string | undefined
-      if (emailVerified) {
-        // Fetch the email associated with this proposal
-        const emailRes = await fetch(`/api/proposals/by-email?proposalId=${session.proposalId}`)
-        if (emailRes.ok) {
-          const emailData = await emailRes.json()
-          email = emailData.email
-        }
-      }
-
-      // Create new session with email if available
+      // ② Single API call — use cached email instead of fetching
+      const email = cachedEmailRef.current || undefined
       const res = await fetch('/api/intake/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -265,37 +262,23 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
       const newSessionData: SessionData = await res.json()
       storeSession(newSessionData)
 
-      // Reset all state
-      nameManuallyEditedRef.current = false
-      setAppName('')
-      setNameInputValue('')
-      localStorage.removeItem('lamba_app_name')
-      setCurrentIdea('')
-      setLiveModuleCount(0)
-      setLiveConfidenceScore(0)
-      setProposalOpen(false)
-
-      // If email was set, the new proposal is auto-linked
+      // ③ On success
       if (email) {
         localStorage.setItem(`lamba_email_verified_${newSessionData.proposalId}`, '1')
         setEmailVerified(true)
       }
 
-      // Update URL
+      window.history.replaceState(null, '', '?c=' + newSessionData.proposalId)
       setCurrentSlug(null)
-      window.history.replaceState(null, '', `?c=${newSessionData.proposalId}`)
-
-      // Trigger remount
       setSession(newSessionData)
 
-      // Refresh proposals list to include the new one
       if (email) {
         fetchProposals(newSessionData.proposalId)
       }
     } catch (err) {
       console.error('Failed to create new proposal:', err)
     }
-  }, [session, emailVerified, proposals, fetchProposals])
+  }, [session, fetchProposals])
 
   const handleStateChange = useCallback((m: number, c: number, pName?: string) => {
     setLiveModuleCount(m)
