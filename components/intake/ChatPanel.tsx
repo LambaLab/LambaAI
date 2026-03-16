@@ -19,14 +19,16 @@ type Props = {
   theme?: 'dark' | 'light'
   isPaused?: boolean
   pausedQuestion?: string | null
+  questionRevealed?: boolean
   onPauseQuestions?: () => void
   onResumeQuestions?: () => void
+  onRevealPausedQuestion?: () => void
   onSkipQuestion?: () => void
   confidenceScore?: number
   emailVerified?: boolean
 }
 
-export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onRequestViewProposal, onSaveLater, constrained = false, theme, isPaused, pausedQuestion, onPauseQuestions, onResumeQuestions, onSkipQuestion, confidenceScore = 0, emailVerified }: Props) {
+export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onRequestViewProposal, onSaveLater, constrained = false, theme, isPaused, pausedQuestion, questionRevealed, onPauseQuestions, onResumeQuestions, onRevealPausedQuestion, onSkipQuestion, confidenceScore = 0, emailVerified }: Props) {
   const [input, setInput] = useState('')
   const [reEditingMessageId, setReEditingMessageId] = useState<string | null>(null)
   const [showScrollBtn, setShowScrollBtn] = useState(false)
@@ -118,8 +120,9 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
   const reEditingQuestion = reEditingMsg?.sourceQuestion
 
   // Active QR at bottom: re-edit takes priority over new question QR.
-  // When paused, force to null so the textarea always shows.
-  const activeQR = isPaused ? (reEditingQR ?? null) : (reEditingQR ?? listQR)
+  // When paused, force to null so the textarea always shows — UNLESS the user
+  // tapped the peek card to temporarily reveal the question (questionRevealed).
+  const activeQR = (isPaused && !questionRevealed) ? (reEditingQR ?? null) : (reEditingQR ?? listQR)
   const activeQuestion = reEditingQR ? reEditingQuestion : questionText
 
   return (
@@ -132,7 +135,8 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
         >
           {messages.map((msg, i) => (
             msg.isPause ? (
-              <PauseCheckpoint
+              // Hide breather checkpoint while a paused question is temporarily revealed
+              questionRevealed ? null : <PauseCheckpoint
                 key={msg.id}
                 message={msg}
                 onSend={(val, display) => onSend(val, display)}
@@ -232,11 +236,11 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
         ) : (
           <>
             {/* Peek card — paused question sliding from behind the input field */}
-            {isPaused && pausedQuestion && onResumeQuestions && (
+            {isPaused && pausedQuestion && onRevealPausedQuestion && (
               <button
-                onClick={onResumeQuestions}
+                onClick={onRevealPausedQuestion}
                 className="w-[calc(100%-16px)] mx-auto block group/peek px-4 py-2.5 rounded-t-xl bg-[var(--ov-surface-subtle,rgba(255,255,255,0.04))] border border-b-0 border-[var(--ov-border,rgba(255,255,255,0.08))] hover:bg-[var(--ov-surface-subtle,rgba(255,255,255,0.08))] transition-colors cursor-pointer text-left"
-                aria-label="Resume auto-questions"
+                aria-label="Answer this question"
               >
                 {questionNumber > 0 && (
                   <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--ov-text-muted,#727272)]/50 group-hover/peek:text-[var(--ov-text-muted,#727272)] transition-colors">

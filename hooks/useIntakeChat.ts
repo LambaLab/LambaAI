@@ -90,6 +90,9 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   const [projectName, setProjectName] = useState('')
   const [isPaused, setIsPaused] = useState(false)
   const [pausedQuestion, setPausedQuestion] = useState<string | null>(null)
+  // When true, the paused question's QR card is temporarily revealed (user tapped peek card)
+  // This stays true until the user answers, then auto-hides back to paused state
+  const [questionRevealed, setQuestionRevealed] = useState(false)
   // Store the stripped QR so we can silently restore it on resume
   const pausedQRRef = useRef<{ question: string; quickReplies: QuickReplies; messageId: string } | null>(null)
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null)
@@ -563,6 +566,23 @@ export function useIntakeChat({ proposalId, idea }: Props) {
               }]
             })
 
+            // When paused and the AI sends a new list QR (which we stripped above),
+            // save it for the peek card so the user sees the next question peeking.
+            if (isPausedRef.current && !isPauseThisTurn) {
+              const qText = typeof input?.question === 'string' ? input.question.trim() : ''
+              const rawQRPeek = input?.quick_replies
+              const validQRPeek = rawQRPeek && Array.isArray(rawQRPeek.options) && rawQRPeek.options.length > 0 ? rawQRPeek : undefined
+              const normQR = normalizeQRStyle(validQRPeek)
+              if (normQR?.style === 'list' && qText) {
+                const qrData = { question: qText, quickReplies: normQR, messageId: activeBubbleId }
+                pausedQRRef.current = qrData
+                setPausedQuestion(qText)
+                if (proposalId) {
+                  try { localStorage.setItem(PAUSED_QR_KEY(proposalId), JSON.stringify(qrData)) } catch { /* ignore */ }
+                }
+              }
+            }
+
             // Mark streaming done — the QR card and question are ready to show.
             // The Anthropic stream may still be open (consuming message_delta / message_stop)
             // but there's nothing left to display; we don't need to wait for it.
@@ -645,6 +665,14 @@ export function useIntakeChat({ proposalId, idea }: Props) {
       { role: 'user', content },
     ])
 
+    // If answering a revealed (temporarily shown) paused question, hide it back
+    // and clear the saved QR — the question is now answered.
+    if (questionRevealed) {
+      setQuestionRevealed(false)
+      pausedQRRef.current = null
+      if (proposalId) localStorage.removeItem(PAUSED_QR_KEY(proposalId))
+    }
+
     setMessages((prev) => {
       // Clear quickReplies and question from last assistant message
       const cleared = prev.map((m, i) =>
@@ -654,7 +682,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     })
 
     await streamAIResponse(apiMessages)
-  }, [isStreaming]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isStreaming, questionRevealed, proposalId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleModule(moduleId: string) {
     const newModules = activeModules.includes(moduleId)
@@ -763,6 +791,31 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     }
   }, [proposalId, sendMessage])
 
+  // Temporarily reveal the paused question's QR card so the user can answer it
+  // without fully resuming auto-questions. After answering, the card hides and
+  // the breather checkpoint remains.
+  const revealPausedQuestion = useCallback(() => {
+    const saved = pausedQRRef.current
+    if (!saved) return
+    // Restore QR on the original message
+    setMessages((prev) => {
+      let targetIdx = prev.findIndex(m => m.id === saved.messageId)
+      if (targetIdx === -1) {
+        const revIdx = [...prev].reverse().findIndex(m => m.role === 'assistant' && !m.isPause)
+        if (revIdx !== -1) targetIdx = prev.length - 1 - revIdx
+      }
+      if (targetIdx === -1) return prev
+      const msg = prev[targetIdx]
+      return [
+        ...prev.slice(0, targetIdx),
+        { ...msg, question: saved.question, quickReplies: saved.quickReplies },
+        ...prev.slice(targetIdx + 1),
+      ]
+    })
+    setPausedQuestion(null)  // hide peek card
+    setQuestionRevealed(true)  // override isPaused QR suppression
+  }, [])
+
   const skipQuestion = useCallback(() => {
     sendMessage('Skip this question and ask the next one', 'Skipped')
   }, [sendMessage])
@@ -798,5 +851,5 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     pausedQRRef.current = null
   }, [proposalId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, editMessage, reset, moduleSummaries, projectName, isPaused, pausedQuestion, pauseQuestions, resumeQuestions, skipQuestion, lastSyncedAt }
+  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, editMessage, reset, moduleSummaries, projectName, isPaused, pausedQuestion, questionRevealed, pauseQuestions, resumeQuestions, revealPausedQuestion, skipQuestion, lastSyncedAt }
 }

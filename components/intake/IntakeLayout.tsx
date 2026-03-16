@@ -36,8 +36,10 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
     projectName,
     isPaused,
     pausedQuestion,
+    questionRevealed,
     pauseQuestions,
     resumeQuestions,
+    revealPausedQuestion,
     skipQuestion,
     lastSyncedAt,
   } = useIntakeChat({ proposalId, idea: initialMessage })
@@ -144,8 +146,10 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             theme={theme}
             isPaused={isPaused}
             pausedQuestion={pausedQuestion}
+            questionRevealed={questionRevealed}
             onPauseQuestions={pauseQuestions}
             onResumeQuestions={resumeQuestions}
+            onRevealPausedQuestion={revealPausedQuestion}
             onSkipQuestion={skipQuestion}
             confidenceScore={confidenceScore}
             emailVerified={emailVerified}
@@ -200,8 +204,10 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             theme={theme}
             isPaused={isPaused}
             pausedQuestion={pausedQuestion}
+            questionRevealed={questionRevealed}
             onPauseQuestions={pauseQuestions}
             onResumeQuestions={resumeQuestions}
+            onRevealPausedQuestion={revealPausedQuestion}
             onSkipQuestion={skipQuestion}
             confidenceScore={confidenceScore}
             emailVerified={emailVerified}
