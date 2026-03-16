@@ -161,6 +161,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             theme={theme}
             moduleSummaries={moduleSummaries}
             onReset={onReset}
+            onSaveLater={onSaveLater}
           />
         </div>
       </div>
