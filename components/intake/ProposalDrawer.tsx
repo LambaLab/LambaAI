@@ -232,7 +232,7 @@ export default function ProposalDrawer({
                                 setMenuOpenId(menuOpenId === p.id ? null : p.id)
                               }}
                               className={`w-6 h-6 rounded flex items-center justify-center transition-opacity
-                                ${menuOpenId === p.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100'}
+                                ${menuOpenId === p.id ? 'opacity-100' : 'opacity-40 md:opacity-0 md:group-hover:opacity-100'}
                                 ${isLight ? 'hover:bg-black/5 text-[#999]' : 'hover:bg-white/10 text-[#666]'}`}
                               aria-label="More options"
                             >
