@@ -87,6 +87,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   const [moduleSummaries, setModuleSummaries] = useState<{ [moduleId: string]: string }>({})
   const [projectName, setProjectName] = useState('')
   const [isPaused, setIsPaused] = useState(false)
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null)
 
   const messagesRef = useRef<ChatMessage[]>([])
   const confidenceRef = useRef(0)
@@ -165,9 +166,10 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                 metadata: syncMetadata,
               }),
             })
-              .then(() =>
+              .then(() => {
                 localStorage.setItem(SYNCED_COUNT_KEY(proposalId), String(newCount))
-              )
+                setLastSyncedAt(Date.now())
+              })
               .catch((e) => console.error('Auto-save error:', e))
           }
         }
@@ -708,5 +710,5 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     isPausedRef.current = false
   }, [proposalId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, editMessage, reset, moduleSummaries, projectName, isPaused, pauseQuestions, resumeQuestions, skipQuestion }
+  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, editMessage, reset, moduleSummaries, projectName, isPaused, pauseQuestions, resumeQuestions, skipQuestion, lastSyncedAt }
 }

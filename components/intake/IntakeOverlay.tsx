@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Menu, Minus, Sun, Moon, X } from 'lucide-react'
+import { Check, Menu, Minus, Sun, Moon, X } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 import IntakeLayout from './IntakeLayout'
 import MinimizedBar from './MinimizedBar'
@@ -44,6 +44,8 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
   const nameManuallyEditedRef = useRef(false)
   const [currentSlug, setCurrentSlug] = useState<string | null>(null)
   const cachedEmailRef = useRef<string | null>(null)
+  const [showSaved, setShowSaved] = useState(false)
+  const lastSyncedAtRef = useRef<number | null>(null)
 
   const updateSlug = useCallback(async (proposalId: string, name: string) => {
     try {
@@ -311,7 +313,7 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
     }
   }, [session, proposals, switchToProposal, handleNewProposal])
 
-  const handleStateChange = useCallback((m: number, c: number, pName?: string) => {
+  const handleStateChange = useCallback((m: number, c: number, pName?: string, syncedAt?: number | null) => {
     setLiveModuleCount(m)
     setLiveConfidenceScore(c)
     // Auto-update the app name with the AI-generated project name —
@@ -324,7 +326,17 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
         updateSlug(session.proposalId, pName.trim())
       }
     }
+    if (syncedAt && syncedAt !== lastSyncedAtRef.current) {
+      lastSyncedAtRef.current = syncedAt
+      setShowSaved(true)
+    }
   }, [session, updateSlug])
+
+  useEffect(() => {
+    if (!showSaved) return
+    const timer = setTimeout(() => setShowSaved(false), 2500)
+    return () => clearTimeout(timer)
+  }, [showSaved])
 
   const resetRef = useRef<(() => void) | null>(null)
 
@@ -450,6 +462,12 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
                   <span className={`transition-opacity text-[10px] text-[var(--ov-text-muted,#727272)] font-sans tracking-normal normal-case leading-none
                     ${appName ? 'opacity-0 group-hover:opacity-100' : 'opacity-60'}`}>✎</span>
                 </button>
+              )}
+              {showSaved && emailVerified && (
+                <span className="text-xs text-green-500/80 flex items-center gap-1 animate-fade-in-out ml-2">
+                  <Check className="w-3 h-3" />
+                  Saved
+                </span>
               )}
             </div>
 

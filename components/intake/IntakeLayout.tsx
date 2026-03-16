@@ -10,7 +10,7 @@ import { formatPriceRange, isPricingVisible } from '@/lib/pricing/engine'
 type Props = {
   proposalId: string
   initialMessage: string
-  onStateChange?: (moduleCount: number, confidenceScore: number, projectName?: string) => void
+  onStateChange?: (moduleCount: number, confidenceScore: number, projectName?: string, lastSyncedAt?: number | null) => void
   onResetRef?: React.MutableRefObject<(() => void) | null>
   theme?: 'dark' | 'light'
   proposalOpen: boolean
@@ -37,6 +37,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
     pauseQuestions,
     resumeQuestions,
     skipQuestion,
+    lastSyncedAt,
   } = useIntakeChat({ proposalId, idea: initialMessage })
 
   const [chatWidthPct, setChatWidthPct] = useState(55)
@@ -102,8 +103,8 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
   }, [reset, onResetRef])
 
   useEffect(() => {
-    onStateChangeRef.current?.(activeModules.length, confidenceScore, projectName)
-  }, [activeModules.length, confidenceScore, projectName])
+    onStateChangeRef.current?.(activeModules.length, confidenceScore, projectName, lastSyncedAt)
+  }, [activeModules.length, confidenceScore, projectName, lastSyncedAt])
 
   const pricingVisible = isPricingVisible(confidenceScore)
 

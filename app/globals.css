@@ -59,3 +59,13 @@ body {
   --ov-accent-strong: #1A1A1A;
   --ov-focus-ring: rgba(0, 0, 0, 0.20);
 }
+
+@keyframes fadeInOut {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  75% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.animate-fade-in-out {
+  animation: fadeInOut 2.5s ease-in-out forwards;
+}
