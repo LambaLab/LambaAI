@@ -76,6 +76,7 @@ const PROPOSAL_KEY = (pid: string) => `lamba_proposal_${pid}`
 const EMAIL_VERIFIED_KEY = (pid: string) => `lamba_email_verified_${pid}`
 const SYNCED_COUNT_KEY   = (pid: string) => `lamba_synced_count_${pid}`
 const PAUSED_KEY = (pid: string) => `lamba_paused_${pid}`
+const PAUSED_QR_KEY = (pid: string) => `lamba_paused_qr_${pid}`
 
 export function useIntakeChat({ proposalId, idea }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -225,6 +226,17 @@ export function useIntakeChat({ proposalId, idea }: Props) {
           if (localStorage.getItem(PAUSED_KEY(proposalId)) === 'true') {
             setIsPaused(true)
             isPausedRef.current = true
+            // Restore paused question + QR data for the peek card and silent resume
+            try {
+              const savedQR = localStorage.getItem(PAUSED_QR_KEY(proposalId))
+              if (savedQR) {
+                const qrData = JSON.parse(savedQR)
+                if (qrData.question) setPausedQuestion(qrData.question)
+                if (qrData.question && qrData.quickReplies) {
+                  pausedQRRef.current = qrData
+                }
+              }
+            } catch { /* ignore */ }
           }
 
           return // Skip auto-send — conversation already exists
@@ -446,7 +458,10 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             if (isPausedRef.current && input?.suggest_resume === true) {
               setIsPaused(false)
               isPausedRef.current = false
-              if (proposalId) localStorage.removeItem(PAUSED_KEY(proposalId))
+              if (proposalId) {
+                localStorage.removeItem(PAUSED_KEY(proposalId))
+                localStorage.removeItem(PAUSED_QR_KEY(proposalId))
+              }
               // Defer the resume message so this tool_result's state updates settle first
               setTimeout(() => {
                 sendMessage('Continue with intake questions', 'Resumed auto-questions')
@@ -686,7 +701,10 @@ export function useIntakeChat({ proposalId, idea }: Props) {
       // Save the question text for the peek card + full QR for silent restore
       if (msg.question) setPausedQuestion(msg.question)
       if (msg.quickReplies && msg.question) {
-        pausedQRRef.current = { question: msg.question, quickReplies: msg.quickReplies, messageId: msg.id }
+        const qrData = { question: msg.question, quickReplies: msg.quickReplies, messageId: msg.id }
+        pausedQRRef.current = qrData
+        // Persist to localStorage so peek card + silent restore survive page refresh
+        try { localStorage.setItem(PAUSED_QR_KEY(proposalId), JSON.stringify(qrData)) } catch { /* ignore */ }
       }
       if (!msg.quickReplies) return prev
       return [
@@ -701,7 +719,10 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     setIsPaused(false)
     isPausedRef.current = false
     setPausedQuestion(null)
-    if (proposalId) localStorage.removeItem(PAUSED_KEY(proposalId))
+    if (proposalId) {
+      localStorage.removeItem(PAUSED_KEY(proposalId))
+      localStorage.removeItem(PAUSED_QR_KEY(proposalId))
+    }
 
     const saved = pausedQRRef.current
     if (saved) {
@@ -738,6 +759,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
       localStorage.removeItem(MSGS_KEY(proposalId))
       localStorage.removeItem(PROPOSAL_KEY(proposalId))
       localStorage.removeItem(PAUSED_KEY(proposalId))
+      localStorage.removeItem(PAUSED_QR_KEY(proposalId))
     }
     // Reset refs synchronously
     messagesRef.current = []

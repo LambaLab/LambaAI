@@ -23,12 +23,29 @@ type Props = {
 // Renders product overview text — supports labeled sections and plain paragraphs.
 // The AI sometimes outputs literal "\n" sequences instead of actual newline characters
 // in JSON string fields — normalize them before splitting.
+// Also handles cases where the AI puts all sections in one block separated by single
+// newlines instead of double newlines.
 function ProductOverview({ text }: { text: string }) {
   const normalized = text.replace(/\\n/g, '\n')
-  const paragraphs = normalized.split('\n\n').filter(Boolean)
+
+  // Known section labels the AI uses — split on these even if only single-newline separated
+  const sectionLabels = ['What it is', 'Who it\'s for', 'How it works', 'Key features', 'Monetization', 'Why it matters']
+  const labelPattern = new RegExp(`(?:^|\\n)(?=${sectionLabels.map(l => l.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'i')
+
+  // First try splitting on label boundaries (handles single-\n between sections)
+  let sections: string[]
+  if (labelPattern.test(normalized)) {
+    // Split before each known label, preserving the label
+    const splitRegex = new RegExp(`\\n(?=${sectionLabels.map(l => l.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi')
+    sections = normalized.split(splitRegex).filter(Boolean).map(s => s.trim())
+  } else {
+    // No known labels — fall back to double-newline splitting
+    sections = normalized.split('\n\n').filter(Boolean)
+  }
+
   return (
-    <div className="space-y-3">
-      {paragraphs.map((para, i) => {
+    <div className="space-y-4">
+      {sections.map((para, i) => {
         const labelMatch = para.match(/^([^:\n]{1,30}):\s+([\s\S]+)$/)
         if (labelMatch) {
           return (
@@ -37,7 +54,7 @@ function ProductOverview({ text }: { text: string }) {
                 {labelMatch[1]}
               </p>
               <p className="text-sm text-[var(--ov-text,#ffffff)] leading-relaxed">
-                {labelMatch[2]}
+                {labelMatch[2].trim()}
               </p>
             </div>
           )

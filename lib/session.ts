@@ -154,6 +154,8 @@ export function clearProposalData(proposalId: string): void {
     `lamba_proposal_${proposalId}`,
     `lamba_email_verified_${proposalId}`,
     `lamba_synced_count_${proposalId}`,
+    `lamba_paused_${proposalId}`,
+    `lamba_paused_qr_${proposalId}`,
   ]
   keys.forEach((k) => localStorage.removeItem(k))
 }

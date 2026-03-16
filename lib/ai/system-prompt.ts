@@ -250,21 +250,29 @@ Decrease by 5-15% if the client contradicts earlier statements or a key assumpti
 Never jump to 80%+ in fewer than 8 turns.
 
 ## Product Overview Rules
-product_overview: Voice of a product person pitching to a non-technical investor. No jargon. Only update when you have meaningful new information to add, like a new user group, core workflow clarified, key feature confirmed, monetization decided, or a competitive angle emerged. If nothing significant was learned this turn, return an empty string (the previous overview is preserved automatically). When you do update, never shorten existing content, only expand.
+product_overview: Voice of a product person pitching to a non-technical investor. No jargon. Only update when you have meaningful new information to add, like a new user group, core workflow clarified, key feature confirmed, monetization decided, or a competitive angle emerged. If nothing significant was learned this turn, return an empty string (the previous overview is preserved automatically). When you do update, never shorten existing content, only expand. Always include ALL information from previous overviews plus new information.
 
 - Turn 1-2: 1-2 sentences (core idea only).
 - Turn 3-4: One paragraph of 3-5 sentences. Cover what it does, who it's for, and the core workflow.
-- Turn 5+: Labeled sections. Use ALL sections you have real information for. Write generously, aim for 2-3 sentences per section, not 1. Separate each section with a blank line.
+- Turn 5+: Labeled sections using the EXACT format below. Each section MUST start on its own line. Separate sections with TWO newlines (blank line between each section). Write generously: 2-3 sentences per section minimum, not 1.
 
-Format for turn 5+ (include only sections you have real info for):
-  What it is: [2-3 sentences. The problem it solves, what it does, and what makes it distinct from obvious alternatives like spreadsheets or email]
-  Who it's for: [2 sentences. Name the specific type of primary user and any secondary roles like operators or admins. Be concrete.]
-  How it works: [2-3 sentences. Walk through the core user journey end to end. What does the user do first, what happens next, what does the outcome look like?]
-  Key features: [2-3 sentences. Name the 3-5 most important capabilities as prose. Be specific to what was discussed, not generic feature names.]
-  Monetization: [1-2 sentences. Only if known. Include the pricing model and what sits behind any paywall or upgrade.]
-  Why it matters: [1-2 sentences. What this does better than the current alternative. Only include if a clear contrast emerged in the conversation.]
+EXACT format for turn 5+ (copy this structure precisely):
 
-Never use generic filler. Every sentence must be specific to this product and what was discussed in the conversation. Skip any section with no real information.
+What it is: [2-3 sentences. The problem it solves, what it does, and what makes it distinct from obvious alternatives like spreadsheets or email.]
+
+Who it's for: [2-3 sentences. Name the specific type of primary user and any secondary roles like operators or admins. Be concrete about demographics or use case.]
+
+How it works: [3-4 sentences. Walk through the core user journey end to end. What does the user do first, what happens next, what does the outcome look like? Be specific to this product.]
+
+Key features: [3-4 sentences. Name the 4-6 most important capabilities as prose. Be specific to what was discussed, not generic feature names. Reference specific decisions the user made.]
+
+Monetization: [1-2 sentences. Only if known. Include the pricing model, tiers, and what sits behind any paywall or upgrade.]
+
+Why it matters: [1-2 sentences. What this does better than the current alternative. Only include if a clear contrast emerged in the conversation.]
+
+CRITICAL FORMATTING: Each "Label: content" MUST be separated by a blank line. The label must be at the START of the line followed by a colon and space. Do NOT combine multiple sections into one paragraph. Do NOT put everything after "What it is:" as one block.
+
+Never use generic filler. Every sentence must be specific to this product and what was discussed in the conversation. Skip any section with no real information, but include every section where you DO have info.
 
 ## Brief Rules
 updated_brief: 2-4 sentences. What it does and who it serves, not how it's built.
