@@ -137,6 +137,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             onPauseQuestions={pauseQuestions}
             onResumeQuestions={resumeQuestions}
             onSkipQuestion={skipQuestion}
+            confidenceScore={confidenceScore}
           />
         </div>
 
@@ -189,6 +190,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             onPauseQuestions={pauseQuestions}
             onResumeQuestions={resumeQuestions}
             onSkipQuestion={skipQuestion}
+            confidenceScore={confidenceScore}
           />
         </div>
         <MobileBottomDrawer

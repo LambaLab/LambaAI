@@ -21,9 +21,10 @@ type Props = {
   onPauseQuestions?: () => void
   onResumeQuestions?: () => void
   onSkipQuestion?: () => void
+  confidenceScore?: number
 }
 
-export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onRequestViewProposal, onSaveLater, constrained = false, theme, isPaused, onPauseQuestions, onResumeQuestions, onSkipQuestion }: Props) {
+export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onRequestViewProposal, onSaveLater, constrained = false, theme, isPaused, onPauseQuestions, onResumeQuestions, onSkipQuestion, confidenceScore = 0 }: Props) {
   const [input, setInput] = useState('')
   const [reEditingMessageId, setReEditingMessageId] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -179,8 +180,10 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
               }}
               disabled={isStreaming}
               question={activeQuestion}
-              onSkipQuestion={!reEditingQR ? onSkipQuestion : undefined}
+              onSkipQuestion={!reEditingQR && confidenceScore >= 40 ? onSkipQuestion : undefined}
               onPauseQuestions={!reEditingQR ? onPauseQuestions : undefined}
+              onResumeQuestions={!reEditingQR ? onResumeQuestions : undefined}
+              isPaused={isPaused}
             />
           </>
         ) : (
@@ -202,8 +205,8 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
                 onClick={() => isPaused ? onResumeQuestions?.() : onPauseQuestions?.()}
                 disabled={isStreaming}
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--ov-text-muted,#727272)] hover:text-brand-yellow hover:bg-[var(--ov-surface-subtle,rgba(255,255,255,0.08))] transition-all flex-shrink-0 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                aria-label={isPaused ? 'Resume auto-questions' : 'Pause auto-questions'}
-                title={isPaused ? 'Resume auto-questions' : 'Pause auto-questions'}
+                aria-label={isPaused ? 'Resume Auto-questions' : 'Pause Auto-questions'}
+                title={isPaused ? 'Resume Auto-questions' : 'Pause Auto-questions'}
               >
                 {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
               </button>

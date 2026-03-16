@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Pause, Play } from 'lucide-react'
 import type { QuickReplies as QuickRepliesType, QuickReplyOption } from '@/lib/intake-types'
 
 type Props = {
@@ -10,9 +11,11 @@ type Props = {
   question?: string  // Shown as a header at the top of the list card
   onSkipQuestion?: () => void
   onPauseQuestions?: () => void
+  isPaused?: boolean
+  onResumeQuestions?: () => void
 }
 
-export default function QuickReplies({ quickReplies, onSelect, disabled, question, onSkipQuestion, onPauseQuestions }: Props) {
+export default function QuickReplies({ quickReplies, onSelect, disabled, question, onSkipQuestion, onPauseQuestions, isPaused, onResumeQuestions }: Props) {
   const { style, multiSelect, allowCustom, options } = quickReplies
   // Always show "Type something else..." for list style
   const effectiveAllowCustom = style === 'list' ? true : (allowCustom ?? false)
@@ -255,30 +258,35 @@ export default function QuickReplies({ quickReplies, onSelect, disabled, questio
         </div>
       )}
 
-      {/* Skip / Pause footer links */}
-      {(onSkipQuestion || onPauseQuestions) && (
-        <div className="flex items-center justify-center gap-4 px-4 py-2.5 border-t border-[var(--ov-border,rgba(255,255,255,0.06))]">
-          {onSkipQuestion && (
-            <button
-              onClick={onSkipQuestion}
-              disabled={disabled}
-              className="text-xs text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Skip this question
-            </button>
-          )}
-          {onSkipQuestion && onPauseQuestions && (
-            <span className="text-xs text-[var(--ov-border,rgba(255,255,255,0.12))]">·</span>
-          )}
-          {onPauseQuestions && (
-            <button
-              onClick={onPauseQuestions}
-              disabled={disabled}
-              className="text-xs text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Pause auto-questions
-            </button>
-          )}
+      {/* Skip / Pause footer */}
+      {(onSkipQuestion || onPauseQuestions || onResumeQuestions) && (
+        <div className="flex items-center justify-between px-4 py-2.5 border-t border-[var(--ov-border,rgba(255,255,255,0.06))]">
+          {/* Left: Skip (only on non-essential questions) */}
+          <div>
+            {onSkipQuestion && (
+              <button
+                onClick={onSkipQuestion}
+                disabled={disabled}
+                className="text-xs text-[var(--ov-text-muted,#727272)] hover:text-[var(--ov-text,#ffffff)] transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Skip this question
+              </button>
+            )}
+          </div>
+          {/* Right: Pause/Resume toggle with icon + label */}
+          <div>
+            {(onPauseQuestions || onResumeQuestions) && (
+              <button
+                onClick={() => isPaused ? onResumeQuestions?.() : onPauseQuestions?.()}
+                disabled={disabled}
+                title={isPaused ? 'Resume Auto-questions' : 'Pause Auto-questions'}
+                className="inline-flex items-center gap-1.5 text-xs text-[var(--ov-text-muted,#727272)] hover:text-brand-yellow transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isPaused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
+                {isPaused ? 'Resume Auto-questions' : 'Pause Auto-questions'}
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
