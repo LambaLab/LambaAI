@@ -47,9 +47,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to save proposal. Please contact support.' }, { status: 500 })
   }
 
+  // Fetch slug for the email URL
+  const { data: proposalData } = await supabase
+    .from('proposals')
+    .select('slug')
+    .eq('id', proposalId)
+    .single()
+
   // Send confirmation email with proposal link
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
-  const proposalUrl = `${appUrl}/?c=${proposalId}`
+  const slug = proposalData?.slug
+  const proposalUrl = slug
+    ? `${appUrl}/proposal/${slug}`
+    : `${appUrl}/?c=${proposalId}`
   const { subject, html } = buildConfirmationEmail({ projectName: projectName ?? '', proposalUrl })
 
   const { error: emailError } = await resend.emails.send({
