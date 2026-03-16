@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   // Fetch all proposals for that email
   const { data: proposals, error } = await supabase
     .from('proposals')
-    .select('id, confidence_score, saved_at, metadata')
+    .select('id, confidence_score, saved_at, metadata, slug')
     .eq('email', anchor.email)
     .order('saved_at', { ascending: false, nullsFirst: false })
 
@@ -42,6 +42,7 @@ export async function GET(req: NextRequest) {
         projectName: (meta?.projectName as string) || 'Untitled Proposal',
         confidenceScore: p.confidence_score ?? 0,
         savedAt: p.saved_at,
+        slug: (p as Record<string, unknown>).slug ?? null,
       }
     }),
   })
