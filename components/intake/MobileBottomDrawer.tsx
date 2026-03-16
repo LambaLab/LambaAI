@@ -179,10 +179,12 @@ export default function MobileBottomDrawer({
 
           <button
             onClick={handleTap}
-            className="w-full flex items-center justify-between px-4 h-10 text-sm"
+            className="w-full flex items-center justify-between px-4 h-10"
             aria-label={open ? 'Close proposal' : 'Open proposal'}
           >
-            <span className="text-[var(--ov-text,#ffffff)] font-medium">{summary}</span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium border border-[var(--ov-border,rgba(255,255,255,0.10))] text-[var(--ov-text,#ffffff)]">
+              View Proposal <span className="text-brand-yellow">{confidenceScore}%</span>
+            </span>
             <ChevronUp
               className={`w-4 h-4 text-[var(--ov-text,#ffffff)] transition-transform duration-200 ${
                 open && dragOffset === null ? 'rotate-180' : ''

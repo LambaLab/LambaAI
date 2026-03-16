@@ -419,10 +419,10 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
                 </button>
               )}
 
-              {/* View / Hide Proposal button */}
+              {/* View / Hide Proposal button — desktop only, mobile uses bottom drawer */}
               <button
                 onClick={() => setProposalOpen(p => !p)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border border-[var(--ov-border,rgba(255,255,255,0.10))] hover:border-[var(--ov-text-muted,rgba(255,255,255,0.20))] bg-transparent text-[var(--ov-text,#ffffff)]"
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border border-[var(--ov-border,rgba(255,255,255,0.10))] hover:border-[var(--ov-text-muted,rgba(255,255,255,0.20))] bg-transparent text-[var(--ov-text,#ffffff)]"
               >
                 {proposalOpen ? (
                   'Hide proposal'
