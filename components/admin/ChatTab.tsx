@@ -147,7 +147,7 @@ export default function ChatTab({ proposalId }: Props) {
   return (
     <div className="flex flex-col h-full">
       {/* Live indicator + join/leave controls */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border">
+      <div className="flex items-center justify-between px-4 py-2 border-b">
         <div className="flex items-center gap-2">
           {isLive && (
             <span className="flex items-center gap-1.5 text-[11px] text-green-500">
@@ -182,8 +182,8 @@ export default function ChatTab({ proposalId }: Props) {
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-3">
+      <ScrollArea className="flex-1 px-4 py-5">
+        <div className="space-y-4">
           {messages.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-8">No messages yet.</p>
           )}
@@ -194,7 +194,7 @@ export default function ChatTab({ proposalId }: Props) {
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'items-start gap-2'}`}
             >
               {msg.role !== 'user' && (
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5 ${
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0 mt-0.5 ${
                   msg.role === 'admin'
                     ? 'bg-blue-500/20 text-blue-500'
                     : 'bg-muted text-muted-foreground'
@@ -205,18 +205,18 @@ export default function ChatTab({ proposalId }: Props) {
 
               <div className={`max-w-[80%] space-y-1`}>
                 {msg.role === 'admin' && (
-                  <Badge variant="outline" className="text-blue-500 border-blue-500 text-[10px] font-medium uppercase tracking-wider">[Admin]</Badge>
+                  <Badge variant="outline" className="text-blue-500 border-blue-500 text-[11px] font-medium uppercase tracking-wider">[Admin]</Badge>
                 )}
                 <div className={`px-3.5 py-2.5 text-sm leading-relaxed ${
                   msg.role === 'user'
                     ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-sm'
                     : msg.role === 'admin'
-                      ? 'bg-blue-500/10 text-foreground border border-blue-500/20 rounded-2xl rounded-bl-sm'
-                      : 'bg-muted text-foreground rounded-2xl rounded-bl-sm'
+                      ? 'bg-blue-50 dark:bg-blue-950 text-foreground border border-blue-500/20 rounded-2xl rounded-bl-sm'
+                      : 'bg-secondary text-secondary-foreground rounded-2xl rounded-bl-sm'
                 }`}>
                   {msg.content}
                 </div>
-                <p className="text-[10px] text-muted-foreground px-1">
+                <p className="text-xs text-muted-foreground px-1">
                   {new Date(msg.created_at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
                 </p>
               </div>
@@ -229,7 +229,7 @@ export default function ChatTab({ proposalId }: Props) {
 
       {/* Admin input — only when joined */}
       {isJoined && (
-        <form onSubmit={handleSendMessage} className="p-4 border-t">
+        <form onSubmit={handleSendMessage} className="p-4 border-t bg-background">
           <div className="flex items-center gap-2">
             <Input
               value={adminMessage}

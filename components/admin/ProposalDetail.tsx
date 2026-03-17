@@ -52,9 +52,9 @@ export default function ProposalDetail({ proposal, onBack, onProposalUpdate }: P
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-6 py-4 border-b space-y-3">
+      <div className="px-4 py-4 md:px-6 border-b space-y-3">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onBack} className="lg:hidden">
+          <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden">
             <ArrowLeft className="w-5 h-5" />
           </Button>
 
@@ -68,7 +68,7 @@ export default function ProposalDetail({ proposal, onBack, onProposalUpdate }: P
         </div>
 
         {/* Stats row */}
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-4 text-[13px] text-muted-foreground">
           <span>Confidence: <strong className="text-foreground">{proposal.confidence_score}%</strong></span>
           {proposal.price_min > 0 && (
             <span>Range: <strong className="text-foreground">${proposal.price_min.toLocaleString()}&ndash;${proposal.price_max.toLocaleString()}</strong></span>
@@ -91,10 +91,10 @@ export default function ProposalDetail({ proposal, onBack, onProposalUpdate }: P
 
       {/* Tabs */}
       <Tabs defaultValue="chat" className="flex flex-1 flex-col overflow-hidden">
-        <TabsList className="mx-6">
-          <TabsTrigger value="chat">Chat</TabsTrigger>
-          <TabsTrigger value="proposal">Proposal</TabsTrigger>
-          <TabsTrigger value="budget">Budget</TabsTrigger>
+        <TabsList className="mx-4 md:mx-6">
+          <TabsTrigger value="chat" className="cursor-pointer">Chat</TabsTrigger>
+          <TabsTrigger value="proposal" className="cursor-pointer">Proposal</TabsTrigger>
+          <TabsTrigger value="budget" className="cursor-pointer">Budget</TabsTrigger>
         </TabsList>
         <TabsContent value="chat" className="flex-1 overflow-y-auto mt-0">
           <ChatTab proposalId={proposal.id} />

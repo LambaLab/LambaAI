@@ -54,8 +54,8 @@ export default function AdminDashboardPage() {
       {/* Desktop: flex split */}
       <div className="hidden md:flex flex-1 overflow-hidden">
         {/* Left panel — proposal list */}
-        <div className="w-[380px] min-w-[320px] max-w-[480px] flex flex-col h-full border-r">
-          <div className="p-3 border-b">
+        <div className="w-[400px] min-w-[340px] max-w-[520px] flex flex-col h-full border-r">
+          <div className="p-4 border-b">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -84,7 +84,8 @@ export default function AdminDashboardPage() {
               onProposalUpdate={handleProposalUpdate}
             />
           ) : (
-            <div className="flex h-full items-center justify-center">
+            <div className="flex h-full flex-col items-center justify-center gap-3">
+              <Search className="h-10 w-10 text-muted-foreground/40" />
               <p className="text-sm text-muted-foreground">Select a proposal to view details</p>
             </div>
           )}
@@ -102,7 +103,7 @@ export default function AdminDashboardPage() {
           />
         ) : (
           <div className="flex flex-col h-full">
-            <div className="p-3 border-b">
+            <div className="p-4 border-b">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input

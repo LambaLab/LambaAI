@@ -81,10 +81,10 @@ export default function ProposalList({ proposals, selectedId, onSelect, searchQu
   return (
     <div className="flex flex-col h-full">
       {/* Filters bar */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b">
+      <div className="flex items-center gap-2 px-4 py-3 border-b bg-background">
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-          <SelectTrigger className="flex-1 h-8 text-xs">
-            <SelectValue />
+          <SelectTrigger className="flex-1 min-w-0 h-8 text-xs">
+            <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
             {STATUS_OPTIONS.map((opt) => (
@@ -97,7 +97,7 @@ export default function ProposalList({ proposals, selectedId, onSelect, searchQu
 
         <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
           <SelectTrigger className="w-[110px] h-8 text-xs">
-            <SelectValue />
+            <SelectValue placeholder="Newest" />
           </SelectTrigger>
           <SelectContent>
             {SORT_OPTIONS.map((opt) => (
@@ -126,7 +126,7 @@ export default function ProposalList({ proposals, selectedId, onSelect, searchQu
       </ScrollArea>
 
       {/* Count */}
-      <div className="px-4 py-2 border-t text-[11px] text-muted-foreground">
+      <div className="px-4 py-2 border-t text-xs text-muted-foreground">
         {filtered.length} proposal{filtered.length !== 1 ? 's' : ''}
       </div>
     </div>

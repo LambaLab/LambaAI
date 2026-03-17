@@ -45,7 +45,7 @@ export function AdminLayoutShell({ children, adminEmail, adminRole }: Props) {
           <div className="flex w-full items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mx-1 data-[orientation=vertical]:h-4" />
-            <h1 className="font-bebas text-lg tracking-wide">LAMBA LAB</h1>
+            <h1 className="text-sm font-medium">Proposals</h1>
 
             <div className="ml-auto flex items-center gap-2">
               <ThemeToggle />
@@ -53,7 +53,7 @@ export function AdminLayoutShell({ children, adminEmail, adminRole }: Props) {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Avatar className="size-8 cursor-pointer">
-                    <AvatarFallback className="text-xs font-medium">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xs font-medium">
                       {adminEmail.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
@@ -62,7 +62,7 @@ export function AdminLayoutShell({ children, adminEmail, adminRole }: Props) {
                   <DropdownMenuLabel className="p-0">
                     <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                       <Avatar className="size-8">
-                        <AvatarFallback className="text-xs font-medium">
+                        <AvatarFallback className="bg-primary text-primary-foreground text-xs font-medium">
                           {adminEmail.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
@@ -82,7 +82,7 @@ export function AdminLayoutShell({ children, adminEmail, adminRole }: Props) {
             </div>
           </div>
         </header>
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="bg-muted/40 flex flex-1 flex-col overflow-hidden">
           {children}
         </div>
       </SidebarInset>
