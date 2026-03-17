@@ -128,7 +128,10 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
   }, [minimized])
 
   useEffect(() => {
-    getOrCreateSession().then((data) => {
+    // When the user typed a new idea from the homepage, force a fresh session
+    // instead of reusing the stored (previous) one.
+    const forceNew = !!initialMessage
+    getOrCreateSession(forceNew).then((data) => {
       setSession(data)
       // Store the idea so we can restore it on refresh
       if (initialMessage) {

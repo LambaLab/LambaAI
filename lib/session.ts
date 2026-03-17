@@ -61,9 +61,11 @@ async function createNewSession(attempt = 1): Promise<SessionData> {
   return data
 }
 
-export async function getOrCreateSession(): Promise<SessionData> {
-  const stored = getStoredSession()
-  if (stored) return stored
+export async function getOrCreateSession(forceNew = false): Promise<SessionData> {
+  if (!forceNew) {
+    const stored = getStoredSession()
+    if (stored) return stored
+  }
 
   // Deduplicate: if a creation request is already in-flight, reuse it
   if (inflightPromise) return inflightPromise

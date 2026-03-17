@@ -56,6 +56,10 @@ export async function POST(req: NextRequest) {
           `Modules queue: ${queue.length > 0 ? queue.join(', ') : 'empty'}`,
           `Completed modules: ${completed.length > 0 ? completed.join(', ') : 'none'}`,
           `Confidence: ${currentConfidence}%`,
+          // On turn 1, strongly nudge the AI to skip discovery and go straight to deep_dive
+          ...(phase === 'discovery' && turns === 0 ? [
+            `\n⚠️ TURN 1 INSTRUCTION: This is the user's first message. You MUST skip discovery and go directly to deep_dive. Set current_phase: "deep_dive", detect modules, set current_module to the first one, and set modules_queue. Set question to "" (empty string) — this is the stage-setting turn. The UI will auto-trigger the first question after showing the module checklist card.`,
+          ] : []),
           // Force transition when discovery has gone too long
           ...(phase === 'discovery' && turns >= 2 ? [
             `\n⚠️ IMPORTANT: You are on discovery turn ${turns + 1}. Discovery MUST end by turn 3. On THIS turn, set current_phase: "deep_dive", set current_module to the first detected module, and set modules_queue to the full ordered list. Do NOT list module names in follow_up_question — the UI shows a visual checklist card automatically.`,
