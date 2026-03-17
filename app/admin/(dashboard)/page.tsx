@@ -139,6 +139,40 @@ function AdminDashboardContent() {
 
   const selectedProposal = proposals.find((p) => p.id === selectedId) ?? null
 
+  // Mobile slide animation state — open immediately if URL has id on mount
+  const [mobileSlideOpen, setMobileSlideOpen] = useState(!!searchParams.get('id'))
+  const mobileProposalRef = useRef<Proposal | null>(null)
+  const slideTimerRef = useRef<ReturnType<typeof setTimeout>>(null)
+
+  // Manage mobile slide lifecycle based on selectedProposal
+  useEffect(() => {
+    if (selectedProposal) {
+      // Opening: store proposal, trigger slide-in after paint
+      mobileProposalRef.current = selectedProposal
+      if (slideTimerRef.current) clearTimeout(slideTimerRef.current)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setMobileSlideOpen(true))
+      })
+    } else if (mobileSlideOpen) {
+      // Closing: slide out, then clear ref after animation
+      setMobileSlideOpen(false)
+      slideTimerRef.current = setTimeout(() => {
+        mobileProposalRef.current = null
+      }, 300)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProposal?.id])
+
+  // Keep ref in sync with latest proposal data (polling updates)
+  useEffect(() => {
+    if (selectedProposal && mobileSlideOpen) {
+      mobileProposalRef.current = selectedProposal
+    }
+  }, [selectedProposal, mobileSlideOpen])
+
+  // The proposal to display in the mobile overlay (current or closing)
+  const mobileDisplayProposal = selectedProposal ?? mobileProposalRef.current
+
   function handleProposalUpdate(updated: Proposal) {
     setProposals((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
   }
@@ -280,12 +314,16 @@ function AdminDashboardContent() {
         </div>
       </div>
 
-      {/* ─── Mobile detail overlay — covers shell header ─── */}
-      {selectedProposal && (
-        <div className="fixed inset-0 z-40 bg-background flex flex-col md:hidden">
+      {/* ─── Mobile detail overlay — slides in from right ─── */}
+      {mobileDisplayProposal && (
+        <div
+          className={`fixed inset-0 z-40 bg-background flex flex-col md:hidden transition-transform duration-300 ease-out will-change-transform ${
+            mobileSlideOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
           <ProposalDetail
-            key={selectedProposal.id}
-            proposal={selectedProposal}
+            key={mobileDisplayProposal.id}
+            proposal={mobileDisplayProposal}
             onBack={handleDeselect}
             onProposalUpdate={handleProposalUpdate}
             isMobileFullscreen
