@@ -4,6 +4,12 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { DollarSign, Send, Clock, Check, MessageSquare, Phone } from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 
 type BudgetProposal = Database['public']['Tables']['budget_proposals']['Row']
 
@@ -18,13 +24,6 @@ const STATUS_ICONS: Record<string, typeof Check> = {
   accepted: Check,
   countered: MessageSquare,
   call_requested: Phone,
-}
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: 'text-brand-yellow',
-  accepted: 'text-brand-green',
-  countered: 'text-brand-blue',
-  call_requested: 'text-brand-gray-mid',
 }
 
 export default function BudgetTab({ proposalId, proposalEmail, proposalSlug }: Props) {
@@ -112,10 +111,53 @@ export default function BudgetTab({ proposalId, proposalEmail, proposalSlug }: P
     setSending(false)
   }
 
+  function statusBadge(status: string) {
+    const Icon = STATUS_ICONS[status] ?? Clock
+    const label = status.replace(/_/g, ' ')
+
+    switch (status) {
+      case 'pending':
+        return (
+          <Badge variant="outline" className="border-yellow-500 text-yellow-600 dark:text-yellow-400 gap-1">
+            <Icon className="w-3.5 h-3.5" />
+            {label}
+          </Badge>
+        )
+      case 'accepted':
+        return (
+          <Badge variant="outline" className="border-green-500 text-green-600 dark:text-green-400 gap-1">
+            <Icon className="w-3.5 h-3.5" />
+            {label}
+          </Badge>
+        )
+      case 'countered':
+        return (
+          <Badge variant="outline" className="border-blue-500 text-blue-600 dark:text-blue-400 gap-1">
+            <Icon className="w-3.5 h-3.5" />
+            {label}
+          </Badge>
+        )
+      case 'call_requested':
+        return (
+          <Badge variant="secondary" className="gap-1">
+            <Icon className="w-3.5 h-3.5" />
+            {label}
+          </Badge>
+        )
+      default:
+        return (
+          <Badge variant="outline" className="gap-1">
+            <Icon className="w-3.5 h-3.5" />
+            {label}
+          </Badge>
+        )
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-5 h-5 border-2 border-brand-yellow/30 border-t-brand-yellow rounded-full animate-spin" />
+        <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     )
   }
@@ -125,120 +167,117 @@ export default function BudgetTab({ proposalId, proposalEmail, proposalSlug }: P
       {/* Budget history */}
       {budgets.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-xs text-brand-gray-mid uppercase tracking-wider">Budget history</h3>
+          <h3 className="text-xs text-muted-foreground uppercase tracking-wider">Budget history</h3>
           <div className="space-y-2">
-            {budgets.map((budget) => {
-              const Icon = STATUS_ICONS[budget.status] ?? Clock
-              const color = STATUS_COLORS[budget.status] ?? 'text-brand-gray-mid'
-              return (
-                <div key={budget.id} className="p-4 bg-white/[0.03] border border-white/5 rounded-xl space-y-2">
+            {budgets.map((budget) => (
+              <Card key={budget.id}>
+                <CardContent className="p-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-brand-green" />
-                      <span className="text-lg font-bold text-brand-white">
+                      <DollarSign className="w-4 h-4 text-green-500" />
+                      <span className="text-lg font-bold text-foreground">
                         ${budget.amount.toLocaleString()}
                       </span>
                     </div>
-                    <div className={`flex items-center gap-1.5 text-xs ${color}`}>
-                      <Icon className="w-3.5 h-3.5" />
-                      {budget.status.replace(/_/g, ' ')}
-                    </div>
+                    {statusBadge(budget.status)}
                   </div>
 
                   {budget.client_notes && (
-                    <p className="text-sm text-brand-gray-mid">{budget.client_notes}</p>
+                    <p className="text-sm text-muted-foreground">{budget.client_notes}</p>
                   )}
 
                   {budget.internal_notes && (
-                    <p className="text-xs text-brand-yellow/60 italic">Internal: {budget.internal_notes}</p>
+                    <p className="text-xs text-yellow-500/60 italic">Internal: {budget.internal_notes}</p>
                   )}
 
                   {budget.status === 'countered' && budget.counter_amount && (
-                    <div className="p-3 bg-brand-blue/5 border border-brand-blue/10 rounded-lg">
-                      <p className="text-xs text-brand-blue mb-1">Counter-offer</p>
-                      <p className="text-sm font-bold text-brand-white">${budget.counter_amount.toLocaleString()}</p>
-                      {budget.counter_notes && (
-                        <p className="text-xs text-brand-gray-mid mt-1">{budget.counter_notes}</p>
-                      )}
-                    </div>
+                    <Card className="border-blue-500/10 bg-blue-500/5">
+                      <CardContent className="p-3">
+                        <p className="text-xs text-blue-500 mb-1">Counter-offer</p>
+                        <p className="text-sm font-bold text-foreground">${budget.counter_amount.toLocaleString()}</p>
+                        {budget.counter_notes && (
+                          <p className="text-xs text-muted-foreground mt-1">{budget.counter_notes}</p>
+                        )}
+                      </CardContent>
+                    </Card>
                   )}
 
                   {budget.status === 'call_requested' && budget.counter_notes && (
-                    <div className="p-3 bg-white/5 border border-white/10 rounded-lg">
-                      <p className="text-xs text-brand-gray-mid mb-1">Call request note</p>
-                      <p className="text-sm text-brand-white">{budget.counter_notes}</p>
-                    </div>
+                    <Card>
+                      <CardContent className="p-3">
+                        <p className="text-xs text-muted-foreground mb-1">Call request note</p>
+                        <p className="text-sm text-foreground">{budget.counter_notes}</p>
+                      </CardContent>
+                    </Card>
                   )}
 
-                  <p className="text-[10px] text-[#555]">
+                  <p className="text-[10px] text-muted-foreground">
                     {new Date(budget.created_at).toLocaleString()}
                     {budget.responded_at && ` · Responded ${new Date(budget.responded_at).toLocaleString()}`}
                   </p>
-                </div>
-              )
-            })}
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       )}
 
       {/* New budget proposal form */}
       <div className="space-y-3">
-        <h3 className="text-xs text-brand-gray-mid uppercase tracking-wider">
+        <h3 className="text-xs text-muted-foreground uppercase tracking-wider">
           {budgets.length > 0 ? 'Send new budget' : 'Propose a budget'}
         </h3>
 
         {!proposalEmail && (
-          <div className="p-3 bg-brand-yellow/5 border border-brand-yellow/10 rounded-lg text-xs text-brand-yellow">
-            No email on file. The client won't receive an email notification.
-          </div>
+          <Card className="border-yellow-500/20 bg-yellow-500/5">
+            <CardContent className="p-3 text-xs text-yellow-500">
+              No email on file. The client won't receive an email notification.
+            </CardContent>
+          </Card>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          <div>
-            <label className="block text-[11px] text-brand-gray-mid mb-1">Amount (USD)</label>
+          <div className="space-y-1">
+            <Label>Amount (USD)</Label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-gray-mid" />
-              <input
+              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="12000"
                 min="1"
-                className="w-full pl-9 pr-4 py-2.5 bg-white/[0.03] border border-white/10 rounded-xl text-sm text-brand-white outline-none focus:border-brand-yellow/30 transition-colors"
+                className="pl-9"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-[11px] text-brand-gray-mid mb-1">Notes to client (optional)</label>
-            <textarea
+          <div className="space-y-1">
+            <Label>Notes to client (optional)</Label>
+            <Textarea
               value={clientNotes}
               onChange={(e) => setClientNotes(e.target.value)}
               placeholder="Here's why we think this is fair..."
-              className="w-full px-4 py-2.5 bg-white/[0.03] border border-white/10 rounded-xl text-sm text-brand-white outline-none focus:border-brand-yellow/30 transition-colors min-h-[80px] resize-y placeholder-brand-gray-mid/50"
+              className="min-h-[80px] resize-y"
             />
           </div>
 
-          <div>
-            <label className="block text-[11px] text-brand-gray-mid mb-1">Internal notes (admin only)</label>
-            <textarea
+          <div className="space-y-1">
+            <Label>Internal notes (admin only)</Label>
+            <Textarea
               value={internalNotes}
               onChange={(e) => setInternalNotes(e.target.value)}
               placeholder="Pricing rationale, margin notes..."
-              className="w-full px-4 py-2.5 bg-white/[0.03] border border-brand-yellow/10 rounded-xl text-sm text-brand-white outline-none focus:border-brand-yellow/30 transition-colors min-h-[60px] resize-y placeholder-brand-gray-mid/50"
+              className="min-h-[60px] resize-y border-primary/20"
             />
           </div>
 
-          {error && <p className="text-xs text-red-400">{error}</p>}
+          {error && <p className="text-xs text-destructive">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={sending || !amount}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-brand-yellow text-brand-dark font-medium rounded-xl hover:bg-brand-yellow/90 transition-all disabled:opacity-50 text-sm cursor-pointer disabled:cursor-not-allowed"
-          >
+          <Button type="submit" className="w-full" disabled={sending || !amount}>
             <Send className="w-4 h-4" />
             {sending ? 'Sending...' : 'Send Budget Proposal'}
-          </button>
+          </Button>
         </form>
       </div>
     </div>
