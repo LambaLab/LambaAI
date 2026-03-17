@@ -39,7 +39,7 @@ const ANTI_FLASH_SCRIPT = `
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${bebas.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${bebas.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: ANTI_FLASH_SCRIPT }} />
       </head>
