@@ -1,7 +1,12 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { X, Plus, Trash2, Shield, ShieldCheck, Loader2 } from 'lucide-react'
+import { Plus, Trash2, Loader2 } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
 
 type AdminUser = {
   id: string
@@ -12,10 +17,11 @@ type AdminUser = {
 }
 
 type Props = {
-  onClose: () => void
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
-export default function TeamModal({ onClose }: Props) {
+export default function TeamModal({ open, onOpenChange }: Props) {
   const [users, setUsers] = useState<AdminUser[]>([])
   const [loading, setLoading] = useState(true)
   const [newEmail, setNewEmail] = useState('')
@@ -38,8 +44,10 @@ export default function TeamModal({ onClose }: Props) {
   }, [])
 
   useEffect(() => {
-    loadUsers()
-  }, [loadUsers])
+    if (open) {
+      loadUsers()
+    }
+  }, [open, loadUsers])
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault()
@@ -92,63 +100,62 @@ export default function TeamModal({ onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-
-      {/* Modal */}
-      <div className="relative bg-[#1d1d1d] border border-white/10 rounded-xl w-full max-w-lg mx-4 shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
-          <h2 className="font-bebas text-xl text-brand-white tracking-wide">TEAM MEMBERS</h2>
-          <button
-            onClick={onClose}
-            className="text-brand-gray-mid hover:text-brand-white transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="font-bebas text-xl tracking-wide">TEAM MEMBERS</DialogTitle>
+        </DialogHeader>
 
         {/* Content */}
-        <div className="px-6 py-4 max-h-96 overflow-y-auto">
+        <div className="max-h-96 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-5 h-5 text-brand-yellow animate-spin" />
+              <Loader2 className="w-5 h-5 text-primary animate-spin" />
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1">
               {users.map((user) => (
                 <div
                   key={user.id}
-                  className="flex items-center justify-between py-3 px-3 rounded-lg hover:bg-white/5 group"
+                  className="flex items-center justify-between py-3 px-3 rounded-lg hover:bg-muted group"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    {user.role === 'super_admin' ? (
-                      <ShieldCheck className="w-4 h-4 text-brand-yellow flex-shrink-0" />
-                    ) : (
-                      <Shield className="w-4 h-4 text-brand-gray-mid flex-shrink-0" />
-                    )}
+                    <Avatar className="h-8 w-8 flex-shrink-0">
+                      <AvatarFallback className="text-xs">
+                        {user.email.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
                     <div className="min-w-0">
-                      <p className="text-sm text-brand-white truncate">{user.email}</p>
-                      <p className="text-xs text-brand-gray-mid">
-                        {user.role === 'super_admin' ? 'Super Admin' : 'Admin'}
-                        {user.added_by && ` · Added by ${user.added_by}`}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-foreground truncate">{user.email}</p>
+                        {user.role === 'super_admin' ? (
+                          <Badge>Super Admin</Badge>
+                        ) : (
+                          <Badge variant="secondary">Admin</Badge>
+                        )}
+                      </div>
+                      {user.added_by && (
+                        <p className="text-xs text-muted-foreground">
+                          Added by {user.added_by}
+                        </p>
+                      )}
                     </div>
                   </div>
 
                   {user.role !== 'super_admin' && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleRemove(user.id)}
                       disabled={removingId === user.id}
-                      className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 transition-all p-1.5 rounded hover:bg-red-500/10 cursor-pointer disabled:opacity-50"
+                      className="opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive hover:bg-destructive/10 transition-all disabled:opacity-50"
                     >
                       {removingId === user.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <Trash2 className="w-4 h-4" />
                       )}
-                    </button>
+                    </Button>
                   )}
                 </div>
               ))}
@@ -157,22 +164,19 @@ export default function TeamModal({ onClose }: Props) {
         </div>
 
         {/* Add member form */}
-        <div className="px-6 py-4 border-t border-white/5">
-          {error && (
-            <p className="text-xs text-red-400 mb-3">{error}</p>
-          )}
+        <div className="border-t pt-4">
+          {error && <p className="text-xs text-destructive mb-3">{error}</p>}
           <form onSubmit={handleAdd} className="flex gap-2">
-            <input
+            <Input
               type="email"
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
               placeholder="Add team member by email..."
-              className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-brand-white placeholder-brand-gray-mid/50 outline-none focus:border-brand-yellow/40 transition-colors"
+              className="flex-1"
             />
-            <button
+            <Button
               type="submit"
               disabled={adding || !newEmail.trim()}
-              className="flex items-center gap-1.5 px-4 py-2 bg-brand-yellow text-[#1d1d1d] rounded-lg text-sm font-medium hover:bg-brand-yellow/90 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {adding ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -180,10 +184,10 @@ export default function TeamModal({ onClose }: Props) {
                 <Plus className="w-4 h-4" />
               )}
               Add
-            </button>
+            </Button>
           </form>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

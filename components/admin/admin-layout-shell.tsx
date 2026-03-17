@@ -32,7 +32,7 @@ export function AdminLayoutShell({ children, adminEmail, adminRole }: Props) {
           {children}
         </div>
       </SidebarInset>
-      {teamOpen && <TeamModal onClose={() => setTeamOpen(false)} />}
+      <TeamModal open={teamOpen} onOpenChange={setTeamOpen} />
     </SidebarProvider>
   )
 }
