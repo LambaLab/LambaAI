@@ -345,7 +345,18 @@ function AdminDashboardContent() {
                       : 'text-muted-foreground'
                   }`}
                 >
-                  {tab.label}
+                  <span className="inline-flex items-center gap-1.5">
+                    {tab.label}
+                    {tab.count && proposals.length > 0 && (
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                        activeTab === tab.value
+                          ? 'bg-yellow-400/15 text-yellow-600 dark:text-yellow-400'
+                          : 'bg-muted text-muted-foreground'
+                      }`}>
+                        {proposals.length}
+                      </span>
+                    )}
+                  </span>
                   {activeTab === tab.value && (
                     <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-500 dark:bg-yellow-400" />
                   )}
