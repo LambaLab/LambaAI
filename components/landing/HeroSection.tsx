@@ -29,11 +29,10 @@ function getInitialState(): { open: boolean; message: string } {
       // Cross-device restore handled in useEffect (needs async fetch)
       return { open: false, message: '' }
     }
-    const storedSession = getStoredSession()
-    if (storedSession) {
-      const idea = getIdeaForSession(storedSession.proposalId)
-      if (idea) return { open: true, message: idea }
-    }
+    // Only auto-restore if the user isn't landing on the bare root URL.
+    // If someone pastes "/" in a new tab, they expect the landing page —
+    // not an automatic jump back into a previous conversation.
+    // Auto-restore is still triggered via ?c= links (handled above).
   } catch { /* SSR or localStorage error — fall through */ }
   return { open: false, message: '' }
 }
