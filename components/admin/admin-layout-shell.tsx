@@ -41,9 +41,9 @@ export function AdminLayoutShell({ children, adminEmail, adminRole }: Props) {
         onTeamOpen={() => setTeamOpen(true)}
       />
       <SidebarInset>
-        <header className="bg-background/40 sticky top-0 z-50 flex h-14 shrink-0 items-center gap-2 border-b backdrop-blur-md">
-          <div className="flex w-full items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
+        <header className="bg-background sticky top-0 z-50 flex h-14 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-14 md:rounded-tl-xl">
+          <div className="flex w-full items-center gap-1 px-4 lg:gap-2">
+            <SidebarTrigger />
             <Separator orientation="vertical" className="mx-1 data-[orientation=vertical]:h-4" />
             <h1 className="text-sm font-medium">Proposals</h1>
 
