@@ -96,6 +96,8 @@ export default function HeroSection({ onIntakeChange, onIntakeClose }: HeroProps
     setIntakeOpen(false)
     setInitialMessage('')
     setHeroInputResetKey((k) => k + 1)
+    // Reset URL to bare "/" so the address bar doesn't keep showing the proposal slug
+    window.history.replaceState(null, '', '/')
     onIntakeClose?.()
   }
 
@@ -115,19 +117,17 @@ export default function HeroSection({ onIntakeChange, onIntakeClose }: HeroProps
     window.history.replaceState(null, '', '/')
   }
 
-  // When intake is open, skip rendering the homepage entirely — prevents any flash
-  if (intakeOpen) {
-    return (
-      <IntakeOverlay
-        initialMessage={initialMessage}
-        onReset={handleReset}
-        onClose={handleClose}
-      />
-    )
-  }
-
   return (
     <>
+      {/* IntakeOverlay renders on top via fixed positioning */}
+      {intakeOpen && (
+        <IntakeOverlay
+          initialMessage={initialMessage}
+          onReset={handleReset}
+          onClose={handleClose}
+        />
+      )}
+
       <section className="min-h-screen flex flex-col items-center justify-center px-4 py-20 relative">
         {/* Background grid */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,252,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,252,0,0.03)_1px,transparent_1px)] bg-[size:64px_64px] pointer-events-none" />
