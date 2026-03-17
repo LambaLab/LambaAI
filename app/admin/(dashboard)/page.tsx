@@ -83,7 +83,7 @@ function AdminDashboardContent() {
 
   const handleDeselect = useCallback(() => {
     setSelectedId(null)
-    router.back()
+    router.replace('/admin', { scroll: false })
   }, [router])
 
   const handleDividerMouseDown = useCallback((e: React.MouseEvent) => {
