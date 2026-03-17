@@ -54,7 +54,7 @@ export default function AdminDashboardPage() {
     <>
       {/* Desktop: resizable split */}
       <div className="hidden md:flex flex-1 overflow-hidden">
-        <ResizablePanelGroup direction="horizontal">
+        <ResizablePanelGroup orientation="horizontal">
           <ResizablePanel defaultSize={35} minSize={25} maxSize={50}>
             <div className="flex flex-col h-full">
               <div className="p-3 border-b">
