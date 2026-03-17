@@ -413,6 +413,8 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
       onClose?.()
     } else {
       setMinimized(true)
+      // Reset URL to "/" so the address bar shows the homepage
+      window.history.replaceState(null, '', '/')
     }
   }
 
@@ -431,7 +433,13 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
         <MinimizedBar
           appName={appName}
           confidenceScore={liveConfidenceScore}
-          onExpand={() => setMinimized(false)}
+          onExpand={() => {
+            setMinimized(false)
+            // Restore the proposal URL when expanding back
+            if (currentSlug) {
+              window.history.replaceState(null, '', `/proposal/${currentSlug}`)
+            }
+          }}
         />
       )}
 
