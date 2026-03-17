@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { ArrowLeft, X, Maximize2, Minimize2 } from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
 import { MODULE_CATALOG } from '@/lib/modules/catalog'
 import { Button } from '@/components/ui/button'
@@ -16,6 +16,9 @@ type Props = {
   onBack: () => void
   onProposalUpdate: (updated: Proposal) => void
   isMobileFullscreen?: boolean
+  isExpanded?: boolean
+  onToggleExpand?: () => void
+  onClose?: () => void
 }
 
 type DetailTab = 'proposal' | 'chat'
@@ -46,7 +49,7 @@ function getProjectName(proposal: Proposal): string {
   return 'Untitled'
 }
 
-export default function ProposalDetail({ proposal, onBack, onProposalUpdate, isMobileFullscreen }: Props) {
+export default function ProposalDetail({ proposal, onBack, onProposalUpdate, isMobileFullscreen, isExpanded, onToggleExpand, onClose }: Props) {
   const [activeTab, setActiveTab] = useState<DetailTab>('proposal')
 
   const modules = (proposal.modules ?? []) as string[]
@@ -59,6 +62,22 @@ export default function ProposalDetail({ proposal, onBack, onProposalUpdate, isM
     { value: 'proposal', label: 'Proposal' },
     { value: 'chat', label: 'Chat' },
   ]
+
+  // Escape key to close expanded view or close panel
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      if (isExpanded && onToggleExpand) {
+        onToggleExpand()
+      } else if (onClose) {
+        onClose()
+      }
+    }
+  }, [isExpanded, onToggleExpand, onClose])
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [handleKeyDown])
 
   return (
     <div className="flex flex-col h-full">
@@ -122,25 +141,50 @@ export default function ProposalDetail({ proposal, onBack, onProposalUpdate, isM
         </div>
       )}
 
-      {/* ─── Desktop header (always shown) ─── */}
+      {/* ─── Desktop header ─── */}
       <div className={`shrink-0 bg-background border-b ${isMobileFullscreen ? 'hidden md:block' : ''}`}>
         {/* Title row */}
-        <div className="px-4 md:px-6 pt-4 pb-2">
-          <div className="flex items-center gap-3 mb-2">
+        <div className="px-4 md:px-6 pt-3 pb-2">
+          <div className="flex items-center gap-3 mb-1.5">
             <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden h-8 w-8">
               <ArrowLeft className="w-4 h-4" />
             </Button>
 
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 flex items-center gap-2.5">
               <h2 className="font-bebas text-xl text-foreground truncate">
                 {getProjectName(proposal)}
               </h2>
+              <span className={`inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded-full uppercase tracking-wide shrink-0 ${status.bg} ${status.text}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+                {status.label}
+              </span>
             </div>
 
-            <span className={`inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded-full uppercase tracking-wide ${status.bg} ${status.text}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
-              {status.label}
-            </span>
+            {/* Action buttons: expand + close */}
+            <div className="hidden md:flex items-center gap-1">
+              {onToggleExpand && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onToggleExpand}
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  title={isExpanded ? 'Exit fullscreen' : 'Expand fullscreen'}
+                >
+                  {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                </Button>
+              )}
+              {onClose && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  title="Close"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Compact stats */}
@@ -184,20 +228,22 @@ export default function ProposalDetail({ proposal, onBack, onProposalUpdate, isM
         </div>
       </div>
 
-      {/* Tab content — scrolls independently */}
+      {/* Tab content — scrolls independently, centered in expanded mode */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-        {activeTab === 'proposal' && (
-          <div>
-            <ProposalEditor proposal={proposal} onUpdate={onProposalUpdate} />
-            {/* Budget section within Proposal tab */}
-            <div className="border-t">
-              <BudgetTab proposalId={proposal.id} proposalEmail={proposal.email} proposalSlug={proposal.slug} />
+        <div className={isExpanded ? 'max-w-4xl mx-auto' : ''}>
+          {activeTab === 'proposal' && (
+            <div>
+              <ProposalEditor proposal={proposal} onUpdate={onProposalUpdate} />
+              {/* Budget section within Proposal tab */}
+              <div className="border-t">
+                <BudgetTab proposalId={proposal.id} proposalEmail={proposal.email} proposalSlug={proposal.slug} />
+              </div>
             </div>
-          </div>
-        )}
-        {activeTab === 'chat' && (
-          <ChatTab proposalId={proposal.id} />
-        )}
+          )}
+          {activeTab === 'chat' && (
+            <ChatTab proposalId={proposal.id} />
+          )}
+        </div>
       </div>
     </div>
   )

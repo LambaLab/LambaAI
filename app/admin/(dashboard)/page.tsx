@@ -63,6 +63,7 @@ function AdminDashboardContent() {
   const [sortKey, setSortKey] = useState<SortKey>('newest')
   const [activeTab, setActiveTab] = useState<ProposalType>('build')
   const [refreshing, setRefreshing] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
 
   // Sync selectedId from URL when browser back/forward changes searchParams
   useEffect(() => {
@@ -83,8 +84,13 @@ function AdminDashboardContent() {
 
   const handleDeselect = useCallback(() => {
     setSelectedId(null)
+    setIsExpanded(false)
     router.replace('/admin', { scroll: false })
   }, [router])
+
+  const handleToggleExpand = useCallback(() => {
+    setIsExpanded((prev) => !prev)
+  }, [])
 
   const handleDividerMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -300,19 +306,37 @@ function AdminDashboardContent() {
             </div>
           )}
 
-          {/* Right panel — detail */}
-          {selectedProposal && (
+          {/* Right panel — detail (hidden when expanded) */}
+          {selectedProposal && !isExpanded && (
             <div className="flex-1 min-w-0 min-h-0 flex flex-col">
               <ProposalDetail
                 key={selectedProposal.id}
                 proposal={selectedProposal}
                 onBack={handleDeselect}
                 onProposalUpdate={handleProposalUpdate}
+                onClose={handleDeselect}
+                onToggleExpand={handleToggleExpand}
+                isExpanded={false}
               />
             </div>
           )}
         </div>
       </div>
+
+      {/* ─── Desktop expanded overlay ─── */}
+      {selectedProposal && isExpanded && (
+        <div className="hidden md:flex fixed inset-0 z-50 bg-background flex-col">
+          <ProposalDetail
+            key={`expanded-${selectedProposal.id}`}
+            proposal={selectedProposal}
+            onBack={handleDeselect}
+            onProposalUpdate={handleProposalUpdate}
+            onClose={handleDeselect}
+            onToggleExpand={handleToggleExpand}
+            isExpanded
+          />
+        </div>
+      )}
 
       {/* ─── Mobile detail overlay — slides in from right ─── */}
       {mobileDisplayProposal && (
