@@ -148,7 +148,7 @@ function AdminDashboardContent() {
   return (
     <>
       {/* ─── Desktop layout ─── */}
-      <div className="hidden md:flex flex-col flex-1 h-full overflow-hidden">
+      <div className="hidden md:flex flex-col flex-1 min-h-0 overflow-hidden">
         {/* Sticky toolbar: search + filters + tabs — never scrolls */}
         <div className="shrink-0 z-40 bg-background border-b">
           <div className="flex items-center gap-3 px-4 lg:px-6 py-2.5">

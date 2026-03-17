@@ -34,14 +34,14 @@ export function AdminLayoutShell({ children, adminEmail, adminRole }: Props) {
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="!h-svh !overflow-hidden">
       <AppSidebar
         adminRole={adminRole}
         adminEmail={adminEmail}
         onTeamOpen={() => setTeamOpen(true)}
       />
-      <SidebarInset>
-        <header className="bg-background sticky top-0 z-50 flex h-14 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-14 md:rounded-tl-xl">
+      <SidebarInset className="!min-h-0 !overflow-hidden">
+        <header className="bg-background flex h-14 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-14 md:rounded-tl-xl">
           <div className="flex w-full items-center gap-1 px-4 lg:gap-2">
             <SidebarTrigger />
             <Separator orientation="vertical" className="mx-1 data-[orientation=vertical]:h-4" />
@@ -82,7 +82,7 @@ export function AdminLayoutShell({ children, adminEmail, adminRole }: Props) {
             </div>
           </div>
         </header>
-        <div className="bg-muted/40 flex flex-1 flex-col overflow-hidden">
+        <div className="bg-muted/40 flex flex-1 flex-col min-h-0 overflow-hidden">
           {children}
         </div>
       </SidebarInset>
