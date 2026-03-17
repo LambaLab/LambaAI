@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Search } from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable'
 import { Input } from '@/components/ui/input'
 import ProposalList from '@/components/admin/ProposalList'
 import ProposalDetail from '@/components/admin/ProposalDetail'
@@ -52,46 +51,44 @@ export default function AdminDashboardPage() {
 
   return (
     <>
-      {/* Desktop: resizable split */}
+      {/* Desktop: flex split */}
       <div className="hidden md:flex flex-1 overflow-hidden">
-        <ResizablePanelGroup orientation="horizontal">
-          <ResizablePanel defaultSize={35} minSize={25} maxSize={50}>
-            <div className="flex flex-col h-full">
-              <div className="p-3 border-b">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search proposals..."
-                    className="pl-9"
-                  />
-                </div>
-              </div>
-              <ProposalList
-                proposals={proposals}
-                selectedId={selectedId}
-                onSelect={setSelectedId}
-                searchQuery={searchQuery}
+        {/* Left panel — proposal list */}
+        <div className="w-[380px] min-w-[320px] max-w-[480px] flex flex-col h-full border-r">
+          <div className="p-3 border-b">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search proposals..."
+                className="pl-9"
               />
             </div>
-          </ResizablePanel>
-          <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={65} minSize={40}>
-            {selectedProposal ? (
-              <ProposalDetail
-                key={selectedProposal.id}
-                proposal={selectedProposal}
-                onBack={() => setSelectedId(null)}
-                onProposalUpdate={handleProposalUpdate}
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center">
-                <p className="text-sm text-muted-foreground">Select a proposal to view details</p>
-              </div>
-            )}
-          </ResizablePanel>
-        </ResizablePanelGroup>
+          </div>
+          <ProposalList
+            proposals={proposals}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            searchQuery={searchQuery}
+          />
+        </div>
+
+        {/* Right panel — detail */}
+        <div className="flex-1 min-w-0 h-full overflow-hidden">
+          {selectedProposal ? (
+            <ProposalDetail
+              key={selectedProposal.id}
+              proposal={selectedProposal}
+              onBack={() => setSelectedId(null)}
+              onProposalUpdate={handleProposalUpdate}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-sm text-muted-foreground">Select a proposal to view details</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Mobile: list or detail */}
