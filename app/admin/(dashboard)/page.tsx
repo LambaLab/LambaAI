@@ -85,12 +85,37 @@ function AdminDashboardContent() {
   const handleDeselect = useCallback(() => {
     setSelectedId(null)
     setIsExpanded(false)
+    setExpandVisible(false)
+    setExpandAnimating(false)
     router.replace('/admin', { scroll: false })
   }, [router])
 
+  // Expand animation state
+  const [expandAnimating, setExpandAnimating] = useState(false)
+  const [expandVisible, setExpandVisible] = useState(false)
+  const expandTimerRef = useRef<ReturnType<typeof setTimeout>>(null)
+
   const handleToggleExpand = useCallback(() => {
-    setIsExpanded((prev) => !prev)
-  }, [])
+    if (expandTimerRef.current) clearTimeout(expandTimerRef.current)
+
+    if (!isExpanded) {
+      // Opening: mount overlay, then animate in
+      setIsExpanded(true)
+      setExpandAnimating(true)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setExpandVisible(true))
+      })
+      expandTimerRef.current = setTimeout(() => setExpandAnimating(false), 250)
+    } else {
+      // Closing: animate out, then unmount
+      setExpandAnimating(true)
+      setExpandVisible(false)
+      expandTimerRef.current = setTimeout(() => {
+        setIsExpanded(false)
+        setExpandAnimating(false)
+      }, 250)
+    }
+  }, [isExpanded])
 
   const handleDividerMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -292,6 +317,7 @@ function AdminDashboardContent() {
                 searchQuery={searchQuery}
                 statusFilter={statusFilter}
                 sortKey={sortKey}
+                isFullWidth={!selectedProposal}
               />
             </div>
           </div>
@@ -323,9 +349,16 @@ function AdminDashboardContent() {
         </div>
       </div>
 
-      {/* ─── Desktop expanded overlay ─── */}
+      {/* ─── Desktop expanded overlay with animation ─── */}
       {selectedProposal && isExpanded && (
-        <div className="hidden md:flex fixed inset-0 z-50 bg-background flex-col">
+        <div
+          className={`hidden md:flex fixed inset-0 z-50 bg-background flex-col transition-all duration-250 ease-out will-change-transform ${
+            expandVisible
+              ? 'opacity-100 scale-100'
+              : 'opacity-0 scale-[0.97]'
+          } ${expandAnimating ? 'pointer-events-none' : ''}`}
+          style={{ transformOrigin: 'center center' }}
+        >
           <ProposalDetail
             key={`expanded-${selectedProposal.id}`}
             proposal={selectedProposal}

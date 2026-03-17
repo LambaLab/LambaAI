@@ -143,88 +143,90 @@ export default function ProposalDetail({ proposal, onBack, onProposalUpdate, isM
 
       {/* ─── Desktop header ─── */}
       <div className={`shrink-0 bg-background border-b ${isMobileFullscreen ? 'hidden md:block' : ''}`}>
-        {/* Title row */}
-        <div className="px-4 md:px-6 pt-3 pb-2">
-          <div className="flex items-center gap-3 mb-1.5">
-            <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden h-8 w-8">
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
+        <div className={isExpanded ? 'max-w-4xl mx-auto' : ''}>
+          {/* Title row */}
+          <div className="px-4 md:px-6 pt-3 pb-2">
+            <div className="flex items-center gap-3 mb-1.5">
+              <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden h-8 w-8">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
 
-            <div className="flex-1 min-w-0 flex items-center gap-2.5">
-              <h2 className="font-bebas text-xl text-foreground truncate">
-                {getProjectName(proposal)}
-              </h2>
-              <span className={`inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded-full uppercase tracking-wide shrink-0 ${status.bg} ${status.text}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
-                {status.label}
-              </span>
-            </div>
-
-            {/* Action buttons: expand + close */}
-            <div className="hidden md:flex items-center gap-1">
-              {onToggleExpand && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onToggleExpand}
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                  title={isExpanded ? 'Exit fullscreen' : 'Expand fullscreen'}
-                >
-                  {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                </Button>
-              )}
-              {onClose && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onClose}
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                  title="Close"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {/* Compact stats */}
-          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-            <span>{proposal.confidence_score}% confidence</span>
-            {proposal.price_min > 0 && (
-              <span className="font-medium text-foreground">${proposal.price_min.toLocaleString()}&ndash;${proposal.price_max.toLocaleString()}</span>
-            )}
-            <span>{modules.length} module{modules.length !== 1 ? 's' : ''}</span>
-            {proposal.email && <span className="text-blue-600 dark:text-blue-400">{proposal.email}</span>}
-            {moduleNames.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {moduleNames.map((name) => (
-                  <span key={name} className="inline-flex items-center text-[10px] font-medium px-1.5 py-px rounded bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400">
-                    {name}
-                  </span>
-                ))}
+              <div className="flex-1 min-w-0 flex items-center gap-2.5">
+                <h2 className="font-bebas text-xl text-foreground truncate">
+                  {getProjectName(proposal)}
+                </h2>
+                <span className={`inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded-full uppercase tracking-wide shrink-0 ${status.bg} ${status.text}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+                  {status.label}
+                </span>
               </div>
-            )}
-          </div>
-        </div>
 
-        {/* Tabs row — desktop */}
-        <div className="flex items-center gap-0 px-4 md:px-6">
-          {tabs.map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => setActiveTab(tab.value)}
-              className={`relative px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
-                activeTab === tab.value
-                  ? 'text-foreground'
-                  : 'text-muted-foreground hover:text-foreground/70'
-              }`}
-            >
-              {tab.label}
-              {activeTab === tab.value && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-500 dark:bg-yellow-400" />
+              {/* Action buttons: expand + close */}
+              <div className="hidden md:flex items-center gap-1">
+                {onToggleExpand && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onToggleExpand}
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
+                    title={isExpanded ? 'Exit fullscreen' : 'Expand fullscreen'}
+                  >
+                    {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                  </Button>
+                )}
+                {onClose && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onClose}
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
+                    title="Close"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Compact stats */}
+            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+              <span>{proposal.confidence_score}% confidence</span>
+              {proposal.price_min > 0 && (
+                <span className="font-medium text-foreground">${proposal.price_min.toLocaleString()}&ndash;${proposal.price_max.toLocaleString()}</span>
               )}
-            </button>
-          ))}
+              <span>{modules.length} module{modules.length !== 1 ? 's' : ''}</span>
+              {proposal.email && <span className="text-blue-600 dark:text-blue-400">{proposal.email}</span>}
+              {moduleNames.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {moduleNames.map((name) => (
+                    <span key={name} className="inline-flex items-center text-[10px] font-medium px-1.5 py-px rounded bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400">
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Tabs row — desktop */}
+          <div className="flex items-center gap-0 px-4 md:px-6">
+            {tabs.map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setActiveTab(tab.value)}
+                className={`relative px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
+                  activeTab === tab.value
+                    ? 'text-foreground'
+                    : 'text-muted-foreground hover:text-foreground/70'
+                }`}
+              >
+                {tab.label}
+                {activeTab === tab.value && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-500 dark:bg-yellow-400" />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

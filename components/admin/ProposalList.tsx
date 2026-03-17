@@ -15,9 +15,10 @@ type Props = {
   searchQuery: string
   statusFilter: StatusFilter
   sortKey: SortKey
+  isFullWidth?: boolean
 }
 
-export default function ProposalList({ proposals, selectedId, onSelect, searchQuery, statusFilter, sortKey }: Props) {
+export default function ProposalList({ proposals, selectedId, onSelect, searchQuery, statusFilter, sortKey, isFullWidth }: Props) {
   const filtered = useMemo(() => {
     let result = [...proposals]
 
@@ -67,6 +68,7 @@ export default function ProposalList({ proposals, selectedId, onSelect, searchQu
           proposal={p}
           isSelected={selectedId === p.id}
           onClick={() => onSelect(p.id)}
+          isFullWidth={isFullWidth}
         />
       ))}
       <div className="px-4 py-2 text-xs text-muted-foreground">

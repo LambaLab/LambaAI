@@ -8,6 +8,7 @@ type Props = {
   proposal: Proposal
   isSelected: boolean
   onClick: () => void
+  isFullWidth?: boolean
 }
 
 function getStatusStyle(status: string): { bg: string; text: string; dot: string } {
@@ -54,10 +55,67 @@ function getConfidenceColor(score: number): string {
   return 'text-zinc-500 dark:text-zinc-400'
 }
 
-export default function ProposalListItem({ proposal, isSelected, onClick }: Props) {
+export default function ProposalListItem({ proposal, isSelected, onClick, isFullWidth }: Props) {
   const status = getStatusStyle(proposal.status)
   const statusLabel = proposal.status.replace(/_/g, ' ')
 
+  // Full-width single-line layout (desktop, no proposal selected)
+  if (isFullWidth) {
+    return (
+      <button
+        onClick={onClick}
+        className={`w-full text-left px-4 lg:px-6 py-3 border-b transition-colors cursor-pointer group ${
+          isSelected
+            ? 'bg-yellow-50/80 dark:bg-yellow-500/5 border-l-2 border-l-yellow-500'
+            : 'hover:bg-muted/50 border-l-2 border-l-transparent'
+        }`}
+      >
+        <div className="flex items-center gap-4">
+          {/* Name */}
+          <p className={`text-sm truncate w-[220px] shrink-0 ${
+            isSelected ? 'font-bold text-foreground' : 'font-semibold text-foreground'
+          }`}>
+            {getProjectName(proposal)}
+          </p>
+
+          {/* Email */}
+          <span className="text-xs text-muted-foreground truncate w-[200px] shrink-0">
+            {proposal.email ?? 'No email'}
+          </span>
+
+          {/* Spacer */}
+          <span className="flex-1" />
+
+          {/* Confidence */}
+          <span className={`text-xs font-medium tabular-nums shrink-0 ${getConfidenceColor(proposal.confidence_score)}`}>
+            {proposal.confidence_score}%
+          </span>
+
+          {/* Price */}
+          {proposal.price_min > 0 ? (
+            <span className="text-xs font-medium text-foreground tabular-nums shrink-0 w-[80px] text-right">
+              ${proposal.price_min.toLocaleString()}
+            </span>
+          ) : (
+            <span className="w-[80px] shrink-0" />
+          )}
+
+          {/* Status badge */}
+          <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0 uppercase tracking-wide w-[100px] justify-center ${status.bg} ${status.text}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+            {statusLabel}
+          </span>
+
+          {/* Time */}
+          <span className="text-[11px] text-muted-foreground whitespace-nowrap shrink-0 w-[60px] text-right tabular-nums">
+            {timeAgo(proposal.created_at)}
+          </span>
+        </div>
+      </button>
+    )
+  }
+
+  // Compact 2-line layout (split panel or mobile)
   return (
     <button
       onClick={onClick}
