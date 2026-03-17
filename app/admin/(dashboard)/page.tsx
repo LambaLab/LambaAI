@@ -64,20 +64,26 @@ function AdminDashboardContent() {
   const [activeTab, setActiveTab] = useState<ProposalType>('build')
   const [refreshing, setRefreshing] = useState(false)
 
+  // Sync selectedId from URL when browser back/forward changes searchParams
+  useEffect(() => {
+    const urlId = searchParams.get('id')
+    setSelectedId(urlId)
+  }, [searchParams])
+
   // Draggable divider state
   const [listWidthPx, setListWidthPx] = useState(380)
   const isDragging = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Sync URL when selectedId changes
+  // Sync URL when selectedId changes — push so browser back works
   const handleSelect = useCallback((id: string) => {
     setSelectedId(id)
-    router.replace(`/admin?id=${id}`, { scroll: false })
+    router.push(`/admin?id=${id}`, { scroll: false })
   }, [router])
 
   const handleDeselect = useCallback(() => {
     setSelectedId(null)
-    router.replace('/admin', { scroll: false })
+    router.back()
   }, [router])
 
   const handleDividerMouseDown = useCallback((e: React.MouseEvent) => {
@@ -274,85 +280,90 @@ function AdminDashboardContent() {
         </div>
       </div>
 
-      {/* ─── Mobile layout ─── */}
-      <div className="flex md:hidden flex-1 flex-col overflow-hidden">
-        {selectedProposal ? (
+      {/* ─── Mobile detail overlay — covers shell header ─── */}
+      {selectedProposal && (
+        <div className="fixed inset-0 z-40 bg-background flex flex-col md:hidden">
           <ProposalDetail
             key={selectedProposal.id}
             proposal={selectedProposal}
             onBack={handleDeselect}
             onProposalUpdate={handleProposalUpdate}
+            isMobileFullscreen
           />
-        ) : (
-          <div className="flex flex-col h-full overflow-hidden">
-            {/* Mobile search + filters */}
-            <div className="shrink-0 p-3 border-b space-y-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search proposals..."
-                  className="pl-9 h-9"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-                  <SelectTrigger className="flex-1 h-8 text-xs">
-                    <SelectValue placeholder="All statuses" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
-                  <SelectTrigger className="w-[100px] h-8 text-xs">
-                    <SelectValue placeholder="Newest" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SORT_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex gap-0 -mb-2">
-                {TYPE_TABS.map((tab) => (
-                  <button
-                    key={tab.value}
-                    onClick={() => setActiveTab(tab.value)}
-                    className={`relative px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
-                      activeTab === tab.value
-                        ? 'text-foreground'
-                        : 'text-muted-foreground'
-                    }`}
-                  >
-                    {tab.label}
-                    {activeTab === tab.value && (
-                      <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-500 dark:bg-yellow-400 rounded-full" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              <ProposalList
-                proposals={proposals}
-                selectedId={selectedId}
-                onSelect={handleSelect}
-                searchQuery={searchQuery}
-                statusFilter={statusFilter}
-                sortKey={sortKey}
+        </div>
+      )}
+
+      {/* ─── Mobile list layout ─── */}
+      <div className="flex md:hidden flex-1 flex-col overflow-hidden">
+        <div className="flex flex-col h-full overflow-hidden">
+          {/* Mobile search + filters */}
+          <div className="shrink-0 px-4 pt-3 pb-0 border-b space-y-2.5">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search proposals..."
+                className="pl-9 h-10 text-base"
               />
             </div>
+            <div className="flex gap-2">
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+                <SelectTrigger className="flex-1 h-9 text-sm">
+                  <SelectValue placeholder="All statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value} className="text-sm">
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
+                <SelectTrigger className="w-[110px] h-9 text-sm">
+                  <SelectValue placeholder="Newest" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SORT_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value} className="text-sm">
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Equal-width type tabs */}
+            <div className="flex">
+              {TYPE_TABS.map((tab) => (
+                <button
+                  key={tab.value}
+                  onClick={() => setActiveTab(tab.value)}
+                  className={`relative flex-1 py-2.5 text-sm font-medium text-center transition-colors cursor-pointer ${
+                    activeTab === tab.value
+                      ? 'text-foreground'
+                      : 'text-muted-foreground'
+                  }`}
+                >
+                  {tab.label}
+                  {activeTab === tab.value && (
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-500 dark:bg-yellow-400" />
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
-        )}
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <ProposalList
+              proposals={proposals}
+              selectedId={selectedId}
+              onSelect={handleSelect}
+              searchQuery={searchQuery}
+              statusFilter={statusFilter}
+              sortKey={sortKey}
+            />
+          </div>
+        </div>
       </div>
     </>
   )

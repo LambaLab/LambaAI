@@ -15,6 +15,7 @@ type Props = {
   proposal: Proposal
   onBack: () => void
   onProposalUpdate: (updated: Proposal) => void
+  isMobileFullscreen?: boolean
 }
 
 type DetailTab = 'proposal' | 'chat'
@@ -45,7 +46,7 @@ function getProjectName(proposal: Proposal): string {
   return 'Untitled'
 }
 
-export default function ProposalDetail({ proposal, onBack, onProposalUpdate }: Props) {
+export default function ProposalDetail({ proposal, onBack, onProposalUpdate, isMobileFullscreen }: Props) {
   const [activeTab, setActiveTab] = useState<DetailTab>('proposal')
 
   const modules = (proposal.modules ?? []) as string[]
@@ -61,8 +62,68 @@ export default function ProposalDetail({ proposal, onBack, onProposalUpdate }: P
 
   return (
     <div className="flex flex-col h-full">
-      {/* Sticky header with info + tabs */}
-      <div className="shrink-0 bg-background border-b">
+      {/* ─── Mobile fullscreen header — replaces shell header ─── */}
+      {isMobileFullscreen && (
+        <div className="shrink-0 bg-background border-b md:hidden">
+          {/* App bar: back + title */}
+          <div className="flex items-center gap-3 px-4 h-14">
+            <Button variant="ghost" size="icon" onClick={onBack} className="h-10 w-10 -ml-2">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <h1 className="text-lg font-semibold text-foreground truncate flex-1">
+              {getProjectName(proposal)}
+            </h1>
+            <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full uppercase tracking-wide shrink-0 ${status.bg} ${status.text}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+              {status.label}
+            </span>
+          </div>
+
+          {/* Stats row */}
+          <div className="flex flex-wrap items-center gap-3 px-4 pb-2 text-sm text-muted-foreground">
+            <span>{proposal.confidence_score}% confidence</span>
+            {proposal.price_min > 0 && (
+              <span className="font-medium text-foreground">${proposal.price_min.toLocaleString()}&ndash;${proposal.price_max.toLocaleString()}</span>
+            )}
+            <span>{modules.length} module{modules.length !== 1 ? 's' : ''}</span>
+            {proposal.email && <span className="text-blue-600 dark:text-blue-400">{proposal.email}</span>}
+          </div>
+
+          {/* Module tags */}
+          {moduleNames.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 px-4 pb-2">
+              {moduleNames.map((name) => (
+                <span key={name} className="inline-flex items-center text-xs font-medium px-2 py-0.5 rounded bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400">
+                  {name}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Equal-width tabs — underline flush with border */}
+          <div className="flex">
+            {tabs.map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setActiveTab(tab.value)}
+                className={`relative flex-1 py-3 text-base font-medium text-center transition-colors cursor-pointer ${
+                  activeTab === tab.value
+                    ? 'text-foreground'
+                    : 'text-muted-foreground'
+                }`}
+              >
+                {tab.label}
+                {activeTab === tab.value && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-500 dark:bg-yellow-400" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ─── Desktop header (always shown) ─── */}
+      <div className={`shrink-0 bg-background border-b ${isMobileFullscreen ? 'hidden md:block' : ''}`}>
         {/* Title row */}
         <div className="px-4 md:px-6 pt-4 pb-2">
           <div className="flex items-center gap-3 mb-2">
@@ -102,7 +163,7 @@ export default function ProposalDetail({ proposal, onBack, onProposalUpdate }: P
           </div>
         </div>
 
-        {/* Tabs row */}
+        {/* Tabs row — desktop */}
         <div className="flex items-center gap-0 px-4 md:px-6">
           {tabs.map((tab) => (
             <button
@@ -116,7 +177,7 @@ export default function ProposalDetail({ proposal, onBack, onProposalUpdate }: P
             >
               {tab.label}
               {activeTab === tab.value && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-500 dark:bg-yellow-400 rounded-full" />
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-500 dark:bg-yellow-400" />
               )}
             </button>
           ))}

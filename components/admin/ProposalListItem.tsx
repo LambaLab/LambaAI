@@ -61,28 +61,28 @@ export default function ProposalListItem({ proposal, isSelected, onClick }: Prop
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left px-4 py-3 border-b transition-colors cursor-pointer group ${
+      className={`w-full text-left px-4 py-3.5 md:py-3 border-b transition-colors cursor-pointer group ${
         isSelected
           ? 'bg-yellow-50/80 dark:bg-yellow-500/5 border-l-2 border-l-yellow-500'
           : 'hover:bg-muted/50 border-l-2 border-l-transparent'
       }`}
     >
-      {/* Line 1: Project name + status badge + time */}
+      {/* Line 1: Project name + status badge */}
       <div className="flex items-center gap-2 mb-1">
-        <p className={`text-sm truncate flex-1 ${
+        <p className={`text-base md:text-sm truncate flex-1 ${
           isSelected ? 'font-semibold text-foreground' : 'font-medium text-foreground'
         }`}>
           {getProjectName(proposal)}
         </p>
 
-        <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0 uppercase tracking-wide ${status.bg} ${status.text}`}>
+        <span className={`inline-flex items-center gap-1 text-[11px] md:text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0 uppercase tracking-wide ${status.bg} ${status.text}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
           {statusLabel}
         </span>
       </div>
 
-      {/* Line 2: Email + confidence + price */}
-      <div className="flex items-center gap-2 text-xs">
+      {/* Line 2: Email + confidence + price + time */}
+      <div className="flex items-center gap-2 text-sm md:text-xs">
         <span className="text-muted-foreground truncate flex-1">
           {proposal.email ?? 'No email'}
         </span>
@@ -101,7 +101,7 @@ export default function ProposalListItem({ proposal, isSelected, onClick }: Prop
         )}
 
         <span className="text-muted-foreground/40">·</span>
-        <span className="text-muted-foreground whitespace-nowrap text-[11px]">
+        <span className="text-muted-foreground whitespace-nowrap text-xs md:text-[11px]">
           {timeAgo(proposal.created_at)}
         </span>
       </div>
