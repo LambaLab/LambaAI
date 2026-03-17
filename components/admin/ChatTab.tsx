@@ -211,8 +211,8 @@ export default function ChatTab({ proposalId }: Props) {
                   msg.role === 'user'
                     ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-sm'
                     : msg.role === 'admin'
-                      ? 'bg-blue-500/10 border border-blue-500/20 rounded-2xl rounded-bl-sm'
-                      : 'bg-muted rounded-2xl rounded-bl-sm'
+                      ? 'bg-blue-500/10 text-foreground border border-blue-500/20 rounded-2xl rounded-bl-sm'
+                      : 'bg-muted text-foreground rounded-2xl rounded-bl-sm'
                 }`}>
                   {msg.content}
                 </div>

@@ -4,7 +4,6 @@ import { ClipboardList, BarChart3, Users, Settings } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -15,8 +14,6 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
-import { ThemeToggle } from '@/components/admin/theme-toggle'
-import { NavUser } from '@/components/admin/nav-user'
 
 type Props = {
   adminRole: 'super_admin' | 'admin' | null
@@ -24,7 +21,7 @@ type Props = {
   onTeamOpen: () => void
 }
 
-export function AppSidebar({ adminRole, adminEmail, onTeamOpen }: Props) {
+export function AppSidebar({ adminRole, onTeamOpen }: Props) {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
@@ -93,11 +90,6 @@ export function AppSidebar({ adminRole, adminEmail, onTeamOpen }: Props) {
           </SidebarGroup>
         )}
       </SidebarContent>
-
-      <SidebarFooter>
-        <ThemeToggle />
-        <NavUser email={adminEmail} />
-      </SidebarFooter>
 
       <SidebarRail />
     </Sidebar>
