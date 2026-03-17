@@ -159,6 +159,10 @@ export default function ChatPanel({ messages, isStreaming, onSend, onEdit, onReq
                 isStreaming={isStreaming && i === messages.length - 1}
                 emailVerified={emailVerified}
               />
+            ) : msg.isAutoContinue && msg.role === 'assistant' ? (
+              // Auto-continue messages: suppress the bubble text entirely.
+              // The question card renders from the bottom panel via the list QR.
+              null
             ) : (
               <MessageBubble
                 key={msg.id}

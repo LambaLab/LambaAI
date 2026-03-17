@@ -5,10 +5,11 @@ import { calculatePriceRange, applyComplexityAdjustment, tightenPriceRange, type
 import { expandWithDependencies } from '@/lib/modules/dependencies'
 import type { QuickReplies } from '@/lib/intake-types'
 import { getStoredSession } from '@/lib/session'
+import { createClient } from '@/lib/supabase/client'
 
 export type ChatMessage = {
   id: string
-  role: 'user' | 'assistant'
+  role: 'user' | 'assistant' | 'admin'
   content: string
   displayContent?: string  // For user bubbles: shown text may differ from content sent to the API
   question?: string        // The question for this turn (shown as rows card header)
@@ -30,6 +31,7 @@ export type ChatMessage = {
   checklistCurrent?: string          // ID of module currently being probed
   checklistQueue?: string[]          // IDs of remaining modules in order
   hidden?: boolean                   // true = don't render (e.g. auto-continue messages)
+  isAutoContinue?: boolean           // true = auto-continue response (suppress bubble text, show only question card)
   isOverview?: boolean               // true = stage-setting card (all modules shown, none active yet)
 }
 
@@ -129,6 +131,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   // Store the stripped QR so we can silently restore it on resume
   const pausedQRRef = useRef<{ question: string; quickReplies: QuickReplies; messageId: string } | null>(null)
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null)
+  const [isAdminActive, setIsAdminActive] = useState(false)
 
   const messagesRef = useRef<ChatMessage[]>([])
   const confidenceRef = useRef(0)
@@ -157,6 +160,79 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   useEffect(() => { currentModuleRef.current = currentModule }, [currentModule])
   useEffect(() => { modulesQueueRef.current = modulesQueue }, [modulesQueue])
   useEffect(() => { completedModulesRef.current = completedModules }, [completedModules])
+
+  // Subscribe to admin takeover broadcast signals
+  useEffect(() => {
+    if (!proposalId) return
+    const supabase = createClient()
+    const channel = supabase.channel(`proposal:${proposalId}`)
+
+    channel
+      .on('broadcast', { event: 'admin_status' }, (payload) => {
+        const type = payload.payload?.type
+        if (type === 'admin_joined') {
+          setIsAdminActive(true)
+          // Show system message
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: crypto.randomUUID(),
+              role: 'admin' as const,
+              content: '[Admin] has joined the chat',
+              createdAt: Date.now(),
+            },
+          ])
+        } else if (type === 'admin_left') {
+          setIsAdminActive(false)
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: crypto.randomUUID(),
+              role: 'admin' as const,
+              content: '[Admin] has left the chat. AI assistant resumed.',
+              createdAt: Date.now(),
+            },
+          ])
+        }
+      })
+      .subscribe()
+
+    // Also listen for admin messages via realtime (chat_messages table)
+    const msgChannel = supabase
+      .channel(`admin-msgs:${proposalId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `proposal_id=eq.${proposalId}`,
+        },
+        (payload) => {
+          const newMsg = payload.new as { id: string; role: string; content: string; created_at: string }
+          if (newMsg.role === 'admin') {
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === newMsg.id)) return prev
+              return [
+                ...prev,
+                {
+                  id: newMsg.id,
+                  role: 'admin' as const,
+                  content: newMsg.content,
+                  createdAt: new Date(newMsg.created_at).getTime(),
+                },
+              ]
+            })
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+      supabase.removeChannel(msgChannel)
+    }
+  }, [proposalId])
 
   // Persist messages to localStorage after every update.
   // Also auto-saves to Supabase when email is verified and streaming is complete.
@@ -371,14 +447,15 @@ export function useIntakeChat({ proposalId, idea }: Props) {
 
   // Streams from /api/intake/chat with the given API message history.
   // Adds an empty assistant message first, then fills it in as tokens arrive.
-  async function streamAIResponse(apiMessages: ApiMessage[]) {
+  async function streamAIResponse(apiMessages: ApiMessage[], opts?: { isAutoContinue?: boolean }) {
+    const isAutoContinue = opts?.isAutoContinue ?? false
     // Capture a unique ID for this stream invocation so stale streams (still draining
     // after the user submitted a new message) can be identified and their side-effects
     // suppressed without cancelling the HTTP request itself.
     const myStreamId = crypto.randomUUID()
     streamIdRef.current = myStreamId
     setIsStreaming(true)
-    const assistantMessage: ChatMessage = { id: crypto.randomUUID(), role: 'assistant', content: '', createdAt: Date.now() }
+    const assistantMessage: ChatMessage = { id: crypto.randomUUID(), role: 'assistant', content: '', isAutoContinue, createdAt: Date.now() }
     // activeBubbleId tracks the ID of the assistant message currently receiving text events.
     // It starts as bubble 1 and is reassigned to bubble 2 when a bubble_split event arrives
     // (i.e. when the AI produces transition_text for a topic pivot). All setMessages guards
@@ -886,7 +963,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                 { role: 'user', content: 'Continue' },
               ]
               setTimeout(() => {
-                streamAIResponse(autoMessages)
+                streamAIResponse(autoMessages, { isAutoContinue: true })
               }, 1500)
             }
           }
@@ -936,14 +1013,21 @@ export function useIntakeChat({ proposalId, idea }: Props) {
       createdAt: Date.now(),
     }
 
+    // When admin is active, just add the user message but don't call AI
+    if (isAdminActive) {
+      setMessages((prev) => [...prev, userMessage])
+      return
+    }
+
     const apiMessages = mergeConsecutiveMessages([
       ...messagesRef.current
         // Filter out synthetic messages that shouldn't be in API history:
         // - Module dividers (empty content, UI-only)
         // - Pause checkpoints (synthetic breather prompts)
+        // - Admin messages (not part of AI conversation)
         // - Any message with empty/missing content (Claude API rejects these)
-        .filter(m => !m.isModuleStart && !m.isModuleComplete && !m.isPause && m.content)
-        .map((m): ApiMessage => ({ role: m.role, content: m.content })),
+        .filter(m => !m.isModuleStart && !m.isModuleComplete && !m.isPause && m.role !== 'admin' && m.content)
+        .map((m): ApiMessage => ({ role: m.role === 'admin' ? 'user' : m.role, content: m.content })),
       { role: 'user', content: safeContent },
     ])
 
@@ -1010,8 +1094,8 @@ export function useIntakeChat({ proposalId, idea }: Props) {
 
     const aiHistory = mergeConsecutiveMessages(
       [...kept, correctionMsg]
-        .filter(m => !m.isModuleStart && !m.isModuleComplete && !m.isPause && m.content)
-        .map((m): ApiMessage => ({ role: m.role, content: m.content }))
+        .filter(m => !m.isModuleStart && !m.isModuleComplete && !m.isPause && m.role !== 'admin' && m.content)
+        .map((m): ApiMessage => ({ role: m.role as 'user' | 'assistant', content: m.content }))
     )
 
     await streamAIResponse(aiHistory)
@@ -1148,5 +1232,5 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     setCompletedModules([])
   }, [proposalId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, editMessage, reset, moduleSummaries, projectName, isPaused, pausedQuestion, questionRevealed, pauseQuestions, resumeQuestions, revealPausedQuestion, skipQuestion, lastSyncedAt, currentPhase, currentModule, modulesQueue, completedModules }
+  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, editMessage, reset, moduleSummaries, projectName, isPaused, pausedQuestion, questionRevealed, pauseQuestions, resumeQuestions, revealPausedQuestion, skipQuestion, lastSyncedAt, currentPhase, currentModule, modulesQueue, completedModules, isAdminActive }
 }
