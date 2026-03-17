@@ -47,6 +47,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to save proposal. Please contact support.' }, { status: 500 })
   }
 
+  // Generate a one-time auth token for the email link (30-day expiry)
+  const authToken = crypto.randomUUID()
+  const tokenExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+
+  await supabase
+    .from('proposals')
+    .update({ email_auth_token: authToken, email_auth_token_expires_at: tokenExpiry })
+    .eq('id', proposalId)
+
   // Fetch slug for the email URL
   const { data: proposalData } = await supabase
     .from('proposals')
@@ -54,12 +63,13 @@ export async function POST(req: NextRequest) {
     .eq('id', proposalId)
     .single()
 
-  // Send confirmation email with proposal link
+  // Build proposal URL with auth token so clicking from inbox auto-authenticates
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
   const slug = proposalData?.slug
+  const tokenParam = `t=${authToken}`
   const proposalUrl = slug
-    ? `${appUrl}/proposal/${slug}`
-    : `${appUrl}/?c=${proposalId}`
+    ? `${appUrl}/proposal/${slug}?${tokenParam}`
+    : `${appUrl}/?c=${proposalId}&${tokenParam}`
   const { subject, html } = buildConfirmationEmail({ projectName: projectName ?? '', proposalUrl })
 
   const { error: emailError } = await resend.emails.send({

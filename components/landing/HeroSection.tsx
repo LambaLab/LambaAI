@@ -61,25 +61,53 @@ export default function HeroSection({ onIntakeChange, onIntakeClose }: HeroProps
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const c = params.get('c')
+    const token = params.get('t')
     if (!c) return // Same-device already handled in getInitialState
 
     // If already open (same-device match found synchronously), skip fetch
     if (intakeOpen) return
 
-    // Cross-device: no localStorage match — fetch from Supabase
-    fetch(`/api/proposals/${c}/restore`)
+    // If there's an auth token (user clicked link from email), try auto-auth
+    if (token) {
+      fetch('/api/auth/verify-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, proposalId: c }),
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.verified) {
+            // Auto-authenticate: skip OTP gate entirely
+            // Strip the token from URL so it can't be reused from address bar
+            window.history.replaceState(null, '', `/?c=${c}`)
+            handleRestoreSuccess(data)
+            return
+          }
+          // Token invalid/expired — fall through to normal restore flow
+          fetchRestore(c)
+        })
+        .catch(() => fetchRestore(c))
+      return
+    }
+
+    // No token — normal cross-device restore (will show OTP gate if email exists)
+    fetchRestore(c)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function fetchRestore(proposalId: string) {
+    fetch(`/api/proposals/${proposalId}/restore`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!data) {
-          setRestoreGate({ proposalId: c, sessionId: '' })
+          setRestoreGate({ proposalId, sessionId: '' })
           return
         }
         setRestoreGate(data)
       })
       .catch(() => {
-        setRestoreGate({ proposalId: c, sessionId: '' })
+        setRestoreGate({ proposalId, sessionId: '' })
       })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }
 
   function handleFirstMessage(message: string) {
     setInitialMessage(message)

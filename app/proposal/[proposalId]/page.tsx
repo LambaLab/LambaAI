@@ -2,8 +2,15 @@ import { redirect, notFound } from 'next/navigation'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-export default async function ProposalPage({ params }: { params: Promise<{ proposalId: string }> }) {
+export default async function ProposalPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ proposalId: string }>
+  searchParams: Promise<{ t?: string }>
+}) {
   const { proposalId } = await params
+  const { t: token } = await searchParams
 
   // --- Slug path: resolve via API and redirect ---
   if (!UUID_RE.test(proposalId)) {
@@ -18,10 +25,14 @@ export default async function ProposalPage({ params }: { params: Promise<{ propo
     const data = await res.json()
 
     if (data.redirect && data.currentSlug) {
-      redirect(`/proposal/${data.currentSlug}`)
+      // Pass through the auth token if present
+      const tokenParam = token ? `?t=${token}` : ''
+      redirect(`/proposal/${data.currentSlug}${tokenParam}`)
     }
 
-    redirect(`/?c=${data.proposalId}`)
+    // Pass through the auth token so the landing page can auto-authenticate
+    const tokenParam = token ? `&t=${token}` : ''
+    redirect(`/?c=${data.proposalId}${tokenParam}`)
   }
 
   // --- UUID path: show "in review" page ---
