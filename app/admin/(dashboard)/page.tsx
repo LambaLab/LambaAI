@@ -21,13 +21,14 @@ export default function AdminDashboardPage() {
     const supabase = supabaseRef.current
 
     async function loadData() {
-      // Load proposals
-      const { data } = await supabase
-        .from('proposals')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (data) setProposals(data)
+      // Load proposals via admin API (bypasses RLS)
+      try {
+        const res = await fetch('/api/admin/proposals')
+        if (res.ok) {
+          const data = await res.json()
+          setProposals(data)
+        }
+      } catch { /* ignore */ }
 
       // Fetch current user's admin role
       try {
@@ -41,38 +42,24 @@ export default function AdminDashboardPage() {
 
     loadData()
 
-    // Subscribe to real-time proposal changes
+    // Subscribe to real-time proposal changes.
+    // On any change, refetch the full list via the admin API (bypasses RLS).
+    async function refetchProposals() {
+      try {
+        const res = await fetch('/api/admin/proposals')
+        if (res.ok) {
+          const data = await res.json()
+          setProposals(data)
+        }
+      } catch { /* ignore */ }
+    }
+
     const channel = supabase
       .channel('admin:proposals')
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'proposals' },
-        (payload) => {
-          const newProposal = payload.new as Proposal
-          setProposals((prev) => {
-            // Avoid duplicates (in case initial fetch already included it)
-            if (prev.some((p) => p.id === newProposal.id)) return prev
-            return [newProposal, ...prev]
-          })
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'proposals' },
-        (payload) => {
-          const updated = payload.new as Proposal
-          setProposals((prev) =>
-            prev.map((p) => (p.id === updated.id ? updated : p))
-          )
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'proposals' },
-        (payload) => {
-          const deletedId = (payload.old as { id: string }).id
-          setProposals((prev) => prev.filter((p) => p.id !== deletedId))
-        }
+        { event: '*', schema: 'public', table: 'proposals' },
+        () => { refetchProposals() }
       )
       .subscribe()
 
