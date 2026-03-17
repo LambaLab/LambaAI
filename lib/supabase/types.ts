@@ -24,7 +24,7 @@ export type Database = {
           id: string
           session_id: string
           user_id: string | null
-          status: 'draft' | 'saved' | 'pending_review' | 'approved' | 'accepted'
+          status: 'draft' | 'saved' | 'pending_review' | 'approved' | 'accepted' | 'budget_proposed' | 'budget_accepted'
           modules: Json
           confidence_score: number
           price_min: number
@@ -40,6 +40,8 @@ export type Database = {
           timeline: string | null
           milestone_plan: Json | null
           metadata: Json | null
+          email_auth_token: string | null
+          email_auth_token_expires_at: string | null
           created_at: string
           updated_at: string
         }
@@ -47,7 +49,7 @@ export type Database = {
           id?: string
           session_id: string
           user_id?: string | null
-          status?: 'draft' | 'saved' | 'pending_review' | 'approved' | 'accepted'
+          status?: 'draft' | 'saved' | 'pending_review' | 'approved' | 'accepted' | 'budget_proposed' | 'budget_accepted'
           modules?: Json
           confidence_score?: number
           price_min?: number
@@ -63,6 +65,8 @@ export type Database = {
           timeline?: string | null
           milestone_plan?: Json | null
           metadata?: Json | null
+          email_auth_token?: string | null
+          email_auth_token_expires_at?: string | null
         }
         Update: Partial<Database['public']['Tables']['proposals']['Insert']>
         Relationships: []
@@ -71,7 +75,7 @@ export type Database = {
         Row: {
           id: string
           proposal_id: string
-          role: 'user' | 'assistant'
+          role: 'user' | 'assistant' | 'admin'
           content: string
           metadata: Json | null
           created_at: string
@@ -79,7 +83,7 @@ export type Database = {
         Insert: {
           id?: string
           proposal_id: string
-          role: 'user' | 'assistant'
+          role: 'user' | 'assistant' | 'admin'
           content: string
           metadata?: Json | null
           created_at?: string
@@ -123,6 +127,34 @@ export type Database = {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['proposal_slug_history']['Insert']>
+        Relationships: []
+      }
+      budget_proposals: {
+        Row: {
+          id: string
+          proposal_id: string
+          amount: number
+          client_notes: string | null
+          internal_notes: string | null
+          status: 'pending' | 'accepted' | 'countered' | 'call_requested'
+          counter_amount: number | null
+          counter_notes: string | null
+          created_at: string
+          responded_at: string | null
+        }
+        Insert: {
+          id?: string
+          proposal_id: string
+          amount: number
+          client_notes?: string | null
+          internal_notes?: string | null
+          status?: 'pending' | 'accepted' | 'countered' | 'call_requested'
+          counter_amount?: number | null
+          counter_notes?: string | null
+          created_at?: string
+          responded_at?: string | null
+        }
+        Update: Partial<Database['public']['Tables']['budget_proposals']['Insert']>
         Relationships: []
       }
     }
