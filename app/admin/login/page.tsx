@@ -3,6 +3,10 @@
 import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 function GoogleIcon() {
   return (
@@ -18,8 +22,8 @@ function GoogleIcon() {
 export default function AdminLoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-brand-yellow/30 border-t-brand-yellow rounded-full animate-spin" />
+      <div className="min-h-screen bg-muted flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     }>
       <AdminLoginContent />
@@ -76,76 +80,74 @@ function AdminLoginContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
-      <div className="w-full max-w-sm space-y-8">
-        <div className="text-center space-y-2">
-          <h1 className="font-bebas text-4xl text-brand-white tracking-wide">LAMBA LAB</h1>
-          <p className="text-sm text-brand-gray-mid">Admin Panel</p>
-        </div>
+    <div className="min-h-screen bg-muted flex items-center justify-center p-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader className="text-center">
+          <CardTitle className="font-bebas text-3xl tracking-wide">LAMBA LAB</CardTitle>
+          <CardDescription>Admin Dashboard</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {callbackError && !error && (
+            <p className="text-sm text-destructive text-center">
+              Access denied. Please try again.
+            </p>
+          )}
 
-        {callbackError && !error && (
-          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400 text-center">
-            Access denied. Please try again.
-          </div>
-        )}
-
-        {sent ? (
-          <div className="p-6 bg-white/5 border border-white/5 rounded-2xl text-center space-y-3">
-            <div className="text-3xl">&#9993;</div>
-            <p className="text-sm text-brand-white">Magic link sent to <strong>{email}</strong></p>
-            <p className="text-xs text-brand-gray-mid">Check your inbox and click the link to sign in.</p>
-          </div>
-        ) : (
-          <div className="space-y-5">
-            {/* Google sign-in */}
-            <button
-              onClick={handleGoogleLogin}
-              disabled={googleLoading}
-              className="w-full flex items-center justify-center gap-3 py-3 bg-white text-[#1d1d1d] font-medium rounded-xl hover:bg-white/90 transition-all disabled:opacity-50 text-sm cursor-pointer disabled:cursor-not-allowed"
-            >
-              <GoogleIcon />
-              {googleLoading ? 'Redirecting...' : 'Sign in with Google'}
-            </button>
-
-            {/* Divider */}
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-px bg-white/10" />
-              <span className="text-xs text-brand-gray-mid uppercase tracking-wider">or</span>
-              <div className="flex-1 h-px bg-white/10" />
+          {sent ? (
+            <div className="text-center space-y-3 py-4">
+              <div className="text-3xl">&#9993;</div>
+              <p className="text-sm text-foreground">Magic link sent to <strong>{email}</strong></p>
+              <p className="text-xs text-muted-foreground">Check your inbox and click the link to sign in.</p>
             </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Google sign-in */}
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleGoogleLogin}
+                disabled={googleLoading}
+              >
+                <GoogleIcon />
+                {googleLoading ? 'Redirecting...' : 'Sign in with Google'}
+              </Button>
 
-            {/* Magic link form */}
-            <form onSubmit={handleMagicLink} className="space-y-4">
-              <div>
-                <label htmlFor="email" className="block text-xs text-brand-gray-mid mb-2 uppercase tracking-wider">
-                  Email address
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  placeholder="you@lambalab.com"
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-brand-white placeholder-brand-gray-mid/50 outline-none focus:border-brand-yellow/40 transition-colors"
-                />
+              {/* Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">or</span>
+                </div>
               </div>
 
-              {error && (
-                <p className="text-xs text-red-400 text-center">{error}</p>
-              )}
+              {/* Magic link form */}
+              <form onSubmit={handleMagicLink} className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="admin@lambalab.com"
+                  />
+                </div>
 
-              <button
-                type="submit"
-                disabled={loading || !email.trim()}
-                className="w-full py-3 bg-brand-yellow text-brand-dark font-medium rounded-xl hover:bg-brand-yellow/90 transition-all disabled:opacity-50 text-sm cursor-pointer disabled:cursor-not-allowed"
-              >
-                {loading ? 'Sending...' : 'Send magic link'}
-              </button>
-            </form>
-          </div>
-        )}
-      </div>
+                {error && (
+                  <p className="text-xs text-destructive text-center">{error}</p>
+                )}
+
+                <Button type="submit" className="w-full" disabled={loading || !email.trim()}>
+                  {loading ? 'Sending...' : 'Send Magic Link'}
+                </Button>
+              </form>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
