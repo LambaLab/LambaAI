@@ -852,8 +852,9 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             if (newMod && newMod !== prevModuleRef.current && !input?.module_complete) {
               const queueArr = Array.isArray(input?.modules_queue) ? input.modules_queue : effectiveQueue
               const totalModules = queueArr.length + completedModulesRef.current.length
-              // Stage-setting turn: first module transition with no question = overview card
-              const isStageSettingTurn = completedModulesRef.current.length === 0 && !stageQuestionText
+              // Stage-setting turn: first module transition = overview card (always show checklist
+              // on the very first deep-dive entry, regardless of whether AI set question to "")
+              const isStageSettingTurn = completedModulesRef.current.length === 0 && prevModuleRef.current === ''
               const moduleStartMsg: ChatMessage = {
                 id: crypto.randomUUID(),
                 role: 'assistant',
