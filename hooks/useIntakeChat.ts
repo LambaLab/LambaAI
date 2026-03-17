@@ -642,7 +642,9 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             const turnsSinceLast = turnCount.current - lastPauseTurn.current
             const aiWantsPause = input?.suggest_pause === true
             const phase = input?.current_phase || currentPhaseRef.current
-            const clientWantsPause = phase === 'discovery' && newScore >= 60 && turnsSinceLast >= 6
+            const clientWantsPause = (phase === 'discovery' && newScore >= 60 && turnsSinceLast >= 6)
+              // Safety net: wrap_up phase should ALWAYS show pills
+              || phase === 'wrap_up'
             const isPauseThisTurn = (aiWantsPause || clientWantsPause) && turnsSinceLast >= 4
             if (isPauseThisTurn) lastPauseTurn.current = turnCount.current
 
@@ -888,12 +890,24 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             // Module-complete divider: insert when AI signals a module is done
             if (input?.module_complete === true && newMod) {
               setCompletedModules(prev => prev.includes(newMod) ? prev : [...prev, newMod])
-              // Build the completed list including this module that just finished
-              const newCompleted = completedModulesRef.current.includes(newMod)
+              completedModulesRef.current = completedModulesRef.current.includes(newMod)
                 ? [...completedModulesRef.current]
                 : [...completedModulesRef.current, newMod]
+              const newCompleted = completedModulesRef.current
               const remainingQueue = effectiveQueue.filter(id => id !== newMod && !newCompleted.includes(id))
               const nextModule = remainingQueue[0] || ''
+
+              // Advance currentModule to the next module so the AI knows where
+              // to continue on the "Keep going" turn. Without this, the system
+              // prompt tells the AI current_module = the completed module, which
+              // confuses it into thinking it's done and jumping to wrap_up.
+              if (nextModule) {
+                setCurrentModule(nextModule)
+                currentModuleRef.current = nextModule
+                setModulesQueue(remainingQueue)
+                modulesQueueRef.current = remainingQueue
+              }
+
               const moduleCompleteMsg: ChatMessage = {
                 id: crypto.randomUUID(),
                 role: 'assistant',
@@ -939,11 +953,9 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                 // Use refs to avoid stale closure values
                 const phaseState = {
                   currentPhase: effectivePhase || 'discovery',
-                  currentModule: effectiveModule,
-                  modulesQueue: effectiveQueue,
-                  completedModules: input?.module_complete && newMod
-                    ? [...completedModulesRef.current.filter(m => m !== newMod), newMod]
-                    : completedModulesRef.current,
+                  currentModule: currentModuleRef.current || effectiveModule,
+                  modulesQueue: modulesQueueRef.current.length > 0 ? modulesQueueRef.current : effectiveQueue,
+                  completedModules: completedModulesRef.current,
                 }
                 localStorage.setItem(PHASE_KEY(proposalId), JSON.stringify(phaseState))
               } catch { /* Ignore QuotaExceededError */ }

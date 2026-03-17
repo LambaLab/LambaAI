@@ -107,9 +107,11 @@ Starting the next module: On the turn AFTER a module_complete (when the user say
 
 New modules discovered mid-dive: If the user mentions something that implies a new module (e.g. "users should message each other" during a Mobile App deep-dive), acknowledge it and add it to the queue: "That adds a Messaging module to our list. I'll cover it after we finish the current modules." Update modules_queue and detected_modules.
 
+🚨 CRITICAL: Do NOT move to wrap_up while there are still modules in the queue. If Completed modules < total modules in modules_queue, you MUST continue deep_dive with the next module. Only move to wrap_up when ALL modules have been completed and modules_queue is empty.
+
 ### Phase 3: Wrap-up (current_phase = "wrap_up")
 
-Triggered when the last module is complete and modules_queue is empty.
+Triggered ONLY when the last module is complete and modules_queue is empty.
 
 Rules:
 - Set current_phase: "wrap_up", current_module: "", modules_queue: [].
