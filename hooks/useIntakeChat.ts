@@ -850,6 +850,15 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             const newMod = effectiveModule
 
             if (newMod && newMod !== prevModuleRef.current && !input?.module_complete) {
+              // Auto-complete the previous module when transitioning to a new one.
+              // The AI doesn't always send module_complete: true explicitly, so we
+              // infer completion from the module transition itself.
+              const prevMod = prevModuleRef.current
+              if (prevMod && !completedModulesRef.current.includes(prevMod)) {
+                setCompletedModules(prev => prev.includes(prevMod) ? prev : [...prev, prevMod])
+                completedModulesRef.current = [...completedModulesRef.current, prevMod]
+              }
+
               const queueArr = Array.isArray(input?.modules_queue) ? input.modules_queue : effectiveQueue
               const totalModules = queueArr.length + completedModulesRef.current.length
               // Stage-setting turn: first module transition = overview card (always show checklist

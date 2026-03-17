@@ -19,6 +19,7 @@ type Props = {
   moduleSummaries?: { [id: string]: string }
   onReset?: () => void
   onSaveLater?: () => void
+  currentModule?: string
 }
 
 // Renders product overview text — supports labeled sections and plain paragraphs.
@@ -82,6 +83,7 @@ export default function ModulesPanel({
   moduleSummaries = {},
   onReset,
   onSaveLater,
+  currentModule,
 }: Props) {
   const [showAuthGate, setShowAuthGate] = useState(false)
   const [productOpen, setProductOpen] = useState(true)
@@ -199,9 +201,21 @@ export default function ModulesPanel({
                   />
                 ))}
 
-                {/* 2. Detected but not yet confirmed — grey dashed */}
+                {/* 2. Currently being discussed — yellow dashed */}
+                {currentModule && !confirmedModules.includes(currentModule) && detectedModules.includes(currentModule) && (
+                  <ModuleCard
+                    key={currentModule}
+                    moduleId={currentModule}
+                    status="current"
+                    detectedModules={detectedModules}
+                    onToggle={onToggle}
+                    summary={moduleSummaries[currentModule]}
+                  />
+                )}
+
+                {/* 3. Detected but not yet confirmed or current — grey dashed */}
                 {detectedModules
-                  .filter((id) => !confirmedModules.includes(id))
+                  .filter((id) => !confirmedModules.includes(id) && id !== currentModule)
                   .map((id) => (
                     <ModuleCard
                       key={id}

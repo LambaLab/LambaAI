@@ -16,6 +16,7 @@ type Props = {
   moduleSummaries?: { [id: string]: string }
   onReset?: () => void
   onSaveLater?: () => void
+  currentModule?: string
 }
 
 // Collapsed handle height (swipe bar + button row)
@@ -41,6 +42,7 @@ const MobileBottomDrawer = forwardRef<MobileBottomDrawerHandle, Props>(function 
   moduleSummaries = {},
   onReset,
   onSaveLater,
+  currentModule,
 }, ref) {
   const [open, setOpen] = useState(false)
   // dragOffset: how many px above collapsed position the drawer currently sits.
@@ -218,6 +220,7 @@ const MobileBottomDrawer = forwardRef<MobileBottomDrawerHandle, Props>(function 
               moduleSummaries={moduleSummaries}
               onReset={onReset}
               onSaveLater={onSaveLater}
+              currentModule={currentModule}
             />
           </div>
         )}

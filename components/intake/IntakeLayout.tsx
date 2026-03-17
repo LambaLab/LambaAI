@@ -43,6 +43,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
     revealPausedQuestion,
     skipQuestion,
     lastSyncedAt,
+    currentModule,
   } = useIntakeChat({ proposalId, idea: initialMessage })
 
   const [chatWidthPct, setChatWidthPct] = useState(55)
@@ -188,6 +189,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
             moduleSummaries={moduleSummaries}
             onReset={onReset}
             onSaveLater={onSaveLater}
+            currentModule={currentModule}
           />
         </div>
       </div>
@@ -228,6 +230,7 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
           moduleSummaries={moduleSummaries}
           onReset={onReset}
           onSaveLater={onSaveLater}
+          currentModule={currentModule}
         />
       </div>
     </div>

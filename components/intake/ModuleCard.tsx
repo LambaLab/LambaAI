@@ -7,32 +7,36 @@ import { X, ChevronDown } from 'lucide-react'
 
 type Props = {
   moduleId: string
-  status: 'confirmed' | 'detected' | 'inactive'
+  status: 'confirmed' | 'detected' | 'inactive' | 'current'
   detectedModules: string[]
   onToggle: (id: string) => void
   summary?: string
 }
 
-const cardStyles = {
+const cardStyles: Record<string, string> = {
   confirmed: 'bg-[var(--ov-accent-bg,rgba(255,252,0,0.05))] border-[var(--ov-accent-border,rgba(255,252,0,0.30))]',
+  current: 'bg-[var(--ov-accent-bg,rgba(255,252,0,0.05))] border-[var(--ov-accent-border,rgba(255,252,0,0.20))] border-dashed',
   detected: 'bg-[var(--ov-surface-subtle,rgba(255,255,255,0.03))] border-[var(--ov-border,rgba(255,255,255,0.10))] border-dashed',
   inactive: 'bg-[var(--ov-surface-subtle,rgba(255,255,255,0.02))] border-[var(--ov-border,rgba(255,255,255,0.05))] opacity-50',
 }
 
-const iconBgStyles = {
+const iconBgStyles: Record<string, string> = {
   confirmed: 'bg-[var(--ov-accent-bg,rgba(255,252,0,0.15))]',
+  current: 'bg-[var(--ov-accent-bg,rgba(255,252,0,0.10))]',
   detected: 'bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))]',
   inactive: 'bg-[var(--ov-surface-subtle,rgba(255,255,255,0.05))]',
 }
 
-const iconColorStyles = {
+const iconColorStyles: Record<string, string> = {
   confirmed: 'text-[var(--ov-accent-strong,#fffc00)]',
+  current: 'text-[var(--ov-accent-strong,#fffc00)]',
   detected: 'text-[var(--ov-text-muted,#727272)]',
   inactive: 'text-[var(--ov-text-muted,#727272)]',
 }
 
-const textStyles = {
+const textStyles: Record<string, string> = {
   confirmed: 'text-[var(--ov-text,#ffffff)]',
+  current: 'text-[var(--ov-text,#ffffff)]',
   detected: 'text-[var(--ov-text,#ffffff)]/70',
   inactive: 'text-[var(--ov-text-muted,#727272)]',
 }
@@ -44,7 +48,7 @@ export default function ModuleCard({ moduleId, status, detectedModules, onToggle
 
   const IconComponent = (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[mod.icon] ?? Icons.Box
 
-  const isExpandable = (status === 'confirmed' || status === 'detected') && !!summary
+  const isExpandable = (status === 'confirmed' || status === 'detected' || status === 'current') && !!summary
 
   function handleHeaderClick() {
     if (isExpandable) {
