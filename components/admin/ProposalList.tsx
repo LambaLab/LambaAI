@@ -110,7 +110,7 @@ export default function ProposalList({ proposals, selectedId, onSelect, searchQu
       </div>
 
       {/* List */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         {filtered.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">No proposals found.</p>
         ) : (
