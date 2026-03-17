@@ -21,7 +21,7 @@ export default function AdminHeader({ searchQuery, onSearchChange, adminRole }: 
     setLoggingOut(true)
     const supabase = createClient()
     await supabase.auth.signOut()
-    router.push('/admin/login')
+    window.location.href = '/admin/login'
   }
 
   return (
