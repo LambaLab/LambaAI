@@ -157,6 +157,24 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['budget_proposals']['Insert']>
         Relationships: []
       }
+      admin_users: {
+        Row: {
+          id: string
+          email: string
+          role: 'super_admin' | 'admin'
+          added_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          email: string
+          role?: 'super_admin' | 'admin'
+          added_by?: string | null
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['admin_users']['Insert']>
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

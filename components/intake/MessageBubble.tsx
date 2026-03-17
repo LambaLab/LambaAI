@@ -33,6 +33,7 @@ function formatMessageTime(ts?: number): string | null {
 
 export default function MessageBubble({ message, isStreaming, onQuickReply, isLastMessage, onEdit, onStartRowEdit, isBeingReEdited, theme }: Props) {
   const isUser = message.role === 'user'
+  const isAdmin = message.role === 'admin'
   const iconSrc = theme === 'light' ? '/light icon.png' : '/dark icon.jpg'
 
   // User bubbles show displayContent when available (e.g. quick reply label instead of raw value)
@@ -81,7 +82,7 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'items-start gap-2'}`}>
-      {!isUser && (
+      {!isUser && !isAdmin && (
         <Image
           src={iconSrc}
           alt="Lamba Lab"
@@ -90,7 +91,17 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
           className="rounded-full flex-shrink-0 mt-1 select-none"
         />
       )}
+      {isAdmin && (
+        <div className="w-6 h-6 rounded-full bg-[#0082fe]/20 flex items-center justify-center flex-shrink-0 mt-1 select-none">
+          <span className="text-[9px] font-bold text-[#0082fe]">A</span>
+        </div>
+      )}
       <div className={`space-y-3 ${isUser ? 'max-w-[85%]' : 'max-w-[80%]'}`}>
+        {/* Admin label */}
+        {isAdmin && (
+          <span className="text-[10px] text-[#0082fe] font-medium uppercase tracking-wider">[Admin]</span>
+        )}
+
         {/* Question context: shown above row-selection answer bubbles so the answer has clear context */}
         {isUser && message.sourceQuestion && !isEditing && (
           <p className="text-[11px] text-[var(--ov-text-muted,#727272)] text-right leading-relaxed px-1 mb-1">
@@ -132,7 +143,9 @@ export default function MessageBubble({ message, isStreaming, onQuickReply, isLa
               className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                 isUser
                   ? `bg-[var(--ov-bubble-user-bg,transparent)] border border-[var(--ov-bubble-user-border,#fffc00)] text-[var(--ov-bubble-user-text,var(--ov-text,#ffffff))] font-medium rounded-br-sm ${isBeingReEdited ? 'ring-2 ring-[var(--ov-focus-ring,rgba(255,252,0,0.60))] ring-offset-2 ring-offset-[var(--ov-input-bg,#1a1a1a)]' : ''}`
-                  : 'bg-[var(--ov-bubble-ai-bg,rgba(255,255,255,0.05))] text-[var(--ov-text,#ffffff)] border border-[var(--ov-bubble-ai-border,transparent)] rounded-bl-sm'
+                  : isAdmin
+                    ? 'bg-[#0082fe]/10 border border-[#0082fe]/20 text-[var(--ov-text,#ffffff)] rounded-bl-sm'
+                    : 'bg-[var(--ov-bubble-ai-bg,rgba(255,255,255,0.05))] text-[var(--ov-text,#ffffff)] border border-[var(--ov-bubble-ai-border,transparent)] rounded-bl-sm'
               }`}
             >
               {/* Loading indicator while streaming (before content arrives) */}
