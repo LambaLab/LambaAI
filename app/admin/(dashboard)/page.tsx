@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useState, useEffect, useCallback } from 'react'
 import type { Database } from '@/lib/supabase/types'
 import AdminHeader from '@/components/admin/AdminHeader'
 import ProposalList from '@/components/admin/ProposalList'
@@ -15,20 +14,20 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [adminRole, setAdminRole] = useState<'super_admin' | 'admin' | null>(null)
-  const supabaseRef = useRef(createClient())
+
+  const fetchProposals = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/proposals')
+      if (res.ok) {
+        const data = await res.json()
+        setProposals(data)
+      }
+    } catch { /* ignore */ }
+  }, [])
 
   useEffect(() => {
-    const supabase = supabaseRef.current
-
     async function loadData() {
-      // Load proposals via admin API (bypasses RLS)
-      try {
-        const res = await fetch('/api/admin/proposals')
-        if (res.ok) {
-          const data = await res.json()
-          setProposals(data)
-        }
-      } catch { /* ignore */ }
+      await fetchProposals()
 
       // Fetch current user's admin role
       try {
@@ -42,31 +41,16 @@ export default function AdminDashboardPage() {
 
     loadData()
 
-    // Subscribe to real-time proposal changes.
-    // On any change, refetch the full list via the admin API (bypasses RLS).
-    async function refetchProposals() {
-      try {
-        const res = await fetch('/api/admin/proposals')
-        if (res.ok) {
-          const data = await res.json()
-          setProposals(data)
-        }
-      } catch { /* ignore */ }
-    }
-
-    const channel = supabase
-      .channel('admin:proposals')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'proposals' },
-        () => { refetchProposals() }
-      )
-      .subscribe()
+    // Poll for proposal changes every 5 seconds.
+    // Supabase Realtime postgres_changes respects RLS, which blocks the
+    // admin from receiving events for proposals they don't own. Polling
+    // via the admin API (which uses the service client) works reliably.
+    const pollInterval = setInterval(fetchProposals, 5000)
 
     return () => {
-      supabase.removeChannel(channel)
+      clearInterval(pollInterval)
     }
-  }, [])
+  }, [fetchProposals])
 
   const selectedProposal = proposals.find((p) => p.id === selectedId) ?? null
 

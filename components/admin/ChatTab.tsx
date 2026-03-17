@@ -27,52 +27,47 @@ export default function ChatTab({ proposalId }: Props) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const supabaseRef = useRef(createClient())
 
-  // Load messages and subscribe to realtime
+  // Load messages via admin API (bypasses RLS) and poll for updates
   useEffect(() => {
     const supabase = supabaseRef.current
 
     async function loadMessages() {
-      const { data } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('proposal_id', proposalId)
-        .order('created_at', { ascending: true })
-
-      if (data) setMessages(data as ChatMessage[])
+      try {
+        const res = await fetch(`/api/admin/chat/${proposalId}`)
+        if (res.ok) {
+          const data = await res.json()
+          setMessages(data as ChatMessage[])
+        }
+      } catch { /* ignore */ }
       setLoading(false)
     }
 
     loadMessages()
 
-    // Subscribe to new messages via Realtime
-    const channel = supabase
-      .channel(`chat:${proposalId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_messages',
-          filter: `proposal_id=eq.${proposalId}`,
-        },
-        (payload) => {
-          const newMsg = payload.new as ChatMessage
+    // Poll for new messages every 3 seconds (Realtime postgres_changes
+    // is blocked by RLS for the admin user, so we use polling instead)
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/admin/chat/${proposalId}`)
+        if (res.ok) {
+          const data = await res.json() as ChatMessage[]
           setMessages((prev) => {
-            // Avoid duplicates
-            if (prev.some((m) => m.id === newMsg.id)) return prev
-            return [...prev, newMsg]
+            if (data.length !== prev.length) {
+              setIsLive(true)
+              return data
+            }
+            return prev
           })
-          setIsLive(true)
         }
-      )
-      .subscribe()
+      } catch { /* ignore */ }
+    }, 3000)
 
     // Broadcast channel for admin join/leave signaling
     const broadcastChannel = supabase.channel(`proposal:${proposalId}`)
     broadcastChannel.subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      clearInterval(pollInterval)
       supabase.removeChannel(broadcastChannel)
     }
   }, [proposalId])

@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
-  const supabase = await createServerSupabaseClient()
+  // Use the service client for everything — this avoids overwriting the
+  // browser's auth cookies (which would sign out an admin testing in the
+  // same browser).
+  const supabase = createServiceClient()
 
-  // Sign in anonymously — creates a real Supabase user with UUID
-  const { data: authData, error: authError } = await supabase.auth.signInAnonymously()
+  // Create an anonymous Supabase auth user (service-side, no cookies touched)
+  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    email_confirm: true,
+    // Anonymous user — no email, no password
+    user_metadata: { anonymous: true },
+  })
   if (authError || !authData.user) {
     return NextResponse.json({ error: 'Failed to create session' }, { status: 500 })
   }
@@ -15,7 +22,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({} as Record<string, unknown>))
   const email = typeof body.email === 'string' && body.email ? body.email : null
 
-  // Create session row
+  // Create session row (service client bypasses RLS)
   const { data: session, error: sessionError } = await supabase
     .from('sessions')
     .insert({ user_id: userId })
@@ -24,8 +31,7 @@ export async function POST(req: NextRequest) {
 
   if (sessionError || !session) {
     // Clean up orphaned auth user
-    const adminClient = await createServiceClient()
-    await adminClient.auth.admin.deleteUser(userId)
+    await supabase.auth.admin.deleteUser(userId)
     return NextResponse.json({ error: 'Failed to create session record' }, { status: 500 })
   }
 
@@ -41,9 +47,7 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (proposalError || !proposal) {
-    // Clean up orphaned auth user
-    const adminClient = await createServiceClient()
-    await adminClient.auth.admin.deleteUser(userId)
+    await supabase.auth.admin.deleteUser(userId)
     return NextResponse.json({ error: 'Failed to create proposal' }, { status: 500 })
   }
 
