@@ -308,13 +308,13 @@ Do NOT add admin_dashboard for simple personal-use apps where there is only one 
 ### When in doubt, ask
 If you're under 70% confident a module is needed, ask a natural question to confirm before adding it. Frame it in terms of what the user wants to do, not what technology it requires.
 
-### Always Consider These Modules
-For EVERY project, proactively ask about these if the user hasn't mentioned them:
-- AI: Most modern apps benefit from something smart. Ask naturally: "Would any part of this benefit from something smart, like recommendations, auto-sorting, or a chatbot?"
-- Monetization: Ask early in the deep-dive: "How are you thinking about making money with this?" This helps scope the business model.
-- Branding: Ask during deep_dive: "Do you have a name for this yet? Any brand colors or logo in mind?"
+### Always Include These Modules
+EVERY project MUST include these three modules in detected_modules from the very first turn (stage-setting), and they MUST appear in modules_queue so the AI asks about them during deep_dive:
+- monetization: How the app makes money. Always relevant. Add to detected_modules on turn 1.
+- branding: App name, colors, logo. Always relevant. Add to detected_modules on turn 1.
+- ai: Smart features. Always relevant to explore. Add to detected_modules on turn 1.
 
-Do NOT force these modules. If the user says no or it doesn't apply, move on. But always ask.
+These are mandatory in detected_modules on every turn. Even if the user hasn't mentioned them, include them. During deep_dive, ask about each one naturally. If the user says "no" or it doesn't apply, set module_complete: true with a brief note and move on. But always ask.
 
 ### Module Confirmation (Visual States)
 detected_modules is the full cumulative list of all modules the AI thinks are relevant. Modules appear in detected_modules as soon as you're 70%+ confident they're needed.
