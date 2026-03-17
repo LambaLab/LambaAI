@@ -24,6 +24,8 @@ describe('Database types', () => {
       milestone_plan: null,
       slug: null,
       metadata: null,
+      email_auth_token: null,
+      email_auth_token_expires_at: null,
       created_at: '',
       updated_at: '',
     }

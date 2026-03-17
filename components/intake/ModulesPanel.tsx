@@ -8,7 +8,8 @@ import AuthGateModal from './AuthGateModal'
 import { MODULE_CATALOG } from '@/lib/modules/catalog'
 
 type Props = {
-  activeModules: string[]
+  detectedModules: string[]
+  confirmedModules: string[]
   confidenceScore: number
   productOverview: string
   proposalId: string
@@ -70,7 +71,8 @@ function ProductOverview({ text }: { text: string }) {
 }
 
 export default function ModulesPanel({
-  activeModules,
+  detectedModules,
+  confirmedModules,
   confidenceScore,
   productOverview,
   proposalId,
@@ -167,9 +169,9 @@ export default function ModulesPanel({
               <h2 className="font-bebas text-xs tracking-[0.15em] text-[var(--ov-text-muted,#727272)]">
                 TECHNICAL MODULES
               </h2>
-              {activeModules.length > 0 && (
+              {confirmedModules.length > 0 && (
                 <span className="text-[10px] bg-[var(--ov-accent-bg,rgba(255,252,0,0.15))] text-[var(--ov-accent-strong,#fffc00)] px-1.5 py-0.5 rounded-full font-medium">
-                  {activeModules.length}
+                  {confirmedModules.length}
                 </span>
               )}
             </div>
@@ -185,18 +187,34 @@ export default function ModulesPanel({
           >
             <div className="overflow-hidden">
               <div className="px-4 pb-4 space-y-2">
-                {activeModules.map((id) => (
+                {/* 1. Confirmed modules (deep-dive complete) — yellow */}
+                {confirmedModules.map((id) => (
                   <ModuleCard
                     key={id}
                     moduleId={id}
-                    isActive={true}
-                    activeModules={activeModules}
+                    status="confirmed"
+                    detectedModules={detectedModules}
                     onToggle={onToggle}
                     summary={moduleSummaries[id]}
                   />
                 ))}
 
-                {activeModules.length > 0 && (
+                {/* 2. Detected but not yet confirmed — grey dashed */}
+                {detectedModules
+                  .filter((id) => !confirmedModules.includes(id))
+                  .map((id) => (
+                    <ModuleCard
+                      key={id}
+                      moduleId={id}
+                      status="detected"
+                      detectedModules={detectedModules}
+                      onToggle={onToggle}
+                      summary={moduleSummaries[id]}
+                    />
+                  ))}
+
+                {/* Divider between detected and remaining catalog */}
+                {detectedModules.length > 0 && (
                   <div className="py-2">
                     <div className="h-px bg-[var(--ov-border,rgba(255,255,255,0.05))]" />
                     <p className="text-xs text-[var(--ov-text-muted,#727272)] mt-2 mb-1">
@@ -205,14 +223,15 @@ export default function ModulesPanel({
                   </div>
                 )}
 
+                {/* 3. Remaining catalog (not detected) — grey 50% opacity */}
                 {MODULE_CATALOG
-                  .filter((m) => !activeModules.includes(m.id))
+                  .filter((m) => !detectedModules.includes(m.id))
                   .map((m) => (
                     <ModuleCard
                       key={m.id}
                       moduleId={m.id}
-                      isActive={false}
-                      activeModules={activeModules}
+                      status="inactive"
+                      detectedModules={detectedModules}
                       onToggle={onToggle}
                     />
                   ))}

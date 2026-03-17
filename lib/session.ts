@@ -105,7 +105,7 @@ export function hydrateProposalFromRestore(data: {
   localStorage.setItem(
     `lamba_proposal_${data.proposalId}`,
     JSON.stringify({
-      activeModules: Array.isArray(data.modules) ? data.modules : [],
+      detectedModules: Array.isArray(data.modules) ? data.modules : [],
       confidenceScore: typeof data.confidenceScore === 'number' ? data.confidenceScore : 0,
       complexityMultiplier: 1.0,
       productOverview: meta.productOverview || '',

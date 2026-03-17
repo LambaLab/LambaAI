@@ -249,7 +249,7 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
         try {
           const parsed = JSON.parse(proposalState)
           setLiveConfidenceScore(parsed.confidenceScore ?? 0)
-          setLiveModuleCount(Array.isArray(parsed.activeModules) ? parsed.activeModules.length : 0)
+          setLiveModuleCount(Array.isArray(parsed.detectedModules) ? parsed.detectedModules.length : (Array.isArray(parsed.activeModules) ? parsed.activeModules.length : 0))
         } catch { /* noop */ }
       } else {
         setLiveConfidenceScore(0)

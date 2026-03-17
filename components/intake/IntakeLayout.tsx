@@ -23,7 +23,8 @@ type Props = {
 export default function IntakeLayout({ proposalId, initialMessage, onStateChange, onResetRef, theme, proposalOpen, onProposalToggle, onReset, onSaveLater, emailVerified }: Props) {
   const {
     messages,
-    activeModules,
+    detectedModules,
+    completedModules,
     confidenceScore,
     priceRange,
     isStreaming,
@@ -113,8 +114,8 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
   }, [reset, onResetRef])
 
   useEffect(() => {
-    onStateChangeRef.current?.(activeModules.length, confidenceScore, projectName, lastSyncedAt)
-  }, [activeModules.length, confidenceScore, projectName, lastSyncedAt])
+    onStateChangeRef.current?.(detectedModules.length, confidenceScore, projectName, lastSyncedAt)
+  }, [detectedModules.length, confidenceScore, projectName, lastSyncedAt])
 
   const pricingVisible = isPricingVisible(confidenceScore)
 
@@ -176,7 +177,8 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
           }}
         >
           <ModulesPanel
-            activeModules={activeModules}
+            detectedModules={detectedModules}
+            confirmedModules={completedModules}
             confidenceScore={confidenceScore}
             productOverview={productOverview}
             proposalId={proposalId}
@@ -216,7 +218,8 @@ export default function IntakeLayout({ proposalId, initialMessage, onStateChange
         <MobileBottomDrawer
           ref={mobileDrawerRef}
           summary={summaryText}
-          activeModules={activeModules}
+          detectedModules={detectedModules}
+          confirmedModules={completedModules}
           confidenceScore={confidenceScore}
           productOverview={productOverview}
           proposalId={proposalId}

@@ -2,7 +2,7 @@ export type Module = {
   id: string
   name: string
   description: string
-  category: 'core' | 'payments' | 'communication' | 'ai' | 'storage' | 'admin'
+  category: 'core' | 'payments' | 'communication' | 'ai' | 'storage' | 'admin' | 'business'
   priceMin: number  // USD
   priceMax: number  // USD
   estimatedWeeks: [number, number]  // [min, max]
@@ -81,9 +81,9 @@ export const MODULE_CATALOG: Module[] = [
     icon: 'LayoutDashboard',
   },
   {
-    id: 'ai_features',
-    name: 'AI Features',
-    description: 'AI-powered features: chat, recommendations, content generation, analysis',
+    id: 'ai',
+    name: 'AI',
+    description: 'Smart features like chatbots, recommendations, and automation',
     category: 'ai',
     priceMin: 3000,
     priceMax: 8000,
@@ -129,5 +129,35 @@ export const MODULE_CATALOG: Module[] = [
     priceMax: 4000,
     estimatedWeeks: [1, 3],
     icon: 'BarChart3',
+  },
+  {
+    id: 'monetization',
+    name: 'Monetization',
+    description: 'How your app makes money — subscriptions, one-time purchase, ads, or freemium',
+    category: 'business',
+    priceMin: 1500,
+    priceMax: 4000,
+    estimatedWeeks: [1, 3],
+    icon: 'DollarSign',
+  },
+  {
+    id: 'branding',
+    name: 'Branding',
+    description: 'App name, domain, logo, colors, and visual identity',
+    category: 'business',
+    priceMin: 1000,
+    priceMax: 3000,
+    estimatedWeeks: [1, 2],
+    icon: 'Palette',
+  },
+  {
+    id: 'integrations',
+    name: 'Third-party Integrations',
+    description: 'Connecting to other services like social login, maps, and email tools',
+    category: 'core',
+    priceMin: 1500,
+    priceMax: 4000,
+    estimatedWeeks: [1, 3],
+    icon: 'Plug',
   },
 ]

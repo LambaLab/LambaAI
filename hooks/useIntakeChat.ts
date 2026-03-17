@@ -108,7 +108,7 @@ const PHASE_KEY = (pid: string) => `lamba_phase_${pid}`
 
 export function useIntakeChat({ proposalId, idea }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [activeModules, setActiveModules] = useState<string[]>([])
+  const [detectedModules, setDetectedModules] = useState<string[]>([])
   const [confidenceScore, setConfidenceScore] = useState(0)
   const [complexityMultiplier, setComplexityMultiplier] = useState(1.0)
   const [priceRange, setPriceRange] = useState<PriceRange>({ min: 0, max: 0 })
@@ -135,7 +135,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
 
   const messagesRef = useRef<ChatMessage[]>([])
   const confidenceRef = useRef(0)
-  const activeModulesRef = useRef<string[]>([])
+  const detectedModulesRef = useRef<string[]>([])
   const complexityRef = useRef(1.0)
   const productOverviewRef = useRef('')
   const moduleSummariesRef = useRef<{ [moduleId: string]: string }>({})
@@ -151,7 +151,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
 
   useEffect(() => { messagesRef.current = messages }, [messages])
   useEffect(() => { confidenceRef.current = confidenceScore }, [confidenceScore])
-  useEffect(() => { activeModulesRef.current = activeModules }, [activeModules])
+  useEffect(() => { detectedModulesRef.current = detectedModules }, [detectedModules])
   useEffect(() => { complexityRef.current = complexityMultiplier }, [complexityMultiplier])
   useEffect(() => { productOverviewRef.current = productOverview }, [productOverview])
   useEffect(() => { moduleSummariesRef.current = moduleSummaries }, [moduleSummaries])
@@ -258,7 +258,8 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             try {
               const p = JSON.parse(localStorage.getItem(PROPOSAL_KEY(proposalId)) ?? '{}')
               if (typeof p.brief === 'string' && p.brief) syncBrief = p.brief
-              if (Array.isArray(p.activeModules)) syncModules = p.activeModules
+              if (Array.isArray(p.detectedModules)) syncModules = p.detectedModules
+              else if (Array.isArray(p.activeModules)) syncModules = p.activeModules
               if (typeof p.confidenceScore === 'number') syncConfidence = p.confidenceScore
               // Rich metadata for full-fidelity restore
               syncMetadata = {
@@ -324,13 +325,13 @@ export function useIntakeChat({ proposalId, idea }: Props) {
           if (storedProposal) {
             try {
               const p = JSON.parse(storedProposal)
-              const modules: string[] = Array.isArray(p.activeModules) ? p.activeModules : []
+              const modules: string[] = Array.isArray(p.detectedModules) ? p.detectedModules : (Array.isArray(p.activeModules) ? p.activeModules : [])
               const score: number = typeof p.confidenceScore === 'number' ? p.confidenceScore : 0
               const multiplier: number = typeof p.complexityMultiplier === 'number' ? p.complexityMultiplier : 1.0
-              activeModulesRef.current = modules
+              detectedModulesRef.current = modules
               confidenceRef.current = score
               complexityRef.current = multiplier
-              setActiveModules(modules)
+              setDetectedModules(modules)
               setConfidenceScore(score)
               setComplexityMultiplier(multiplier)
               setPriceRange(computePriceRange(modules, multiplier, score))
@@ -470,7 +471,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: apiMessages,
-          currentModules: activeModulesRef.current,
+          currentModules: detectedModulesRef.current,
           confidenceScore: confidenceRef.current,
           paused: isPausedRef.current,
           currentPhase: currentPhaseRef.current,
@@ -601,7 +602,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             const rawModules = data.detected_modules
             if (Array.isArray(rawModules)) {
               const earlyModules = expandWithDependencies(rawModules as string[])
-              setActiveModules(earlyModules)
+              setDetectedModules(earlyModules)
             }
           } else if (event === 'tool_result') {
             const input = data.input as UpdateProposalInput
@@ -609,13 +610,13 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             // UNION with existing modules — the AI may only send new or currently-relevant
             // modules each turn, so we must accumulate across the entire conversation.
             const aiModules = Array.isArray(input?.detected_modules) ? input.detected_modules : []
-            const merged = Array.from(new Set([...activeModulesRef.current, ...aiModules]))
+            const merged = Array.from(new Set([...detectedModulesRef.current, ...aiModules]))
             const newModules = expandWithDependencies(merged)
             const newMultiplier = typeof input?.complexity_multiplier === 'number' ? input.complexity_multiplier : 1.0
             const delta = typeof input?.confidence_score_delta === 'number' ? input.confidence_score_delta : 0
             const newScore = Math.max(0, Math.min(85, confidenceRef.current + delta))
 
-            setActiveModules(newModules)
+            setDetectedModules(newModules)
             setConfidenceScore(newScore)
             setComplexityMultiplier(newMultiplier)
             setPriceRange(computePriceRange(newModules, newMultiplier, newScore))
@@ -786,7 +787,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                     ? input.updated_brief.trim()
                     : undefined
                   localStorage.setItem(PROPOSAL_KEY(proposalId), JSON.stringify({
-                    activeModules: newModules,
+                    detectedModules: newModules,
                     confidenceScore: newScore,
                     complexityMultiplier: newMultiplier,
                     productOverview: savedOverview,
@@ -823,10 +824,10 @@ export function useIntakeChat({ proposalId, idea }: Props) {
             let effectiveModule = typeof input?.current_module === 'string' ? input.current_module : ''
             let effectiveQueue = Array.isArray(input?.modules_queue) ? input.modules_queue : modulesQueueRef.current
 
-            if (effectivePhase === 'discovery' && turnCount.current >= 4 && activeModulesRef.current.length >= 2) {
+            if (effectivePhase === 'discovery' && turnCount.current >= 4 && detectedModulesRef.current.length >= 2) {
               console.log('[Phase] Client forcing transition to deep_dive after', turnCount.current, 'turns')
               effectivePhase = 'deep_dive'
-              const mods = [...activeModulesRef.current]
+              const mods = [...detectedModulesRef.current]
               const coreFirst = ['mobile_app', 'web_app']
               const sorted = [
                 ...mods.filter(m => coreFirst.includes(m)),
@@ -929,7 +930,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                   ? input.updated_brief.trim()
                   : undefined
                 localStorage.setItem(PROPOSAL_KEY(proposalId), JSON.stringify({
-                  activeModules: newModules,
+                  detectedModules: newModules,
                   confidenceScore: newScore,
                   complexityMultiplier: newMultiplier,
                   productOverview: savedOverview,
@@ -1054,17 +1055,17 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   sendMessageRef.current = sendMessage
 
   function toggleModule(moduleId: string) {
-    const newModules = activeModules.includes(moduleId)
-      ? activeModules.filter((m) => m !== moduleId)
-      : [...activeModules, moduleId]
-    setActiveModules(newModules)
+    const newModules = detectedModules.includes(moduleId)
+      ? detectedModules.filter((m) => m !== moduleId)
+      : [...detectedModules, moduleId]
+    setDetectedModules(newModules)
     setPriceRange(computePriceRange(newModules, complexityMultiplier, confidenceScore))
 
     // Save inline so module toggles survive page reload
     if (proposalId) {
       try {
         localStorage.setItem(PROPOSAL_KEY(proposalId), JSON.stringify({
-          activeModules: newModules,
+          detectedModules: newModules,
           confidenceScore,
           complexityMultiplier,
           productOverview,
@@ -1203,7 +1204,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     // Reset refs synchronously
     messagesRef.current = []
     confidenceRef.current = 0
-    activeModulesRef.current = []
+    detectedModulesRef.current = []
     complexityRef.current = 1.0
     lastPauseTurn.current = -999
     turnCount.current = 0
@@ -1214,7 +1215,7 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     prevModuleRef.current = ''
     // Reset state — blank slate
     setMessages([])
-    setActiveModules([])
+    setDetectedModules([])
     setConfidenceScore(0)
     setComplexityMultiplier(1.0)
     setPriceRange({ min: 0, max: 0 })
@@ -1232,5 +1233,5 @@ export function useIntakeChat({ proposalId, idea }: Props) {
     setCompletedModules([])
   }, [proposalId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { messages, activeModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, editMessage, reset, moduleSummaries, projectName, isPaused, pausedQuestion, questionRevealed, pauseQuestions, resumeQuestions, revealPausedQuestion, skipQuestion, lastSyncedAt, currentPhase, currentModule, modulesQueue, completedModules, isAdminActive }
+  return { messages, detectedModules, confidenceScore, priceRange, isStreaming, sendMessage, toggleModule, productOverview, editMessage, reset, moduleSummaries, projectName, isPaused, pausedQuestion, questionRevealed, pauseQuestions, resumeQuestions, revealPausedQuestion, skipQuestion, lastSyncedAt, currentPhase, currentModule, modulesQueue, completedModules, isAdminActive }
 }

@@ -130,9 +130,19 @@ export default function ProposalDrawer({
           {!emailVerified ? (
             /* ── Unverified state ── */
             <div className="p-4 space-y-4">
-              {/* Current proposal card */}
-              <div className={`rounded-lg p-3 ${isLight ? 'bg-white border border-[rgba(0,0,0,0.06)]' : 'bg-white/5 border border-white/5'}`}>
-                <p className={`text-sm font-medium truncate ${isLight ? 'text-[#1a1a1a]' : 'text-white'}`}>
+              {/* New Proposal + current proposal card */}
+              <button
+                onClick={onNewProposal}
+                className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-colors cursor-pointer
+                  ${isLight ? 'text-[#727272] hover:bg-black/[0.03] hover:text-[#1a1a1a]' : 'text-[#888] hover:bg-white/5 hover:text-white'}`}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                New Proposal
+              </button>
+
+              {/* Current proposal card with delete */}
+              <div className={`rounded-lg p-3 relative group ${isLight ? 'bg-white border border-[rgba(0,0,0,0.06)]' : 'bg-white/5 border border-white/5'}`}>
+                <p className={`text-sm font-medium truncate pr-6 ${isLight ? 'text-[#1a1a1a]' : 'text-white'}`}>
                   {currentAppName || 'Untitled Proposal'}
                 </p>
                 <div className="flex items-center gap-2 mt-1.5">
@@ -146,12 +156,26 @@ export default function ProposalDrawer({
                     {currentConfidence}%
                   </span>
                 </div>
+                {/* Delete button */}
+                <div className="absolute right-2 top-2.5">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setConfirmDeleteId(currentProposalId)
+                    }}
+                    className={`w-6 h-6 rounded flex items-center justify-center transition-opacity opacity-40 hover:opacity-100
+                      ${isLight ? 'hover:bg-black/5 text-[#999]' : 'hover:bg-white/10 text-[#666]'}`}
+                    aria-label="Delete proposal"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
 
               {/* CTA to save email */}
               <div className={`rounded-lg p-4 text-center ${isLight ? 'bg-[rgba(0,0,0,0.03)] border border-[rgba(0,0,0,0.08)]' : 'bg-brand-yellow/5 border border-brand-yellow/10'}`}>
                 <p className={`text-xs mb-3 ${isLight ? 'text-[#1a1a1a]/70' : 'text-white/60'}`}>
-                  Save your email to unlock all your proposals and pick up where you left off on any device.
+                  Save your email to pick up where you left off on any device.
                 </p>
                 <button
                   onClick={onSaveEmail}
@@ -161,7 +185,7 @@ export default function ProposalDrawer({
                       : 'bg-brand-yellow text-brand-dark hover:bg-brand-yellow/90'
                   }`}
                 >
-                  Save & unlock proposals
+                  Save proposal for later
                 </button>
               </div>
             </div>

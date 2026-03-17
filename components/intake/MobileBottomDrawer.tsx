@@ -6,7 +6,8 @@ import ModulesPanel from './ModulesPanel'
 
 type Props = {
   summary: string
-  activeModules: string[]
+  detectedModules: string[]
+  confirmedModules: string[]
   confidenceScore: number
   productOverview: string
   proposalId: string
@@ -30,7 +31,8 @@ export type MobileBottomDrawerHandle = { open: () => void }
 
 const MobileBottomDrawer = forwardRef<MobileBottomDrawerHandle, Props>(function MobileBottomDrawer({
   summary,
-  activeModules,
+  detectedModules,
+  confirmedModules,
   confidenceScore,
   productOverview,
   proposalId,
@@ -206,7 +208,8 @@ const MobileBottomDrawer = forwardRef<MobileBottomDrawerHandle, Props>(function 
             style={{ height: `${Math.max(0, drawerHeight - HANDLE_HEIGHT)}px` }}
           >
             <ModulesPanel
-              activeModules={activeModules}
+              detectedModules={detectedModules}
+              confirmedModules={confirmedModules}
               confidenceScore={confidenceScore}
               productOverview={productOverview}
               proposalId={proposalId}

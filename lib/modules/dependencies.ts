@@ -9,11 +9,14 @@ const DEPENDENCY_GRAPH: Record<string, string[]> = {
   payments: ['auth', 'database'],
   messaging: ['auth', 'database'],
   admin_dashboard: ['auth', 'database'],
-  ai_features: ['database'],
+  ai: ['database'],
   file_uploads: ['database'],
   notifications: ['database'],
   search: ['database'],
   analytics: ['database'],
+  monetization: [],
+  branding: [],
+  integrations: ['database'],
 }
 
 // Reverse map: which modules depend on a given module
