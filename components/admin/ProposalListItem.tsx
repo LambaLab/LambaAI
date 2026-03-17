@@ -70,7 +70,7 @@ export default function ProposalListItem({ proposal, isSelected, onClick }: Prop
       {/* Line 1: Project name + status badge */}
       <div className="flex items-center gap-2 mb-1">
         <p className={`text-base md:text-sm truncate flex-1 ${
-          isSelected ? 'font-semibold text-foreground' : 'font-medium text-foreground'
+          isSelected ? 'font-bold text-foreground' : 'font-semibold text-foreground'
         }`}>
           {getProjectName(proposal)}
         </p>
