@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/lib/supabase/types'
 import AdminHeader from '@/components/admin/AdminHeader'
@@ -15,11 +15,12 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [adminRole, setAdminRole] = useState<'super_admin' | 'admin' | null>(null)
+  const supabaseRef = useRef(createClient())
 
   useEffect(() => {
-    async function loadData() {
-      const supabase = createClient()
+    const supabase = supabaseRef.current
 
+    async function loadData() {
       // Load proposals
       const { data } = await supabase
         .from('proposals')
@@ -39,6 +40,45 @@ export default function AdminDashboardPage() {
     }
 
     loadData()
+
+    // Subscribe to real-time proposal changes
+    const channel = supabase
+      .channel('admin:proposals')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'proposals' },
+        (payload) => {
+          const newProposal = payload.new as Proposal
+          setProposals((prev) => {
+            // Avoid duplicates (in case initial fetch already included it)
+            if (prev.some((p) => p.id === newProposal.id)) return prev
+            return [newProposal, ...prev]
+          })
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'proposals' },
+        (payload) => {
+          const updated = payload.new as Proposal
+          setProposals((prev) =>
+            prev.map((p) => (p.id === updated.id ? updated : p))
+          )
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'proposals' },
+        (payload) => {
+          const deletedId = (payload.old as { id: string }).id
+          setProposals((prev) => prev.filter((p) => p.id !== deletedId))
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   const selectedProposal = proposals.find((p) => p.id === selectedId) ?? null
