@@ -4,11 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { Save, Check, Plus, X } from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
 import { MODULE_CATALOG } from '@/lib/modules/catalog'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 type Proposal = Database['public']['Tables']['proposals']['Row']
 
@@ -20,9 +16,7 @@ type Props = {
 type TaskItem = { name: string; complexity: string; description: string }
 type TaskBreakdown = { module: string; tasks: TaskItem[] }[]
 
-const STATUS_OPTIONS: Proposal['status'][] = [
-  'draft', 'saved', 'pending_review', 'approved', 'accepted', 'budget_proposed', 'budget_accepted',
-]
+// Status options removed — status is shown in the header badge
 
 export default function ProposalEditor({ proposal, onUpdate }: Props) {
   const [saving, setSaving] = useState(false)
@@ -34,7 +28,6 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
   const [projectName, setProjectName] = useState((meta.projectName as string) ?? '')
   const [brief, setBrief] = useState(proposal.brief ?? '')
   const [productOverview, setProductOverview] = useState((meta.productOverview as string) ?? '')
-  const [status, setStatus] = useState(proposal.status)
   const [adminNotes, setAdminNotes] = useState(proposal.admin_notes ?? '')
   const [prd, setPrd] = useState(proposal.prd ?? '')
   const [techArch, setTechArch] = useState(proposal.technical_architecture ?? '')
@@ -47,7 +40,6 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
     setProjectName((m.projectName as string) ?? '')
     setBrief(proposal.brief ?? '')
     setProductOverview((m.productOverview as string) ?? '')
-    setStatus(proposal.status)
     setAdminNotes(proposal.admin_notes ?? '')
     setPrd(proposal.prd ?? '')
     setTechArch(proposal.technical_architecture ?? '')
@@ -109,11 +101,6 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
     }
   }
 
-  function handleStatusChange(newStatus: Proposal['status']) {
-    setStatus(newStatus)
-    saveChanges({ status: newStatus })
-  }
-
   function handleToggleModule(moduleId: string) {
     const updated = modules.includes(moduleId)
       ? modules.filter((m) => m !== moduleId)
@@ -123,54 +110,41 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="px-6 md:px-8 py-6 space-y-8">
       {/* Save indicator */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {saving && <span className="flex items-center gap-1"><Save className="w-3 h-3 animate-pulse" /> Saving...</span>}
-          {!saving && lastSaved && (
-            <span className="flex items-center gap-1 text-green-500"><Check className="w-3 h-3" /> Saved</span>
-          )}
-        </div>
-
-        {/* Status selector */}
-        <Select value={status} onValueChange={(val) => handleStatusChange(val as Proposal['status'])}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {STATUS_OPTIONS.map((s) => (
-              <SelectItem key={s} value={s}>{s.replace(/_/g, ' ')}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        {saving && <span className="flex items-center gap-1"><Save className="w-3 h-3 animate-pulse" /> Saving...</span>}
+        {!saving && lastSaved && (
+          <span className="flex items-center gap-1 text-green-500"><Check className="w-3 h-3" /> Saved</span>
+        )}
       </div>
 
       {/* Project Name */}
       <Field label="Project name">
-        <Input
+        <input
           value={projectName}
           onChange={(e) => handleFieldChange('projectName', e.target.value)}
           placeholder="e.g., FitTrack Pro"
+          className="w-full text-lg font-medium bg-transparent outline-none placeholder:text-muted-foreground/40 text-foreground"
         />
       </Field>
 
       {/* Brief */}
       <Field label="Brief">
-        <Textarea
+        <textarea
           value={brief}
           onChange={(e) => handleFieldChange('brief', e.target.value)}
-          className="min-h-[80px] resize-y"
+          className="w-full min-h-[80px] resize-y bg-transparent outline-none text-sm leading-relaxed placeholder:text-muted-foreground/40 text-foreground"
           placeholder="2-4 sentence summary"
         />
       </Field>
 
       {/* Product Overview */}
       <Field label="Product overview">
-        <Textarea
+        <textarea
           value={productOverview}
           onChange={(e) => handleFieldChange('productOverview', e.target.value)}
-          className="min-h-[120px] resize-y"
+          className="w-full min-h-[120px] resize-y bg-transparent outline-none text-sm leading-relaxed placeholder:text-muted-foreground/40 text-foreground"
           placeholder="Detailed product description"
         />
       </Field>
@@ -185,7 +159,7 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
                 key={mod.id}
                 variant={active ? 'default' : 'outline'}
                 size="sm"
-                className="rounded-full"
+                className="rounded-full cursor-pointer"
                 onClick={() => handleToggleModule(mod.id)}
               >
                 {active ? <X className="w-3 h-3 mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
@@ -198,40 +172,40 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
 
       {/* PRD */}
       <Field label="PRD">
-        <Textarea
+        <textarea
           value={prd}
           onChange={(e) => handleFieldChange('prd', e.target.value)}
-          className="min-h-[200px] resize-y font-mono text-xs"
+          className="w-full min-h-[200px] resize-y bg-transparent outline-none font-mono text-xs leading-relaxed placeholder:text-muted-foreground/40 text-foreground"
           placeholder="Product requirements document"
         />
       </Field>
 
       {/* Technical Architecture */}
       <Field label="Technical architecture">
-        <Textarea
+        <textarea
           value={techArch}
           onChange={(e) => handleFieldChange('technical_architecture', e.target.value)}
-          className="min-h-[150px] resize-y font-mono text-xs"
+          className="w-full min-h-[150px] resize-y bg-transparent outline-none font-mono text-xs leading-relaxed placeholder:text-muted-foreground/40 text-foreground"
           placeholder="Architecture details"
         />
       </Field>
 
       {/* Timeline */}
       <Field label="Timeline">
-        <Textarea
+        <textarea
           value={timeline}
           onChange={(e) => handleFieldChange('timeline', e.target.value)}
-          className="min-h-[100px] resize-y"
+          className="w-full min-h-[100px] resize-y bg-transparent outline-none text-sm leading-relaxed placeholder:text-muted-foreground/40 text-foreground"
           placeholder="Project timeline"
         />
       </Field>
 
       {/* Admin Notes */}
-      <Field label="Admin notes (internal only)">
-        <Textarea
+      <Field label="Admin notes" sublabel="Internal only — not visible to client">
+        <textarea
           value={adminNotes}
           onChange={(e) => handleFieldChange('admin_notes', e.target.value)}
-          className="min-h-[100px] resize-y border-primary/20"
+          className="w-full min-h-[100px] resize-y bg-amber-50/50 dark:bg-amber-500/5 rounded-lg p-3 outline-none text-sm leading-relaxed placeholder:text-muted-foreground/40 text-foreground"
           placeholder="Internal notes, not visible to client"
         />
       </Field>
@@ -239,10 +213,13 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, sublabel, children }: { label: string; sublabel?: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-2">
-      <Label className="text-xs uppercase tracking-wider text-muted-foreground">{label}</Label>
+    <div className="space-y-1.5">
+      <div>
+        <p className="text-[11px] uppercase tracking-widest font-medium text-muted-foreground/70">{label}</p>
+        {sublabel && <p className="text-[10px] text-muted-foreground/50 mt-0.5">{sublabel}</p>}
+      </div>
       {children}
     </div>
   )

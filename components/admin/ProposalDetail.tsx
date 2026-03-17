@@ -231,7 +231,7 @@ export default function ProposalDetail({ proposal, onBack, onProposalUpdate, isM
       </div>
 
       {/* Tab content — scrolls independently, centered in expanded mode */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto bg-white dark:bg-background">
         <div className={isExpanded ? 'max-w-4xl mx-auto' : ''}>
           {activeTab === 'proposal' && (
             <div>
