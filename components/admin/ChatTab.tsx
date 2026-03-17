@@ -103,15 +103,31 @@ export default function ChatTab({ proposalId }: Props) {
     e.preventDefault()
     if (!adminMessage.trim() || sending) return
 
+    const content = adminMessage.trim()
     setSending(true)
     const res = await fetch('/api/admin/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ proposalId, content: adminMessage.trim() }),
+      body: JSON.stringify({ proposalId, content }),
     })
 
     if (res.ok) {
+      const savedMsg = await res.json() as ChatMessage
+      // Optimistic update — show the message immediately in admin panel
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === savedMsg.id)) return prev
+        return [...prev, savedMsg]
+      })
       setAdminMessage('')
+
+      // Broadcast the message to the client so it appears in their chat
+      const supabase = supabaseRef.current
+      const channel = supabase.channel(`proposal:${proposalId}`)
+      await channel.send({
+        type: 'broadcast',
+        event: 'admin_message',
+        payload: { id: savedMsg.id, content, created_at: savedMsg.created_at },
+      })
     }
     setSending(false)
   }

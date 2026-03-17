@@ -195,42 +195,29 @@ export function useIntakeChat({ proposalId, idea }: Props) {
           ])
         }
       })
-      .subscribe()
-
-    // Also listen for admin messages via realtime (chat_messages table)
-    const msgChannel = supabase
-      .channel(`admin-msgs:${proposalId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_messages',
-          filter: `proposal_id=eq.${proposalId}`,
-        },
-        (payload) => {
-          const newMsg = payload.new as { id: string; role: string; content: string; created_at: string }
-          if (newMsg.role === 'admin') {
-            setMessages((prev) => {
-              if (prev.some((m) => m.id === newMsg.id)) return prev
-              return [
-                ...prev,
-                {
-                  id: newMsg.id,
-                  role: 'admin' as const,
-                  content: newMsg.content,
-                  createdAt: new Date(newMsg.created_at).getTime(),
-                },
-              ]
-            })
-          }
+      // Listen for admin messages via broadcast (postgres_changes is blocked
+      // by RLS since the client has no Supabase auth session)
+      .on('broadcast', { event: 'admin_message' }, (payload) => {
+        const msg = payload.payload as { id: string; content: string; created_at: string }
+        if (msg?.content) {
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === msg.id)) return prev
+            return [
+              ...prev,
+              {
+                id: msg.id,
+                role: 'admin' as const,
+                content: msg.content,
+                createdAt: new Date(msg.created_at).getTime(),
+              },
+            ]
+          })
         }
-      )
+      })
       .subscribe()
 
     return () => {
       supabase.removeChannel(channel)
-      supabase.removeChannel(msgChannel)
     }
   }, [proposalId])
 
