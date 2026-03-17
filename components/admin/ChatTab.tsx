@@ -3,6 +3,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Send, UserPlus, Play, Radio } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 type ChatMessage = {
   id: string
@@ -135,7 +139,7 @@ export default function ChatTab({ proposalId }: Props) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-5 h-5 border-2 border-brand-yellow/30 border-t-brand-yellow rounded-full animate-spin" />
+        <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     )
   }
@@ -143,98 +147,105 @@ export default function ChatTab({ proposalId }: Props) {
   return (
     <div className="flex flex-col h-full">
       {/* Live indicator + join/leave controls */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-white/5">
+      <div className="flex items-center justify-between px-4 py-2 border-b border">
         <div className="flex items-center gap-2">
           {isLive && (
-            <span className="flex items-center gap-1.5 text-[11px] text-brand-green">
+            <span className="flex items-center gap-1.5 text-[11px] text-green-500">
               <Radio className="w-3 h-3 animate-pulse" />
               Live
             </span>
           )}
-          <span className="text-[11px] text-brand-gray-mid">
+          <span className="text-[11px] text-muted-foreground">
             {messages.length} message{messages.length !== 1 ? 's' : ''}
           </span>
         </div>
 
         {isJoined ? (
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleLeaveChat}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-brand-green/10 text-brand-green rounded-lg hover:bg-brand-green/20 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-xs bg-green-500/10 text-green-500 hover:bg-green-500/20 hover:text-green-500 cursor-pointer"
           >
             <Play className="w-3 h-3" /> Resume AI
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleJoinChat}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-brand-blue/10 text-brand-blue rounded-lg hover:bg-brand-blue/20 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-xs bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 hover:text-blue-500 cursor-pointer"
           >
             <UserPlus className="w-3 h-3" /> Join Chat
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide">
-        {messages.length === 0 && (
-          <p className="text-sm text-brand-gray-mid text-center py-8">No messages yet.</p>
-        )}
+      <ScrollArea className="flex-1 p-4">
+        <div className="space-y-3">
+          {messages.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-8">No messages yet.</p>
+          )}
 
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${msg.role === 'user' ? 'justify-end' : 'items-start gap-2'}`}
-          >
-            {msg.role !== 'user' && (
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5 ${
-                msg.role === 'admin'
-                  ? 'bg-brand-blue/20 text-brand-blue'
-                  : 'bg-white/10 text-brand-gray-mid'
-              }`}>
-                {msg.role === 'admin' ? 'A' : 'AI'}
-              </div>
-            )}
-
-            <div className={`max-w-[80%] space-y-1`}>
-              {msg.role === 'admin' && (
-                <span className="text-[10px] text-brand-blue font-medium uppercase tracking-wider">[Admin]</span>
+          {messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={`flex ${msg.role === 'user' ? 'justify-end' : 'items-start gap-2'}`}
+            >
+              {msg.role !== 'user' && (
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5 ${
+                  msg.role === 'admin'
+                    ? 'bg-blue-500/20 text-blue-500'
+                    : 'bg-muted text-muted-foreground'
+                }`}>
+                  {msg.role === 'admin' ? 'A' : 'AI'}
+                </div>
               )}
-              <div className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                msg.role === 'user'
-                  ? 'bg-transparent border border-brand-yellow text-brand-white rounded-br-sm'
-                  : msg.role === 'admin'
-                    ? 'bg-brand-blue/10 border border-brand-blue/20 text-brand-white rounded-bl-sm'
-                    : 'bg-white/5 text-brand-white rounded-bl-sm'
-              }`}>
-                {msg.content}
-              </div>
-              <p className="text-[10px] text-[#555] px-1">
-                {new Date(msg.created_at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
-              </p>
-            </div>
-          </div>
-        ))}
 
-        <div ref={messagesEndRef} />
-      </div>
+              <div className={`max-w-[80%] space-y-1`}>
+                {msg.role === 'admin' && (
+                  <Badge variant="outline" className="text-blue-500 border-blue-500 text-[10px] font-medium uppercase tracking-wider">[Admin]</Badge>
+                )}
+                <div className={`px-3.5 py-2.5 text-sm leading-relaxed ${
+                  msg.role === 'user'
+                    ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-sm'
+                    : msg.role === 'admin'
+                      ? 'bg-blue-500/10 border border-blue-500/20 rounded-2xl rounded-bl-sm'
+                      : 'bg-muted rounded-2xl rounded-bl-sm'
+                }`}>
+                  {msg.content}
+                </div>
+                <p className="text-[10px] text-muted-foreground px-1">
+                  {new Date(msg.created_at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+                </p>
+              </div>
+            </div>
+          ))}
+
+          <div ref={messagesEndRef} />
+        </div>
+      </ScrollArea>
 
       {/* Admin input — only when joined */}
       {isJoined && (
-        <form onSubmit={handleSendMessage} className="p-4 border-t border-white/5">
+        <form onSubmit={handleSendMessage} className="p-4 border-t">
           <div className="flex items-center gap-2">
-            <input
+            <Input
               value={adminMessage}
               onChange={(e) => setAdminMessage(e.target.value)}
               placeholder="Type a message as admin..."
-              className="flex-1 px-4 py-2.5 bg-white/5 border border-brand-blue/20 rounded-xl text-sm text-brand-white placeholder-brand-gray-mid/50 outline-none focus:border-brand-blue/40 transition-colors"
+              className="flex-1 rounded-xl"
               autoFocus
             />
-            <button
+            <Button
               type="submit"
+              size="icon"
               disabled={!adminMessage.trim() || sending}
-              className="p-2.5 bg-brand-blue rounded-xl hover:bg-brand-blue/90 transition-colors disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+              className="rounded-xl cursor-pointer"
             >
-              <Send className="w-4 h-4 text-white" />
-            </button>
+              <Send className="w-4 h-4" />
+            </Button>
           </div>
         </form>
       )}
