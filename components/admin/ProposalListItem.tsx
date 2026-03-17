@@ -1,6 +1,7 @@
 'use client'
 
 import type { Database } from '@/lib/supabase/types'
+import { Badge } from '@/components/ui/badge'
 
 type Proposal = Database['public']['Tables']['proposals']['Row']
 
@@ -10,14 +11,24 @@ type Props = {
   onClick: () => void
 }
 
-const STATUS_STYLES: Record<string, string> = {
-  draft: 'bg-white/5 text-brand-gray-mid',
-  saved: 'bg-white/5 text-brand-gray-mid',
-  pending_review: 'bg-brand-yellow/10 text-brand-yellow',
-  approved: 'bg-brand-green/10 text-brand-green',
-  accepted: 'bg-brand-green/10 text-brand-green',
-  budget_proposed: 'bg-brand-blue/10 text-brand-blue',
-  budget_accepted: 'bg-brand-green/10 text-brand-green',
+function getStatusBadge(status: string) {
+  const label = status.replace(/_/g, ' ')
+
+  switch (status) {
+    case 'draft':
+    case 'saved':
+      return <Badge variant="secondary" className="text-[10px] uppercase tracking-wider">{label}</Badge>
+    case 'pending_review':
+      return <Badge variant="outline" className="border-yellow-500 text-yellow-600 dark:text-yellow-400 text-[10px] uppercase tracking-wider">{label}</Badge>
+    case 'approved':
+    case 'accepted':
+    case 'budget_accepted':
+      return <Badge variant="outline" className="border-green-500 text-green-600 dark:text-green-400 text-[10px] uppercase tracking-wider">{label}</Badge>
+    case 'budget_proposed':
+      return <Badge variant="outline" className="border-blue-500 text-blue-600 dark:text-blue-400 text-[10px] uppercase tracking-wider">{label}</Badge>
+    default:
+      return <Badge variant="secondary" className="text-[10px] uppercase tracking-wider">{label}</Badge>
+  }
 }
 
 function timeAgo(dateStr: string): string {
@@ -40,38 +51,34 @@ function getProjectName(proposal: Proposal): string {
 }
 
 export default function ProposalListItem({ proposal, isSelected, onClick }: Props) {
-  const statusStyle = STATUS_STYLES[proposal.status] ?? STATUS_STYLES.draft
-
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left p-4 border-b border-white/5 transition-colors cursor-pointer ${
+      className={`w-full text-left p-4 border-b transition-colors cursor-pointer ${
         isSelected
-          ? 'bg-brand-yellow/5 border-l-2 border-l-brand-yellow'
-          : 'hover:bg-white/[0.03] border-l-2 border-l-transparent'
+          ? 'bg-accent border-l-2 border-l-primary'
+          : 'hover:bg-accent/50 border-l-2 border-l-transparent'
       }`}
     >
       <div className="flex items-start justify-between gap-2 mb-1.5">
-        <p className="text-sm text-brand-white font-medium truncate flex-1">
+        <p className="text-sm text-foreground font-medium truncate flex-1">
           {getProjectName(proposal)}
         </p>
-        <span className="text-[10px] text-brand-gray-mid whitespace-nowrap">
+        <span className="text-[10px] text-muted-foreground whitespace-nowrap">
           {timeAgo(proposal.created_at)}
         </span>
       </div>
 
-      <p className="text-xs text-brand-gray-mid line-clamp-1 mb-2">
+      <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
         {proposal.email ?? 'No email'}
       </p>
 
       <div className="flex items-center justify-between">
-        <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider ${statusStyle}`}>
-          {proposal.status.replace(/_/g, ' ')}
-        </span>
-        <div className="flex items-center gap-3 text-[11px] text-brand-gray-mid">
+        {getStatusBadge(proposal.status)}
+        <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
           <span>{proposal.confidence_score}%</span>
           {proposal.price_min > 0 && (
-            <span className="font-medium text-brand-white">
+            <span className="font-medium text-foreground">
               ${proposal.price_min.toLocaleString()}
             </span>
           )}

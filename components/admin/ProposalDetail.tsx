@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
 import { MODULE_CATALOG } from '@/lib/modules/catalog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import ProposalEditor from './ProposalEditor'
 import ChatTab from './ChatTab'
 import BudgetTab from './BudgetTab'
@@ -16,16 +18,24 @@ type Props = {
   onProposalUpdate: (updated: Proposal) => void
 }
 
-type Tab = 'chat' | 'proposal' | 'budget'
+function getStatusBadge(status: string) {
+  const label = status.replace(/_/g, ' ')
 
-const STATUS_STYLES: Record<string, string> = {
-  draft: 'bg-white/5 text-brand-gray-mid',
-  saved: 'bg-white/5 text-brand-gray-mid',
-  pending_review: 'bg-brand-yellow/10 text-brand-yellow',
-  approved: 'bg-brand-green/10 text-brand-green',
-  accepted: 'bg-brand-green/10 text-brand-green',
-  budget_proposed: 'bg-brand-blue/10 text-brand-blue',
-  budget_accepted: 'bg-brand-green/10 text-brand-green',
+  switch (status) {
+    case 'draft':
+    case 'saved':
+      return <Badge variant="secondary" className="text-[10px] uppercase tracking-wider">{label}</Badge>
+    case 'pending_review':
+      return <Badge variant="outline" className="border-yellow-500 text-yellow-600 dark:text-yellow-400 text-[10px] uppercase tracking-wider">{label}</Badge>
+    case 'approved':
+    case 'accepted':
+    case 'budget_accepted':
+      return <Badge variant="outline" className="border-green-500 text-green-600 dark:text-green-400 text-[10px] uppercase tracking-wider">{label}</Badge>
+    case 'budget_proposed':
+      return <Badge variant="outline" className="border-blue-500 text-blue-600 dark:text-blue-400 text-[10px] uppercase tracking-wider">{label}</Badge>
+    default:
+      return <Badge variant="secondary" className="text-[10px] uppercase tracking-wider">{label}</Badge>
+  }
 }
 
 function getProjectName(proposal: Proposal): string {
@@ -35,45 +45,33 @@ function getProjectName(proposal: Proposal): string {
 }
 
 export default function ProposalDetail({ proposal, onBack, onProposalUpdate }: Props) {
-  const [activeTab, setActiveTab] = useState<Tab>('chat')
   const modules = (proposal.modules ?? []) as string[]
   const moduleNames = modules
     .map((id) => MODULE_CATALOG.find((m) => m.id === id)?.name ?? id)
 
-  const tabs: { key: Tab; label: string }[] = [
-    { key: 'chat', label: 'Chat' },
-    { key: 'proposal', label: 'Proposal' },
-    { key: 'budget', label: 'Budget' },
-  ]
-
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-white/5 space-y-3">
+      <div className="px-6 py-4 border-b space-y-3">
         <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="lg:hidden p-1 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
-          >
-            <ArrowLeft className="w-5 h-5 text-brand-gray-mid" />
-          </button>
+          <Button variant="ghost" size="icon" onClick={onBack} className="lg:hidden">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
 
           <div className="flex-1 min-w-0">
-            <h2 className="font-bebas text-2xl text-brand-white truncate">
+            <h2 className="font-bebas text-2xl text-foreground truncate">
               {getProjectName(proposal)}
             </h2>
           </div>
 
-          <span className={`text-[10px] px-2.5 py-1 rounded-full uppercase tracking-wider ${STATUS_STYLES[proposal.status] ?? STATUS_STYLES.draft}`}>
-            {proposal.status.replace(/_/g, ' ')}
-          </span>
+          {getStatusBadge(proposal.status)}
         </div>
 
         {/* Stats row */}
-        <div className="flex items-center gap-4 text-xs text-brand-gray-mid">
-          <span>Confidence: <strong className="text-brand-white">{proposal.confidence_score}%</strong></span>
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <span>Confidence: <strong className="text-foreground">{proposal.confidence_score}%</strong></span>
           {proposal.price_min > 0 && (
-            <span>Range: <strong className="text-brand-white">${proposal.price_min.toLocaleString()}&ndash;${proposal.price_max.toLocaleString()}</strong></span>
+            <span>Range: <strong className="text-foreground">${proposal.price_min.toLocaleString()}&ndash;${proposal.price_max.toLocaleString()}</strong></span>
           )}
           <span>{modules.length} module{modules.length !== 1 ? 's' : ''}</span>
           {proposal.email && <span>{proposal.email}</span>}
@@ -83,41 +81,31 @@ export default function ProposalDetail({ proposal, onBack, onProposalUpdate }: P
         {moduleNames.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {moduleNames.map((name) => (
-              <span key={name} className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-brand-gray-mid">
+              <Badge key={name} variant="secondary" className="text-xs">
                 {name}
-              </span>
+              </Badge>
             ))}
           </div>
         )}
-
-        {/* Tabs */}
-        <div className="flex gap-1 -mb-3">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`px-4 py-2 text-sm rounded-t-lg transition-colors cursor-pointer ${
-                activeTab === tab.key
-                  ? 'bg-white/5 text-brand-white border-b-2 border-brand-yellow'
-                  : 'text-brand-gray-mid hover:text-brand-white'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
       </div>
 
-      {/* Tab content */}
-      <div className="flex-1 overflow-y-auto">
-        {activeTab === 'chat' && <ChatTab proposalId={proposal.id} />}
-        {activeTab === 'proposal' && (
+      {/* Tabs */}
+      <Tabs defaultValue="chat" className="flex flex-1 flex-col overflow-hidden">
+        <TabsList className="mx-6">
+          <TabsTrigger value="chat">Chat</TabsTrigger>
+          <TabsTrigger value="proposal">Proposal</TabsTrigger>
+          <TabsTrigger value="budget">Budget</TabsTrigger>
+        </TabsList>
+        <TabsContent value="chat" className="flex-1 overflow-y-auto mt-0">
+          <ChatTab proposalId={proposal.id} />
+        </TabsContent>
+        <TabsContent value="proposal" className="flex-1 overflow-y-auto mt-0">
           <ProposalEditor proposal={proposal} onUpdate={onProposalUpdate} />
-        )}
-        {activeTab === 'budget' && (
+        </TabsContent>
+        <TabsContent value="budget" className="flex-1 overflow-y-auto mt-0">
           <BudgetTab proposalId={proposal.id} proposalEmail={proposal.email} proposalSlug={proposal.slug} />
-        )}
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
