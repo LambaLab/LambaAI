@@ -24,10 +24,13 @@ export const metadata: Metadata = {
 // Blocking inline script that runs BEFORE first paint.
 // Checks localStorage for an active session and hides the landing page
 // so the user never sees a flash of the homepage before React hydrates.
+// Only applies when the overlay will actually auto-open (?c= param).
+// On bare "/", the user expects to see the landing page.
 const ANTI_FLASH_SCRIPT = `
 (function(){
   try {
-    if (localStorage.getItem('lamba_session')) {
+    var c = new URLSearchParams(window.location.search).get('c');
+    if (c && localStorage.getItem('lamba_session')) {
       document.documentElement.classList.add('has-session');
     }
   } catch(e) {}
