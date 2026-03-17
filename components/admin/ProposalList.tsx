@@ -2,7 +2,6 @@
 
 import { useMemo } from 'react'
 import type { Database } from '@/lib/supabase/types'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import ProposalListItem from './ProposalListItem'
 
 type Proposal = Database['public']['Tables']['proposals']['Row']
@@ -22,7 +21,6 @@ export default function ProposalList({ proposals, selectedId, onSelect, searchQu
   const filtered = useMemo(() => {
     let result = [...proposals]
 
-    // Search filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       result = result.filter((p) => {
@@ -36,12 +34,10 @@ export default function ProposalList({ proposals, selectedId, onSelect, searchQu
       })
     }
 
-    // Status filter
     if (statusFilter !== 'all') {
       result = result.filter((p) => p.status === statusFilter)
     }
 
-    // Sort
     result.sort((a, b) => {
       switch (sortKey) {
         case 'oldest':
@@ -59,26 +55,21 @@ export default function ProposalList({ proposals, selectedId, onSelect, searchQu
     return result
   }, [proposals, searchQuery, statusFilter, sortKey])
 
-  return (
-    <div className="flex flex-col flex-1 min-h-0">
-      {/* List */}
-      <ScrollArea className="flex-1 min-h-0">
-        {filtered.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">No proposals found.</p>
-        ) : (
-          filtered.map((p) => (
-            <ProposalListItem
-              key={p.id}
-              proposal={p}
-              isSelected={selectedId === p.id}
-              onClick={() => onSelect(p.id)}
-            />
-          ))
-        )}
-      </ScrollArea>
+  if (filtered.length === 0) {
+    return <p className="text-sm text-muted-foreground text-center py-8">No proposals found.</p>
+  }
 
-      {/* Count */}
-      <div className="px-4 py-2 border-t text-xs text-muted-foreground">
+  return (
+    <div>
+      {filtered.map((p) => (
+        <ProposalListItem
+          key={p.id}
+          proposal={p}
+          isSelected={selectedId === p.id}
+          onClick={() => onSelect(p.id)}
+        />
+      ))}
+      <div className="px-4 py-2 text-xs text-muted-foreground">
         {filtered.length} proposal{filtered.length !== 1 ? 's' : ''}
       </div>
     </div>

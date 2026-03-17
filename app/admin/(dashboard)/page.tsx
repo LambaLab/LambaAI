@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { Suspense, useState, useEffect, useCallback, useRef } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Search, RefreshCw } from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
 import { Input } from '@/components/ui/input'
@@ -38,8 +39,24 @@ const TYPE_TABS: { value: ProposalType; label: string; count?: boolean }[] = [
 ]
 
 export default function AdminDashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-1 items-center justify-center">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+      </div>
+    }>
+      <AdminDashboardContent />
+    </Suspense>
+  )
+}
+
+function AdminDashboardContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
   const [proposals, setProposals] = useState<Proposal[]>([])
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  // Read initial selectedId from URL query param
+  const [selectedId, setSelectedId] = useState<string | null>(searchParams.get('id'))
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
@@ -51,6 +68,17 @@ export default function AdminDashboardPage() {
   const [listWidthPx, setListWidthPx] = useState(380)
   const isDragging = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // Sync URL when selectedId changes
+  const handleSelect = useCallback((id: string) => {
+    setSelectedId(id)
+    router.replace(`/admin?id=${id}`, { scroll: false })
+  }, [router])
+
+  const handleDeselect = useCallback(() => {
+    setSelectedId(null)
+    router.replace('/admin', { scroll: false })
+  }, [router])
 
   const handleDividerMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -120,11 +148,10 @@ export default function AdminDashboardPage() {
   return (
     <>
       {/* ─── Desktop layout ─── */}
-      <div className="hidden md:flex flex-col flex-1 overflow-hidden">
-        {/* Sticky toolbar: search + filters + tabs */}
+      <div className="hidden md:flex flex-col flex-1 h-full overflow-hidden">
+        {/* Sticky toolbar: search + filters + tabs — never scrolls */}
         <div className="shrink-0 z-40 bg-background border-b">
           <div className="flex items-center gap-3 px-4 lg:px-6 py-2.5">
-            {/* Search */}
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -135,7 +162,6 @@ export default function AdminDashboardPage() {
               />
             </div>
 
-            {/* Filters */}
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
               <SelectTrigger className="w-[150px] h-9 text-xs">
                 <SelectValue placeholder="All statuses" />
@@ -205,21 +231,23 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Content: list + divider + detail — each scrolls independently */}
-        <div ref={containerRef} className="flex flex-1 min-h-0 overflow-hidden">
-          {/* Left panel — proposal list (scrolls independently) */}
+        {/* Content: list + divider + detail — fills remaining height, each panel scrolls independently */}
+        <div ref={containerRef} className="flex flex-1 min-h-0">
+          {/* Left panel — proposal list */}
           <div
-            className="flex flex-col h-full overflow-hidden shrink-0"
+            className="flex flex-col min-h-0 shrink-0"
             style={{ width: selectedProposal ? `${listWidthPx}px` : '100%' }}
           >
-            <ProposalList
-              proposals={proposals}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-              searchQuery={searchQuery}
-              statusFilter={statusFilter}
-              sortKey={sortKey}
-            />
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <ProposalList
+                proposals={proposals}
+                selectedId={selectedId}
+                onSelect={handleSelect}
+                searchQuery={searchQuery}
+                statusFilter={statusFilter}
+                sortKey={sortKey}
+              />
+            </div>
           </div>
 
           {/* Draggable divider */}
@@ -232,13 +260,13 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* Right panel — detail (scrolls independently) */}
+          {/* Right panel — detail */}
           {selectedProposal && (
-            <div className="flex-1 min-w-0 h-full overflow-hidden">
+            <div className="flex-1 min-w-0 min-h-0 flex flex-col">
               <ProposalDetail
                 key={selectedProposal.id}
                 proposal={selectedProposal}
-                onBack={() => setSelectedId(null)}
+                onBack={handleDeselect}
                 onProposalUpdate={handleProposalUpdate}
               />
             </div>
@@ -252,13 +280,13 @@ export default function AdminDashboardPage() {
           <ProposalDetail
             key={selectedProposal.id}
             proposal={selectedProposal}
-            onBack={() => setSelectedId(null)}
+            onBack={handleDeselect}
             onProposalUpdate={handleProposalUpdate}
           />
         ) : (
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full overflow-hidden">
             {/* Mobile search + filters */}
-            <div className="p-3 border-b space-y-2">
+            <div className="shrink-0 p-3 border-b space-y-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -313,14 +341,16 @@ export default function AdminDashboardPage() {
                 ))}
               </div>
             </div>
-            <ProposalList
-              proposals={proposals}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-              searchQuery={searchQuery}
-              statusFilter={statusFilter}
-              sortKey={sortKey}
-            />
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <ProposalList
+                proposals={proposals}
+                selectedId={selectedId}
+                onSelect={handleSelect}
+                searchQuery={searchQuery}
+                statusFilter={statusFilter}
+                sortKey={sortKey}
+              />
+            </div>
           </div>
         )}
       </div>
