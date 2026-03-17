@@ -50,6 +50,12 @@ export default function HeroSection({ onIntakeChange, onIntakeClose }: HeroProps
   // Restore gate: holds the restore data while waiting for email verification
   const [restoreGate, setRestoreGate] = useState<RestoreData | null>(null)
 
+  // Remove the anti-flash class once React has hydrated — the overlay (if open)
+  // covers everything via its own fixed positioning, so the CSS hack is no longer needed.
+  useEffect(() => {
+    document.documentElement.classList.remove('has-session')
+  }, [])
+
   // Handle cross-device restore (async fetch) — same-device restore is handled
   // synchronously above in getInitialState so there's no flash.
   useEffect(() => {
