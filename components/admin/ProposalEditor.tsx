@@ -4,6 +4,11 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { Save, Check, Plus, X } from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
 import { MODULE_CATALOG } from '@/lib/modules/catalog'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 type Proposal = Database['public']['Tables']['proposals']['Row']
 
@@ -121,51 +126,51 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
     <div className="p-6 space-y-6">
       {/* Save indicator */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-xs text-brand-gray-mid">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {saving && <span className="flex items-center gap-1"><Save className="w-3 h-3 animate-pulse" /> Saving...</span>}
           {!saving && lastSaved && (
-            <span className="flex items-center gap-1"><Check className="w-3 h-3 text-brand-green" /> Saved</span>
+            <span className="flex items-center gap-1 text-green-500"><Check className="w-3 h-3" /> Saved</span>
           )}
         </div>
 
         {/* Status selector */}
-        <select
-          value={status}
-          onChange={(e) => handleStatusChange(e.target.value as Proposal['status'])}
-          className="text-xs bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-brand-white outline-none cursor-pointer"
-        >
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s} value={s} className="bg-brand-dark">{s.replace(/_/g, ' ')}</option>
-          ))}
-        </select>
+        <Select value={status} onValueChange={(val) => handleStatusChange(val as Proposal['status'])}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_OPTIONS.map((s) => (
+              <SelectItem key={s} value={s}>{s.replace(/_/g, ' ')}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Project Name */}
       <Field label="Project name">
-        <input
+        <Input
           value={projectName}
           onChange={(e) => handleFieldChange('projectName', e.target.value)}
-          className="field-input"
           placeholder="e.g., FitTrack Pro"
         />
       </Field>
 
       {/* Brief */}
       <Field label="Brief">
-        <textarea
+        <Textarea
           value={brief}
           onChange={(e) => handleFieldChange('brief', e.target.value)}
-          className="field-input min-h-[80px] resize-y"
+          className="min-h-[80px] resize-y"
           placeholder="2-4 sentence summary"
         />
       </Field>
 
       {/* Product Overview */}
       <Field label="Product overview">
-        <textarea
+        <Textarea
           value={productOverview}
           onChange={(e) => handleFieldChange('productOverview', e.target.value)}
-          className="field-input min-h-[120px] resize-y"
+          className="min-h-[120px] resize-y"
           placeholder="Detailed product description"
         />
       </Field>
@@ -176,18 +181,16 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
           {MODULE_CATALOG.map((mod) => {
             const active = modules.includes(mod.id)
             return (
-              <button
+              <Button
                 key={mod.id}
+                variant={active ? 'default' : 'outline'}
+                size="sm"
+                className="rounded-full"
                 onClick={() => handleToggleModule(mod.id)}
-                className={`text-xs px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
-                  active
-                    ? 'bg-brand-yellow/10 text-brand-yellow border border-brand-yellow/30'
-                    : 'bg-white/5 text-brand-gray-mid border border-white/10 hover:border-white/20'
-                }`}
               >
-                {active ? <X className="w-3 h-3 inline mr-1" /> : <Plus className="w-3 h-3 inline mr-1" />}
+                {active ? <X className="w-3 h-3 mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
                 {mod.name}
-              </button>
+              </Button>
             )
           })}
         </div>
@@ -195,40 +198,40 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
 
       {/* PRD */}
       <Field label="PRD">
-        <textarea
+        <Textarea
           value={prd}
           onChange={(e) => handleFieldChange('prd', e.target.value)}
-          className="field-input min-h-[200px] resize-y font-mono text-xs"
+          className="min-h-[200px] resize-y font-mono text-xs"
           placeholder="Product requirements document"
         />
       </Field>
 
       {/* Technical Architecture */}
       <Field label="Technical architecture">
-        <textarea
+        <Textarea
           value={techArch}
           onChange={(e) => handleFieldChange('technical_architecture', e.target.value)}
-          className="field-input min-h-[150px] resize-y font-mono text-xs"
+          className="min-h-[150px] resize-y font-mono text-xs"
           placeholder="Architecture details"
         />
       </Field>
 
       {/* Timeline */}
       <Field label="Timeline">
-        <textarea
+        <Textarea
           value={timeline}
           onChange={(e) => handleFieldChange('timeline', e.target.value)}
-          className="field-input min-h-[100px] resize-y"
+          className="min-h-[100px] resize-y"
           placeholder="Project timeline"
         />
       </Field>
 
       {/* Admin Notes */}
       <Field label="Admin notes (internal only)">
-        <textarea
+        <Textarea
           value={adminNotes}
           onChange={(e) => handleFieldChange('admin_notes', e.target.value)}
-          className="field-input min-h-[100px] resize-y border-brand-yellow/20"
+          className="min-h-[100px] resize-y border-primary/20"
           placeholder="Internal notes, not visible to client"
         />
       </Field>
@@ -238,30 +241,9 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
-      <label className="block text-[11px] text-brand-gray-mid uppercase tracking-wider">{label}</label>
+    <div className="space-y-2">
+      <Label className="text-xs uppercase tracking-wider text-muted-foreground">{label}</Label>
       {children}
-
-      <style jsx global>{`
-        .field-input {
-          width: 100%;
-          padding: 10px 14px;
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 10px;
-          font-size: 14px;
-          color: #ffffff;
-          outline: none;
-          transition: border-color 0.15s;
-          line-height: 1.6;
-        }
-        .field-input:focus {
-          border-color: rgba(255, 252, 0, 0.3);
-        }
-        .field-input::placeholder {
-          color: rgba(114, 114, 114, 0.5);
-        }
-      `}</style>
     </div>
   )
 }
