@@ -1,9 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
 import { MODULE_CATALOG } from '@/lib/modules/catalog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import ProposalEditor from './ProposalEditor'
 import ChatTab from './ChatTab'
@@ -16,6 +16,8 @@ type Props = {
   onBack: () => void
   onProposalUpdate: (updated: Proposal) => void
 }
+
+type DetailTab = 'proposal' | 'chat'
 
 function getStatusStyle(status: string): { bg: string; text: string; dot: string; label: string } {
   const label = status.replace(/_/g, ' ')
@@ -44,72 +46,98 @@ function getProjectName(proposal: Proposal): string {
 }
 
 export default function ProposalDetail({ proposal, onBack, onProposalUpdate }: Props) {
+  const [activeTab, setActiveTab] = useState<DetailTab>('proposal')
+
   const modules = (proposal.modules ?? []) as string[]
   const moduleNames = modules
     .map((id) => MODULE_CATALOG.find((m) => m.id === id)?.name ?? id)
 
   const status = getStatusStyle(proposal.status)
 
+  const tabs: { value: DetailTab; label: string }[] = [
+    { value: 'proposal', label: 'Proposal' },
+    { value: 'chat', label: 'Chat' },
+  ]
+
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="px-4 py-4 md:px-6 border-b space-y-3">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
+      {/* Sticky header with info + tabs */}
+      <div className="shrink-0 bg-background border-b">
+        {/* Title row */}
+        <div className="px-4 md:px-6 pt-4 pb-2">
+          <div className="flex items-center gap-3 mb-2">
+            <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden h-8 w-8">
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
 
-          <div className="flex-1 min-w-0">
-            <h2 className="font-bebas text-2xl text-foreground truncate">
-              {getProjectName(proposal)}
-            </h2>
+            <div className="flex-1 min-w-0">
+              <h2 className="font-bebas text-xl text-foreground truncate">
+                {getProjectName(proposal)}
+              </h2>
+            </div>
+
+            <span className={`inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded-full uppercase tracking-wide ${status.bg} ${status.text}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+              {status.label}
+            </span>
           </div>
 
-          <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full uppercase tracking-wide ${status.bg} ${status.text}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
-            {status.label}
-          </span>
-        </div>
-
-        {/* Stats row */}
-        <div className="flex flex-wrap items-center gap-4 text-[13px] text-muted-foreground">
-          <span>Confidence: <strong className="text-foreground">{proposal.confidence_score}%</strong></span>
-          {proposal.price_min > 0 && (
-            <span>Range: <strong className="text-foreground">${proposal.price_min.toLocaleString()}&ndash;${proposal.price_max.toLocaleString()}</strong></span>
-          )}
-          <span>{modules.length} module{modules.length !== 1 ? 's' : ''}</span>
-          {proposal.email && <span className="text-blue-600 dark:text-blue-400">{proposal.email}</span>}
-        </div>
-
-        {/* Module tags */}
-        {moduleNames.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {moduleNames.map((name) => (
-              <span key={name} className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-500/20">
-                {name}
-              </span>
-            ))}
+          {/* Compact stats */}
+          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+            <span>{proposal.confidence_score}% confidence</span>
+            {proposal.price_min > 0 && (
+              <span className="font-medium text-foreground">${proposal.price_min.toLocaleString()}&ndash;${proposal.price_max.toLocaleString()}</span>
+            )}
+            <span>{modules.length} module{modules.length !== 1 ? 's' : ''}</span>
+            {proposal.email && <span className="text-blue-600 dark:text-blue-400">{proposal.email}</span>}
+            {moduleNames.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {moduleNames.map((name) => (
+                  <span key={name} className="inline-flex items-center text-[10px] font-medium px-1.5 py-px rounded bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400">
+                    {name}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
+
+        {/* Tabs row */}
+        <div className="flex items-center gap-0 px-4 md:px-6">
+          {tabs.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setActiveTab(tab.value)}
+              className={`relative px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
+                activeTab === tab.value
+                  ? 'text-foreground'
+                  : 'text-muted-foreground hover:text-foreground/70'
+              }`}
+            >
+              {tab.label}
+              {activeTab === tab.value && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-500 dark:bg-yellow-400 rounded-full" />
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Tabs */}
-      <Tabs defaultValue="chat" className="flex flex-1 flex-col overflow-hidden">
-        <TabsList className="mx-4 md:mx-6">
-          <TabsTrigger value="chat" className="cursor-pointer">Chat</TabsTrigger>
-          <TabsTrigger value="proposal" className="cursor-pointer">Proposal</TabsTrigger>
-          <TabsTrigger value="budget" className="cursor-pointer">Budget</TabsTrigger>
-        </TabsList>
-        <TabsContent value="chat" className="flex-1 overflow-y-auto mt-0">
+      {/* Tab content — scrolls independently */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        {activeTab === 'proposal' && (
+          <div>
+            <ProposalEditor proposal={proposal} onUpdate={onProposalUpdate} />
+            {/* Budget section within Proposal tab */}
+            <div className="border-t">
+              <BudgetTab proposalId={proposal.id} proposalEmail={proposal.email} proposalSlug={proposal.slug} />
+            </div>
+          </div>
+        )}
+        {activeTab === 'chat' && (
           <ChatTab proposalId={proposal.id} />
-        </TabsContent>
-        <TabsContent value="proposal" className="flex-1 overflow-y-auto mt-0">
-          <ProposalEditor proposal={proposal} onUpdate={onProposalUpdate} />
-        </TabsContent>
-        <TabsContent value="budget" className="flex-1 overflow-y-auto mt-0">
-          <BudgetTab proposalId={proposal.id} proposalEmail={proposal.email} proposalSlug={proposal.slug} />
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
     </div>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Search, RefreshCw } from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
 import { Input } from '@/components/ui/input'
@@ -47,6 +47,36 @@ export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<ProposalType>('build')
   const [refreshing, setRefreshing] = useState(false)
 
+  // Draggable divider state
+  const [listWidthPx, setListWidthPx] = useState(380)
+  const isDragging = useRef(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const handleDividerMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    isDragging.current = true
+    document.body.style.userSelect = 'none'
+    document.body.style.cursor = 'col-resize'
+
+    function onMouseMove(ev: MouseEvent) {
+      if (!isDragging.current || !containerRef.current) return
+      const rect = containerRef.current.getBoundingClientRect()
+      const x = ev.clientX - rect.left
+      setListWidthPx(Math.min(600, Math.max(280, x)))
+    }
+
+    function onMouseUp() {
+      isDragging.current = false
+      document.body.style.userSelect = ''
+      document.body.style.cursor = ''
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
+    }
+
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+  }, [])
+
   const fetchProposals = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/proposals')
@@ -91,8 +121,8 @@ export default function AdminDashboardPage() {
     <>
       {/* ─── Desktop layout ─── */}
       <div className="hidden md:flex flex-col flex-1 overflow-hidden">
-        {/* Sticky toolbar: search + filters on one line */}
-        <div className="sticky top-0 z-40 bg-background border-b">
+        {/* Sticky toolbar: search + filters + tabs */}
+        <div className="shrink-0 z-40 bg-background border-b">
           <div className="flex items-center gap-3 px-4 lg:px-6 py-2.5">
             {/* Search */}
             <div className="relative flex-1 max-w-md">
@@ -167,7 +197,6 @@ export default function AdminDashboardPage() {
                     </span>
                   )}
                 </span>
-                {/* Active underline */}
                 {activeTab === tab.value && (
                   <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-500 dark:bg-yellow-400 rounded-full" />
                 )}
@@ -176,12 +205,13 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Content: list + detail split */}
-        <div className="flex flex-1 overflow-hidden">
-          {/* Left panel — proposal list */}
-          <div className={`flex flex-col h-full border-r transition-[width] duration-200 ${
-            selectedProposal ? 'w-[380px] min-w-[320px]' : 'w-full'
-          }`}>
+        {/* Content: list + divider + detail — each scrolls independently */}
+        <div ref={containerRef} className="flex flex-1 min-h-0 overflow-hidden">
+          {/* Left panel — proposal list (scrolls independently) */}
+          <div
+            className="flex flex-col h-full overflow-hidden shrink-0"
+            style={{ width: selectedProposal ? `${listWidthPx}px` : '100%' }}
+          >
             <ProposalList
               proposals={proposals}
               selectedId={selectedId}
@@ -192,7 +222,17 @@ export default function AdminDashboardPage() {
             />
           </div>
 
-          {/* Right panel — detail */}
+          {/* Draggable divider */}
+          {selectedProposal && (
+            <div
+              className="w-1 shrink-0 cursor-col-resize relative bg-border hover:bg-yellow-400/50 active:bg-yellow-400/70 transition-colors group"
+              onMouseDown={handleDividerMouseDown}
+            >
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-6 rounded-full bg-muted-foreground/20 group-hover:bg-yellow-500/60 transition-colors pointer-events-none" />
+            </div>
+          )}
+
+          {/* Right panel — detail (scrolls independently) */}
           {selectedProposal && (
             <div className="flex-1 min-w-0 h-full overflow-hidden">
               <ProposalDetail
@@ -254,7 +294,6 @@ export default function AdminDashboardPage() {
                   </SelectContent>
                 </Select>
               </div>
-              {/* Mobile tabs */}
               <div className="flex gap-0 -mb-2">
                 {TYPE_TABS.map((tab) => (
                   <button
