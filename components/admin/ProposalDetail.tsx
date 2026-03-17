@@ -174,7 +174,7 @@ export default function ProposalDetail({ proposal, onBack, onProposalUpdate, isM
                     {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                   </Button>
                 )}
-                {onClose && (
+                {onClose && !isExpanded && (
                   <Button
                     variant="ghost"
                     size="icon"

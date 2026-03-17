@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { ClipboardList, BarChart3, Users, Settings } from 'lucide-react'
 import {
   Sidebar,
@@ -29,8 +30,21 @@ export function AppSidebar({ adminRole, onTeamOpen }: Props) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <div>
-                <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg font-bebas text-sm">
-                  LL
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden">
+                  <Image
+                    src="/light icon.png"
+                    alt="Lamba Lab"
+                    width={32}
+                    height={32}
+                    className="block dark:hidden object-contain"
+                  />
+                  <Image
+                    src="/dark icon.jpg"
+                    alt="Lamba Lab"
+                    width={32}
+                    height={32}
+                    className="hidden dark:block object-contain"
+                  />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-bebas text-lg tracking-wide">LAMBA LAB</span>
