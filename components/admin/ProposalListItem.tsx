@@ -1,7 +1,6 @@
 'use client'
 
 import type { Database } from '@/lib/supabase/types'
-import { Badge } from '@/components/ui/badge'
 
 type Proposal = Database['public']['Tables']['proposals']['Row']
 
@@ -11,23 +10,22 @@ type Props = {
   onClick: () => void
 }
 
-function getStatusBadge(status: string) {
-  const label = status.replace(/_/g, ' ')
-
+function getStatusStyle(status: string): { bg: string; text: string; dot: string } {
   switch (status) {
     case 'draft':
     case 'saved':
-      return <Badge variant="secondary" className="text-[10px] uppercase tracking-wider">{label}</Badge>
+      return { bg: 'bg-zinc-100 dark:bg-zinc-800', text: 'text-zinc-600 dark:text-zinc-400', dot: 'bg-zinc-400' }
     case 'pending_review':
-      return <Badge variant="outline" className="border-yellow-500 text-yellow-600 dark:text-yellow-400 text-[10px] uppercase tracking-wider">{label}</Badge>
+      return { bg: 'bg-yellow-50 dark:bg-yellow-500/10', text: 'text-yellow-700 dark:text-yellow-400', dot: 'bg-yellow-500' }
     case 'approved':
+      return { bg: 'bg-emerald-50 dark:bg-emerald-500/10', text: 'text-emerald-700 dark:text-emerald-400', dot: 'bg-emerald-500' }
+    case 'budget_proposed':
+      return { bg: 'bg-blue-50 dark:bg-blue-500/10', text: 'text-blue-700 dark:text-blue-400', dot: 'bg-blue-500' }
     case 'accepted':
     case 'budget_accepted':
-      return <Badge variant="outline" className="border-green-500 text-green-600 dark:text-green-400 text-[10px] uppercase tracking-wider">{label}</Badge>
-    case 'budget_proposed':
-      return <Badge variant="outline" className="border-blue-500 text-blue-600 dark:text-blue-400 text-[10px] uppercase tracking-wider">{label}</Badge>
+      return { bg: 'bg-violet-50 dark:bg-violet-500/10', text: 'text-violet-700 dark:text-violet-400', dot: 'bg-violet-500' }
     default:
-      return <Badge variant="secondary" className="text-[10px] uppercase tracking-wider">{label}</Badge>
+      return { bg: 'bg-zinc-100 dark:bg-zinc-800', text: 'text-zinc-600 dark:text-zinc-400', dot: 'bg-zinc-400' }
   }
 }
 
@@ -50,39 +48,62 @@ function getProjectName(proposal: Proposal): string {
   return 'Untitled'
 }
 
+function getConfidenceColor(score: number): string {
+  if (score >= 80) return 'text-emerald-600 dark:text-emerald-400'
+  if (score >= 50) return 'text-yellow-600 dark:text-yellow-400'
+  return 'text-zinc-500 dark:text-zinc-400'
+}
+
 export default function ProposalListItem({ proposal, isSelected, onClick }: Props) {
+  const status = getStatusStyle(proposal.status)
+  const statusLabel = proposal.status.replace(/_/g, ' ')
+
   return (
     <button
       onClick={onClick}
-      className={`w-full text-left p-4 border-b transition-colors cursor-pointer ${
+      className={`w-full text-left px-4 py-3 border-b transition-colors cursor-pointer group ${
         isSelected
-          ? 'bg-accent border-l-2 border-l-primary'
-          : 'hover:bg-accent/50 border-l-2 border-l-transparent'
+          ? 'bg-yellow-50/80 dark:bg-yellow-500/5 border-l-2 border-l-yellow-500'
+          : 'hover:bg-muted/50 border-l-2 border-l-transparent'
       }`}
     >
-      <div className="flex items-start justify-between gap-2 mb-1.5">
-        <p className="text-sm text-foreground font-medium truncate flex-1">
+      {/* Line 1: Project name + status badge + time */}
+      <div className="flex items-center gap-2 mb-1">
+        <p className={`text-sm truncate flex-1 ${
+          isSelected ? 'font-semibold text-foreground' : 'font-medium text-foreground'
+        }`}>
           {getProjectName(proposal)}
         </p>
-        <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-          {timeAgo(proposal.created_at)}
+
+        <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full shrink-0 uppercase tracking-wide ${status.bg} ${status.text}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+          {statusLabel}
         </span>
       </div>
 
-      <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
-        {proposal.email ?? 'No email'}
-      </p>
+      {/* Line 2: Email + confidence + price */}
+      <div className="flex items-center gap-2 text-xs">
+        <span className="text-muted-foreground truncate flex-1">
+          {proposal.email ?? 'No email'}
+        </span>
 
-      <div className="flex items-center justify-between">
-        {getStatusBadge(proposal.status)}
-        <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-          <span>{proposal.confidence_score}%</span>
-          {proposal.price_min > 0 && (
-            <span className="font-medium text-foreground">
+        <span className={`font-medium tabular-nums ${getConfidenceColor(proposal.confidence_score)}`}>
+          {proposal.confidence_score}%
+        </span>
+
+        {proposal.price_min > 0 && (
+          <>
+            <span className="text-muted-foreground/40">·</span>
+            <span className="font-medium text-foreground tabular-nums">
               ${proposal.price_min.toLocaleString()}
             </span>
-          )}
-        </div>
+          </>
+        )}
+
+        <span className="text-muted-foreground/40">·</span>
+        <span className="text-muted-foreground whitespace-nowrap text-[11px]">
+          {timeAgo(proposal.created_at)}
+        </span>
       </div>
     </button>
   )

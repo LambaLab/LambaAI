@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useMemo } from 'react'
 import type { Database } from '@/lib/supabase/types'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import ProposalListItem from './ProposalListItem'
 
@@ -10,34 +9,16 @@ type Proposal = Database['public']['Tables']['proposals']['Row']
 type SortKey = 'newest' | 'oldest' | 'confidence' | 'price'
 type StatusFilter = 'all' | Proposal['status']
 
-const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
-  { value: 'all', label: 'All statuses' },
-  { value: 'draft', label: 'Draft' },
-  { value: 'pending_review', label: 'Pending review' },
-  { value: 'approved', label: 'Approved' },
-  { value: 'budget_proposed', label: 'Budget proposed' },
-  { value: 'accepted', label: 'Accepted' },
-  { value: 'budget_accepted', label: 'Budget accepted' },
-]
-
-const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: 'newest', label: 'Newest' },
-  { value: 'oldest', label: 'Oldest' },
-  { value: 'confidence', label: 'Confidence' },
-  { value: 'price', label: 'Price' },
-]
-
 type Props = {
   proposals: Proposal[]
   selectedId: string | null
   onSelect: (id: string) => void
   searchQuery: string
+  statusFilter: StatusFilter
+  sortKey: SortKey
 }
 
-export default function ProposalList({ proposals, selectedId, onSelect, searchQuery }: Props) {
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
-  const [sortKey, setSortKey] = useState<SortKey>('newest')
-
+export default function ProposalList({ proposals, selectedId, onSelect, searchQuery, statusFilter, sortKey }: Props) {
   const filtered = useMemo(() => {
     let result = [...proposals]
 
@@ -79,36 +60,7 @@ export default function ProposalList({ proposals, selectedId, onSelect, searchQu
   }, [proposals, searchQuery, statusFilter, sortKey])
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Filters bar */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b bg-background">
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-          <SelectTrigger className="flex-1 min-w-0 h-8 text-xs">
-            <SelectValue placeholder="All statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            {STATUS_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
-          <SelectTrigger className="w-[110px] h-8 text-xs">
-            <SelectValue placeholder="Newest" />
-          </SelectTrigger>
-          <SelectContent>
-            {SORT_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
+    <div className="flex flex-col flex-1 min-h-0">
       {/* List */}
       <ScrollArea className="flex-1 min-h-0">
         {filtered.length === 0 ? (

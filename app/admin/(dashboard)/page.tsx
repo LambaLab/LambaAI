@@ -1,19 +1,51 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Search } from 'lucide-react'
+import { Search, RefreshCw } from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
 import ProposalList from '@/components/admin/ProposalList'
 import ProposalDetail from '@/components/admin/ProposalDetail'
 
 type Proposal = Database['public']['Tables']['proposals']['Row']
+type StatusFilter = 'all' | Proposal['status']
+type SortKey = 'newest' | 'oldest' | 'confidence' | 'price'
+type ProposalType = 'build' | 'grow' | 'fund'
+
+const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
+  { value: 'all', label: 'All statuses' },
+  { value: 'draft', label: 'Draft' },
+  { value: 'pending_review', label: 'Pending review' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'budget_proposed', label: 'Budget proposed' },
+  { value: 'accepted', label: 'Accepted' },
+  { value: 'budget_accepted', label: 'Budget accepted' },
+]
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: 'newest', label: 'Newest' },
+  { value: 'oldest', label: 'Oldest' },
+  { value: 'confidence', label: 'Confidence' },
+  { value: 'price', label: 'Price' },
+]
+
+const TYPE_TABS: { value: ProposalType; label: string; count?: boolean }[] = [
+  { value: 'build', label: 'Build', count: true },
+  { value: 'grow', label: 'Grow' },
+  { value: 'fund', label: 'Fund' },
+]
 
 export default function AdminDashboardPage() {
   const [proposals, setProposals] = useState<Proposal[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [sortKey, setSortKey] = useState<SortKey>('newest')
+  const [activeTab, setActiveTab] = useState<ProposalType>('build')
+  const [refreshing, setRefreshing] = useState(false)
 
   const fetchProposals = useCallback(async () => {
     try {
@@ -35,6 +67,12 @@ export default function AdminDashboardPage() {
     return () => clearInterval(pollInterval)
   }, [fetchProposals])
 
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true)
+    await fetchProposals()
+    setRefreshing(false)
+  }, [fetchProposals])
+
   const selectedProposal = proposals.find((p) => p.id === selectedId) ?? null
 
   function handleProposalUpdate(updated: Proposal) {
@@ -51,48 +89,124 @@ export default function AdminDashboardPage() {
 
   return (
     <>
-      {/* Desktop: flex split */}
-      <div className="hidden md:flex flex-1 overflow-hidden">
-        {/* Left panel — proposal list */}
-        <div className="w-[400px] min-w-[340px] max-w-[520px] flex flex-col h-full border-r">
-          <div className="p-4 border-b">
-            <div className="relative">
+      {/* ─── Desktop layout ─── */}
+      <div className="hidden md:flex flex-col flex-1 overflow-hidden">
+        {/* Sticky toolbar: search + filters on one line */}
+        <div className="sticky top-0 z-40 bg-background border-b">
+          <div className="flex items-center gap-3 px-4 lg:px-6 py-2.5">
+            {/* Search */}
+            <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search proposals..."
-                className="pl-9"
+                className="pl-9 h-9 bg-muted/50"
               />
             </div>
+
+            {/* Filters */}
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+              <SelectTrigger className="w-[150px] h-9 text-xs">
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
+              <SelectTrigger className="w-[120px] h-9 text-xs">
+                <SelectValue placeholder="Newest" />
+              </SelectTrigger>
+              <SelectContent>
+                {SORT_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 shrink-0"
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </Button>
           </div>
-          <ProposalList
-            proposals={proposals}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            searchQuery={searchQuery}
-          />
+
+          {/* Proposal type tabs */}
+          <div className="flex items-center gap-0 px-4 lg:px-6">
+            {TYPE_TABS.map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setActiveTab(tab.value)}
+                className={`relative px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
+                  activeTab === tab.value
+                    ? 'text-foreground'
+                    : 'text-muted-foreground hover:text-foreground/70'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  {tab.label}
+                  {tab.count && proposals.length > 0 && (
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                      activeTab === tab.value
+                        ? 'bg-yellow-400/15 text-yellow-600 dark:text-yellow-400'
+                        : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {proposals.length}
+                    </span>
+                  )}
+                </span>
+                {/* Active underline */}
+                {activeTab === tab.value && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-500 dark:bg-yellow-400 rounded-full" />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Right panel — detail */}
-        <div className="flex-1 min-w-0 h-full overflow-hidden">
-          {selectedProposal ? (
-            <ProposalDetail
-              key={selectedProposal.id}
-              proposal={selectedProposal}
-              onBack={() => setSelectedId(null)}
-              onProposalUpdate={handleProposalUpdate}
+        {/* Content: list + detail split */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Left panel — proposal list */}
+          <div className={`flex flex-col h-full border-r transition-[width] duration-200 ${
+            selectedProposal ? 'w-[380px] min-w-[320px]' : 'w-full'
+          }`}>
+            <ProposalList
+              proposals={proposals}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              searchQuery={searchQuery}
+              statusFilter={statusFilter}
+              sortKey={sortKey}
             />
-          ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-3">
-              <Search className="h-10 w-10 text-muted-foreground/40" />
-              <p className="text-sm text-muted-foreground">Select a proposal to view details</p>
+          </div>
+
+          {/* Right panel — detail */}
+          {selectedProposal && (
+            <div className="flex-1 min-w-0 h-full overflow-hidden">
+              <ProposalDetail
+                key={selectedProposal.id}
+                proposal={selectedProposal}
+                onBack={() => setSelectedId(null)}
+                onProposalUpdate={handleProposalUpdate}
+              />
             </div>
           )}
         </div>
       </div>
 
-      {/* Mobile: list or detail */}
+      {/* ─── Mobile layout ─── */}
       <div className="flex md:hidden flex-1 flex-col overflow-hidden">
         {selectedProposal ? (
           <ProposalDetail
@@ -103,15 +217,61 @@ export default function AdminDashboardPage() {
           />
         ) : (
           <div className="flex flex-col h-full">
-            <div className="p-4 border-b">
+            {/* Mobile search + filters */}
+            <div className="p-3 border-b space-y-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search proposals..."
-                  className="pl-9"
+                  className="pl-9 h-9"
                 />
+              </div>
+              <div className="flex gap-2">
+                <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+                  <SelectTrigger className="flex-1 h-8 text-xs">
+                    <SelectValue placeholder="All statuses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
+                  <SelectTrigger className="w-[100px] h-8 text-xs">
+                    <SelectValue placeholder="Newest" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SORT_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Mobile tabs */}
+              <div className="flex gap-0 -mb-2">
+                {TYPE_TABS.map((tab) => (
+                  <button
+                    key={tab.value}
+                    onClick={() => setActiveTab(tab.value)}
+                    className={`relative px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+                      activeTab === tab.value
+                        ? 'text-foreground'
+                        : 'text-muted-foreground'
+                    }`}
+                  >
+                    {tab.label}
+                    {activeTab === tab.value && (
+                      <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-500 dark:bg-yellow-400 rounded-full" />
+                    )}
+                  </button>
+                ))}
               </div>
             </div>
             <ProposalList
@@ -119,6 +279,8 @@ export default function AdminDashboardPage() {
               selectedId={selectedId}
               onSelect={setSelectedId}
               searchQuery={searchQuery}
+              statusFilter={statusFilter}
+              sortKey={sortKey}
             />
           </div>
         )}

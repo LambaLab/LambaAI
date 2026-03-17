@@ -4,7 +4,6 @@ import { ArrowLeft } from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
 import { MODULE_CATALOG } from '@/lib/modules/catalog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import ProposalEditor from './ProposalEditor'
 import ChatTab from './ChatTab'
@@ -18,23 +17,23 @@ type Props = {
   onProposalUpdate: (updated: Proposal) => void
 }
 
-function getStatusBadge(status: string) {
+function getStatusStyle(status: string): { bg: string; text: string; dot: string; label: string } {
   const label = status.replace(/_/g, ' ')
-
   switch (status) {
     case 'draft':
     case 'saved':
-      return <Badge variant="secondary" className="text-[10px] uppercase tracking-wider">{label}</Badge>
+      return { bg: 'bg-zinc-100 dark:bg-zinc-800', text: 'text-zinc-600 dark:text-zinc-400', dot: 'bg-zinc-400', label }
     case 'pending_review':
-      return <Badge variant="outline" className="border-yellow-500 text-yellow-600 dark:text-yellow-400 text-[10px] uppercase tracking-wider">{label}</Badge>
+      return { bg: 'bg-yellow-50 dark:bg-yellow-500/10', text: 'text-yellow-700 dark:text-yellow-400', dot: 'bg-yellow-500', label }
     case 'approved':
+      return { bg: 'bg-emerald-50 dark:bg-emerald-500/10', text: 'text-emerald-700 dark:text-emerald-400', dot: 'bg-emerald-500', label }
+    case 'budget_proposed':
+      return { bg: 'bg-blue-50 dark:bg-blue-500/10', text: 'text-blue-700 dark:text-blue-400', dot: 'bg-blue-500', label }
     case 'accepted':
     case 'budget_accepted':
-      return <Badge variant="outline" className="border-green-500 text-green-600 dark:text-green-400 text-[10px] uppercase tracking-wider">{label}</Badge>
-    case 'budget_proposed':
-      return <Badge variant="outline" className="border-blue-500 text-blue-600 dark:text-blue-400 text-[10px] uppercase tracking-wider">{label}</Badge>
+      return { bg: 'bg-violet-50 dark:bg-violet-500/10', text: 'text-violet-700 dark:text-violet-400', dot: 'bg-violet-500', label }
     default:
-      return <Badge variant="secondary" className="text-[10px] uppercase tracking-wider">{label}</Badge>
+      return { bg: 'bg-zinc-100 dark:bg-zinc-800', text: 'text-zinc-600 dark:text-zinc-400', dot: 'bg-zinc-400', label }
   }
 }
 
@@ -48,6 +47,8 @@ export default function ProposalDetail({ proposal, onBack, onProposalUpdate }: P
   const modules = (proposal.modules ?? []) as string[]
   const moduleNames = modules
     .map((id) => MODULE_CATALOG.find((m) => m.id === id)?.name ?? id)
+
+  const status = getStatusStyle(proposal.status)
 
   return (
     <div className="flex flex-col h-full">
@@ -64,7 +65,10 @@ export default function ProposalDetail({ proposal, onBack, onProposalUpdate }: P
             </h2>
           </div>
 
-          {getStatusBadge(proposal.status)}
+          <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full uppercase tracking-wide ${status.bg} ${status.text}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+            {status.label}
+          </span>
         </div>
 
         {/* Stats row */}
@@ -74,16 +78,16 @@ export default function ProposalDetail({ proposal, onBack, onProposalUpdate }: P
             <span>Range: <strong className="text-foreground">${proposal.price_min.toLocaleString()}&ndash;${proposal.price_max.toLocaleString()}</strong></span>
           )}
           <span>{modules.length} module{modules.length !== 1 ? 's' : ''}</span>
-          {proposal.email && <span>{proposal.email}</span>}
+          {proposal.email && <span className="text-blue-600 dark:text-blue-400">{proposal.email}</span>}
         </div>
 
         {/* Module tags */}
         {moduleNames.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {moduleNames.map((name) => (
-              <Badge key={name} variant="secondary" className="text-xs">
+              <span key={name} className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md bg-yellow-50 dark:bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-500/20">
                 {name}
-              </Badge>
+              </span>
             ))}
           </div>
         )}
