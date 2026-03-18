@@ -1,11 +1,10 @@
 'use client'
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { Save, Check, Plus, X, ChevronDown } from 'lucide-react'
+import { Save, Check, Plus, X, ChevronRight } from 'lucide-react'
 import * as Icons from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
 import { MODULE_CATALOG } from '@/lib/modules/catalog'
-import { Button } from '@/components/ui/button'
 
 type Proposal = Database['public']['Tables']['proposals']['Row']
 
@@ -14,15 +13,13 @@ type Props = {
   onUpdate: (updated: Proposal) => void
 }
 
-type TaskItem = { name: string; complexity: string; description: string }
-type TaskBreakdown = { module: string; tasks: TaskItem[] }[]
-
-// Status options removed — status is shown in the header badge
+type SectionKey = 'brief' | 'overview' | 'modules' | 'prd' | 'techArch' | 'timeline' | 'adminNotes'
 
 export default function ProposalEditor({ proposal, onUpdate }: Props) {
   const [saving, setSaving] = useState(false)
-  const [lastSaved, setLastSaved] = useState<number | null>(null)
+  const [showSaved, setShowSaved] = useState(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const savedDismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Local form state
   const meta = (proposal.metadata ?? {}) as Record<string, unknown>
@@ -36,6 +33,20 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
   const [modules, setModules] = useState<string[]>((proposal.modules ?? []) as string[])
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set())
   const moduleSummaries = (meta.moduleSummaries ?? {}) as Record<string, string>
+
+  // Collapsible sections — default all open
+  const [openSections, setOpenSections] = useState<Set<SectionKey>>(
+    new Set(['brief', 'overview', 'modules', 'prd', 'techArch', 'timeline', 'adminNotes'])
+  )
+
+  const toggleSection = (key: SectionKey) => {
+    setOpenSections(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
 
   // Reset form when proposal changes
   useEffect(() => {
@@ -60,7 +71,10 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
     if (res.ok) {
       const updated = await res.json()
       onUpdate(updated)
-      setLastSaved(Date.now())
+      // Show saved indicator, then auto-dismiss after 2s
+      setShowSaved(true)
+      if (savedDismissTimer.current) clearTimeout(savedDismissTimer.current)
+      savedDismissTimer.current = setTimeout(() => setShowSaved(false), 2000)
     }
     setSaving(false)
   }, [proposal.id, onUpdate])
@@ -113,47 +127,69 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
   }
 
   return (
-    <div className="px-6 md:px-8 py-5 space-y-5">
-      {/* Save indicator */}
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        {saving && <span className="flex items-center gap-1"><Save className="w-3 h-3 animate-pulse" /> Saving...</span>}
-        {!saving && lastSaved && (
-          <span className="flex items-center gap-1 text-green-500"><Check className="w-3 h-3" /> Saved</span>
-        )}
+    <div className="px-6 md:px-8 py-4 space-y-0">
+      {/* Project Name — always visible, not collapsible */}
+      <div className="pb-4">
+        <div className="flex items-center gap-2">
+          <input
+            value={projectName}
+            onChange={(e) => handleFieldChange('projectName', e.target.value)}
+            placeholder="e.g., FitTrack Pro"
+            className="w-full text-lg font-medium bg-transparent outline-none placeholder:text-muted-foreground/40 text-foreground flex-1"
+          />
+          {/* Save indicator — next to project name, auto-dismisses */}
+          <div className="shrink-0 text-xs h-5 flex items-center">
+            {saving && (
+              <span className="flex items-center gap-1 text-muted-foreground animate-pulse">
+                <Save className="w-3 h-3" /> Saving
+              </span>
+            )}
+            {!saving && showSaved && (
+              <span className="flex items-center gap-1 text-emerald-500 animate-in fade-in duration-200">
+                <Check className="w-3 h-3" /> Saved
+              </span>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Project Name */}
-      <Field label="Project name">
-        <input
-          value={projectName}
-          onChange={(e) => handleFieldChange('projectName', e.target.value)}
-          placeholder="e.g., FitTrack Pro"
-          className="w-full text-lg font-medium bg-transparent outline-none placeholder:text-muted-foreground/40 text-foreground"
-        />
-      </Field>
-
       {/* Brief */}
-      <Field label="Brief">
+      <CollapsibleSection
+        label="Brief"
+        isOpen={openSections.has('brief')}
+        onToggle={() => toggleSection('brief')}
+        preview={brief ? truncate(brief, 80) : undefined}
+      >
         <textarea
           value={brief}
           onChange={(e) => handleFieldChange('brief', e.target.value)}
           className="w-full min-h-[80px] resize-y bg-transparent outline-none text-sm leading-relaxed placeholder:text-muted-foreground/40 text-foreground"
           placeholder="2-4 sentence summary"
         />
-      </Field>
+      </CollapsibleSection>
 
       {/* Product Overview */}
-      <Field label="Product overview">
+      <CollapsibleSection
+        label="Product overview"
+        isOpen={openSections.has('overview')}
+        onToggle={() => toggleSection('overview')}
+        preview={productOverview ? truncate(productOverview, 80) : undefined}
+      >
         <textarea
           value={productOverview}
           onChange={(e) => handleFieldChange('productOverview', e.target.value)}
           className="w-full min-h-[120px] resize-y bg-transparent outline-none text-sm leading-relaxed placeholder:text-muted-foreground/40 text-foreground"
           placeholder="Detailed product description"
         />
-      </Field>
+      </CollapsibleSection>
 
       {/* Modules */}
-      <Field label={`Modules (${modules.length})`}>
+      <CollapsibleSection
+        label={`Modules (${modules.length})`}
+        isOpen={openSections.has('modules')}
+        onToggle={() => toggleSection('modules')}
+        preview={modules.length > 0 ? modules.map(id => MODULE_CATALOG.find(m => m.id === id)?.name ?? id).join(', ') : undefined}
+      >
         <div className="space-y-2">
           {/* Selected modules */}
           {modules.map((moduleId) => {
@@ -166,11 +202,23 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
             return (
               <div
                 key={moduleId}
-                className="rounded-xl border border-yellow-200 dark:border-yellow-500/20 bg-yellow-50/50 dark:bg-yellow-500/5 overflow-hidden transition-all"
+                className={`rounded-xl border overflow-hidden transition-all ${
+                  isOpen
+                    ? 'border-yellow-200 dark:border-yellow-500/20 bg-yellow-50/30 dark:bg-yellow-500/5'
+                    : 'border-border/60 bg-muted/20 dark:bg-muted/10'
+                }`}
               >
                 <div className="flex items-center gap-2.5 p-3 group">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-yellow-100 dark:bg-yellow-500/15">
-                    <IconComponent className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                    isOpen
+                      ? 'bg-yellow-100 dark:bg-yellow-500/15'
+                      : 'bg-muted/60 dark:bg-muted/30'
+                  }`}>
+                    <IconComponent className={`w-4 h-4 transition-colors ${
+                      isOpen
+                        ? 'text-yellow-600 dark:text-yellow-400'
+                        : 'text-muted-foreground'
+                    }`} />
                   </div>
                   <span className="text-sm font-medium text-foreground flex-1 truncate">{mod.name}</span>
                   <button
@@ -192,7 +240,7 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
                       })}
                       className="p-1 text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
                     >
-                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                      <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
                     </button>
                   )}
                 </div>
@@ -226,7 +274,7 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
                       key={mod.id}
                       type="button"
                       onClick={() => handleToggleModule(mod.id)}
-                      className="w-full flex items-center gap-2.5 p-2.5 rounded-xl border border-dashed border-muted-foreground/15 opacity-50 hover:opacity-100 hover:border-yellow-300 dark:hover:border-yellow-500/30 hover:bg-yellow-50/30 dark:hover:bg-yellow-500/5 transition-all cursor-pointer text-left"
+                      className="w-full flex items-center gap-2.5 p-2.5 rounded-xl border border-dashed border-muted-foreground/15 opacity-50 hover:opacity-100 hover:border-foreground/20 hover:bg-muted/30 transition-all cursor-pointer text-left"
                     >
                       <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-muted/50">
                         <IconComponent className="w-3.5 h-3.5 text-muted-foreground" />
@@ -240,59 +288,127 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
             </div>
           )}
         </div>
-      </Field>
+      </CollapsibleSection>
 
       {/* PRD */}
-      <Field label="PRD">
+      <CollapsibleSection
+        label="PRD"
+        isOpen={openSections.has('prd')}
+        onToggle={() => toggleSection('prd')}
+        preview={prd ? truncate(prd, 80) : undefined}
+      >
         <textarea
           value={prd}
           onChange={(e) => handleFieldChange('prd', e.target.value)}
           className="w-full min-h-[200px] resize-y bg-transparent outline-none font-mono text-xs leading-relaxed placeholder:text-muted-foreground/40 text-foreground"
           placeholder="Product requirements document"
         />
-      </Field>
+      </CollapsibleSection>
 
       {/* Technical Architecture */}
-      <Field label="Technical architecture">
+      <CollapsibleSection
+        label="Technical architecture"
+        isOpen={openSections.has('techArch')}
+        onToggle={() => toggleSection('techArch')}
+        preview={techArch ? truncate(techArch, 80) : undefined}
+      >
         <textarea
           value={techArch}
           onChange={(e) => handleFieldChange('technical_architecture', e.target.value)}
           className="w-full min-h-[150px] resize-y bg-transparent outline-none font-mono text-xs leading-relaxed placeholder:text-muted-foreground/40 text-foreground"
           placeholder="Architecture details"
         />
-      </Field>
+      </CollapsibleSection>
 
       {/* Timeline */}
-      <Field label="Timeline">
+      <CollapsibleSection
+        label="Timeline"
+        isOpen={openSections.has('timeline')}
+        onToggle={() => toggleSection('timeline')}
+        preview={timeline ? truncate(timeline, 80) : undefined}
+      >
         <textarea
           value={timeline}
           onChange={(e) => handleFieldChange('timeline', e.target.value)}
           className="w-full min-h-[100px] resize-y bg-transparent outline-none text-sm leading-relaxed placeholder:text-muted-foreground/40 text-foreground"
           placeholder="Project timeline"
         />
-      </Field>
+      </CollapsibleSection>
 
       {/* Admin Notes */}
-      <Field label="Admin notes" sublabel="Internal only — not visible to client">
+      <CollapsibleSection
+        label="Admin notes"
+        sublabel="Internal only — not visible to client"
+        isOpen={openSections.has('adminNotes')}
+        onToggle={() => toggleSection('adminNotes')}
+        variant="warning"
+      >
         <textarea
           value={adminNotes}
           onChange={(e) => handleFieldChange('admin_notes', e.target.value)}
           className="w-full min-h-[100px] resize-y bg-amber-50/50 dark:bg-amber-500/5 rounded-lg p-3 outline-none text-sm leading-relaxed placeholder:text-muted-foreground/40 text-foreground"
           placeholder="Internal notes, not visible to client"
         />
-      </Field>
+      </CollapsibleSection>
     </div>
   )
 }
 
-function Field({ label, sublabel, children }: { label: string; sublabel?: string; children: React.ReactNode }) {
+function truncate(text: string, max: number): string {
+  if (text.length <= max) return text
+  return text.slice(0, max).trim() + '…'
+}
+
+function CollapsibleSection({
+  label,
+  sublabel,
+  isOpen,
+  onToggle,
+  preview,
+  variant,
+  children,
+}: {
+  label: string
+  sublabel?: string
+  isOpen: boolean
+  onToggle: () => void
+  preview?: string
+  variant?: 'warning'
+  children: React.ReactNode
+}) {
   return (
-    <div className="space-y-1">
-      <div>
-        <p className="text-[11px] uppercase tracking-widest font-medium text-muted-foreground/70">{label}</p>
-        {sublabel && <p className="text-[10px] text-muted-foreground/50 mt-0.5">{sublabel}</p>}
+    <div className={`border-b border-border/40 ${variant === 'warning' ? '' : ''}`}>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center gap-2 py-3 text-left cursor-pointer group"
+      >
+        <ChevronRight
+          className={`w-3.5 h-3.5 text-muted-foreground/50 shrink-0 transition-transform duration-200 ${
+            isOpen ? 'rotate-90' : ''
+          }`}
+        />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-[11px] uppercase tracking-widest font-medium text-muted-foreground/70">{label}</p>
+            {sublabel && <p className="text-[10px] text-muted-foreground/50">{sublabel}</p>}
+          </div>
+          {/* Preview text when collapsed */}
+          {!isOpen && preview && (
+            <p className="text-xs text-muted-foreground/50 truncate mt-0.5">{preview}</p>
+          )}
+        </div>
+      </button>
+      <div
+        className="grid transition-[grid-template-rows] duration-200 ease-in-out"
+        style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}
+      >
+        <div className="overflow-hidden">
+          <div className="pb-4">
+            {children}
+          </div>
+        </div>
       </div>
-      {children}
     </div>
   )
 }
