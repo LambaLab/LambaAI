@@ -6,6 +6,7 @@ import type { Database } from '@/lib/supabase/types'
 import { MODULE_CATALOG } from '@/lib/modules/catalog'
 import { Button } from '@/components/ui/button'
 import ProposalEditor from './ProposalEditor'
+import TrackerTab from './TrackerTab'
 import ChatTab from './ChatTab'
 import BudgetTab from './BudgetTab'
 
@@ -21,7 +22,7 @@ type Props = {
   onClose?: () => void
 }
 
-type DetailTab = 'proposal' | 'chat'
+type DetailTab = 'proposal' | 'tracker' | 'chat'
 
 function getStatusStyle(status: string): { bg: string; text: string; dot: string; label: string } {
   const label = status.replace(/_/g, ' ')
@@ -60,6 +61,7 @@ export default function ProposalDetail({ proposal, onBack, onProposalUpdate, isM
 
   const tabs: { value: DetailTab; label: string }[] = [
     { value: 'proposal', label: 'Proposal' },
+    { value: 'tracker', label: 'Tracker' },
     { value: 'chat', label: 'Chat' },
   ]
 
@@ -241,6 +243,9 @@ export default function ProposalDetail({ proposal, onBack, onProposalUpdate, isM
                 <BudgetTab proposalId={proposal.id} proposalEmail={proposal.email} proposalSlug={proposal.slug} />
               </div>
             </div>
+          )}
+          {activeTab === 'tracker' && (
+            <TrackerTab proposalId={proposal.id} />
           )}
           {activeTab === 'chat' && (
             <ChatTab proposalId={proposal.id} />

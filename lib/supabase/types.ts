@@ -157,6 +157,36 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['budget_proposals']['Insert']>
         Relationships: []
       }
+      project_tasks: {
+        Row: {
+          id: string
+          proposal_id: string
+          parent_id: string | null
+          title: string
+          description: string | null
+          status: 'todo' | 'in_progress' | 'done'
+          sort_order: number
+          complexity: string | null
+          module_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          proposal_id: string
+          parent_id?: string | null
+          title: string
+          description?: string | null
+          status?: 'todo' | 'in_progress' | 'done'
+          sort_order?: number
+          complexity?: string | null
+          module_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['project_tasks']['Insert']>
+        Relationships: []
+      }
       admin_users: {
         Row: {
           id: string
