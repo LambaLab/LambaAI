@@ -165,7 +165,9 @@ export function useIntakeChat({ proposalId, idea }: Props) {
   useEffect(() => {
     if (!proposalId) return
     const supabase = createClient()
-    const channel = supabase.channel(`proposal:${proposalId}`)
+    const channel = supabase.channel(`proposal:${proposalId}`, {
+      config: { presence: { key: 'client' } },
+    })
 
     channel
       .on('broadcast', { event: 'admin_status' }, (payload) => {
@@ -214,7 +216,11 @@ export function useIntakeChat({ proposalId, idea }: Props) {
           })
         }
       })
-      .subscribe()
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({ user_type: 'client' })
+        }
+      })
 
     return () => {
       supabase.removeChannel(channel)
