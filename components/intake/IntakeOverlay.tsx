@@ -30,6 +30,9 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
   const { theme, toggleTheme } = useTheme()
   const [session, setSession] = useState<SessionData | null>(null)
   const [sessionError, setSessionError] = useState(false)
+  const retryCountRef = useRef(0)
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const maxAutoRetries = 6 // auto-retry up to 6 times (~30s total)
   // Start mounted=true for returning users so the overlay is opaque on the
   // very first frame (no flash of the homepage behind the transparent overlay).
   // New users (no stored session) get the fade-in animation.
@@ -146,6 +149,7 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
           // Clear stale data and create a new session
           clearProposalData(data.proposalId)
           localStorage.removeItem('lamba_session')
+          localStorage.removeItem('lamba_session_ts')
           localStorage.removeItem('lamba_app_name')
           const freshData = await getOrCreateSession(true)
           setSession(freshData)
@@ -163,8 +167,51 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
       }
     }
 
-    initSession().catch(() => setSessionError(true))
+    initSession().catch(() => {
+      // Auto-retry: schedule the first automatic retry
+      retryCountRef.current = 0
+      setSessionError(true)
+    })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Auto-retry when session error occurs ──
+  useEffect(() => {
+    if (!sessionError) return
+    if (retryCountRef.current >= maxAutoRetries) return // exhausted auto-retries
+
+    const delay = Math.min(2000 * Math.pow(1.5, retryCountRef.current), 10_000) // 2s → 3s → 4.5s → 6.75s → 10s → 10s
+    retryTimerRef.current = setTimeout(() => {
+      retryCountRef.current += 1
+      setSessionError(false) // triggers loading screen
+      localStorage.removeItem('lamba_session')
+      localStorage.removeItem('lamba_session_ts')
+      getOrCreateSession(true)
+        .then((data) => {
+          setSession(data)
+          if (initialMessage) storeIdeaForSession(data.proposalId, initialMessage)
+          window.history.replaceState(null, '', `/?c=${data.proposalId}`)
+        })
+        .catch(() => setSessionError(true)) // will re-trigger this effect
+    }, delay)
+
+    return () => {
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current)
+    }
+  }, [sessionError, initialMessage]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Reconnect when user returns to tab after being away ──
+  useEffect(() => {
+    function handleVisibility() {
+      if (document.visibilityState !== 'visible') return
+      // If stuck on error screen, reset retries and try again immediately
+      if (sessionError) {
+        retryCountRef.current = 0
+        handleRetry()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }) // intentionally no deps — always uses latest sessionError
 
   // ── Fetch proposals for the drawer ──
   const fetchProposals = useCallback(async (proposalId: string) => {
@@ -417,9 +464,13 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
   }
 
   function handleRetry() {
+    // Reset auto-retry counter so manual click gets a fresh set of retries
+    retryCountRef.current = 0
+    if (retryTimerRef.current) clearTimeout(retryTimerRef.current)
     setSessionError(false)
     // Clear stale session data so we don't restore a broken/expired session
     localStorage.removeItem('lamba_session')
+    localStorage.removeItem('lamba_session_ts')
     getOrCreateSession(true)
       .then((data) => {
         setSession(data)
@@ -474,13 +525,27 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
       {!minimized && sessionError && (
         <div className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${theme === 'light' ? 'bg-[#F5F4F0] intake-light' : 'bg-brand-dark'} ${mounted ? 'opacity-100' : 'opacity-0'}`}>
           <div className="text-center space-y-4">
-            <p className="text-[var(--ov-text,#ffffff)]">Couldn&apos;t connect. Check your connection and try again.</p>
-            <button
-              onClick={handleRetry}
-              className="px-4 py-2 bg-brand-yellow text-brand-dark text-sm font-medium rounded-lg hover:bg-brand-yellow/90 transition-colors cursor-pointer"
-            >
-              Try again
-            </button>
+            {retryCountRef.current < maxAutoRetries ? (
+              <>
+                <div className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-4 w-4 text-[var(--ov-text,#ffffff)]" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  <p className="text-[var(--ov-text,#ffffff)]">Reconnecting…</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-[var(--ov-text,#ffffff)]">Couldn&apos;t connect. Check your connection and try again.</p>
+                <button
+                  onClick={handleRetry}
+                  className="px-4 py-2 bg-brand-yellow text-brand-dark text-sm font-medium rounded-lg hover:bg-brand-yellow/90 transition-colors cursor-pointer"
+                >
+                  Try again
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

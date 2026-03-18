@@ -1,4 +1,7 @@
 const SESSION_KEY = 'lamba_session'
+const SESSION_TS_KEY = 'lamba_session_ts'
+/** Sessions older than 7 days are considered stale and auto-cleared. */
+const MAX_SESSION_AGE_MS = 7 * 24 * 60 * 60 * 1000
 
 export type SessionData = {
   sessionId: string
@@ -19,6 +22,28 @@ function isValidSession(data: unknown): data is SessionData {
 export function getStoredSession(): SessionData | null {
   if (typeof window === 'undefined') return null
   try {
+    // Check session age — clear if stale
+    const ts = localStorage.getItem(SESSION_TS_KEY)
+    if (ts) {
+      const age = Date.now() - Number(ts)
+      if (age > MAX_SESSION_AGE_MS) {
+        // Session too old — clear everything
+        const raw = localStorage.getItem(SESSION_KEY)
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw)
+            if (isValidSession(parsed)) {
+              clearProposalData(parsed.proposalId)
+            }
+          } catch { /* ignore */ }
+        }
+        localStorage.removeItem(SESSION_KEY)
+        localStorage.removeItem(SESSION_TS_KEY)
+        localStorage.removeItem('lamba_app_name')
+        return null
+      }
+    }
+
     const raw = localStorage.getItem(SESSION_KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw)
@@ -31,6 +56,7 @@ export function getStoredSession(): SessionData | null {
 export function storeSession(data: SessionData) {
   if (typeof window === 'undefined') return
   localStorage.setItem(SESSION_KEY, JSON.stringify(data))
+  localStorage.setItem(SESSION_TS_KEY, String(Date.now()))
 }
 
 export function storeIdeaForSession(proposalId: string, idea: string): void {
@@ -46,28 +72,44 @@ export function getIdeaForSession(proposalId: string): string | null {
 // In-flight guard — prevents concurrent API calls (e.g. React StrictMode double-fire)
 let inflightPromise: Promise<SessionData> | null = null
 
+/** Fetch with a timeout (AbortController). Default 15 seconds. */
+function fetchWithTimeout(url: string, opts: RequestInit = {}, timeoutMs = 15_000): Promise<Response> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(timer))
+}
+
 // Retry up to 5 attempts with exponential backoff before throwing
 async function createNewSession(attempt = 1): Promise<SessionData> {
-  const res = await fetch('/api/intake/session', { method: 'POST' })
-  if (!res.ok) {
+  try {
+    const res = await fetchWithTimeout('/api/intake/session', { method: 'POST' })
+    if (!res.ok) {
+      if (attempt < 5) {
+        await new Promise(r => setTimeout(r, 1000 * Math.pow(1.5, attempt - 1)))
+        return createNewSession(attempt + 1)
+      }
+      throw new Error('Failed to create session')
+    }
+    const data: SessionData = await res.json()
+    storeSession(data)
+    return data
+  } catch (err) {
+    // Distinguish abort (timeout) from other errors — both retry
     if (attempt < 5) {
-      await new Promise(r => setTimeout(r, 1000 * attempt))
+      await new Promise(r => setTimeout(r, 1000 * Math.pow(1.5, attempt - 1)))
       return createNewSession(attempt + 1)
     }
-    throw new Error('Failed to create session')
+    throw err
   }
-  const data: SessionData = await res.json()
-  storeSession(data)
-  return data
 }
 
 /** Validate a stored session still exists on the server. Returns true if valid. */
 export async function validateSession(proposalId: string): Promise<boolean> {
   try {
-    const res = await fetch(`/api/proposals/${proposalId}/validate`, { method: 'GET' })
+    const res = await fetchWithTimeout(`/api/proposals/${proposalId}/validate`, { method: 'GET' }, 10_000)
     return res.ok
   } catch {
-    // Network error — assume session might still be valid (offline scenario)
+    // Network error or timeout — assume session might still be valid (offline scenario)
     return true
   }
 }
