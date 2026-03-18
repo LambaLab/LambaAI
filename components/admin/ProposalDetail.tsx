@@ -145,7 +145,7 @@ export default function ProposalDetail({ proposal, onBack, onProposalUpdate, isM
       <div className={`shrink-0 bg-background border-b ${isMobileFullscreen ? 'hidden md:block' : ''}`}>
         <div className={isExpanded ? 'max-w-4xl mx-auto' : ''}>
           {/* Title row */}
-          <div className="px-4 md:px-6 pt-3 pb-2">
+          <div className="px-4 md:px-6 pt-2 pb-1.5">
             <div className="flex items-center gap-3 mb-1.5">
               <Button variant="ghost" size="icon" onClick={onBack} className="md:hidden h-8 w-8">
                 <ArrowLeft className="w-4 h-4" />

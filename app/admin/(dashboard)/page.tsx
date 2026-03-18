@@ -221,166 +221,164 @@ function AdminDashboardContent() {
   return (
     <>
       {/* ─── Desktop layout ─── */}
-      <div className="hidden md:flex flex-col flex-1 min-h-0 overflow-hidden">
-        {/* Sticky toolbar: search + filters + tabs — never scrolls */}
-        <div className="shrink-0 z-40 bg-background border-b">
-          <div className="flex items-center gap-1.5 px-4 lg:px-6 py-2.5">
-            {/* Search: icon that expands into input */}
-            {searchOpen ? (
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  ref={searchInputRef}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search proposals..."
-                  className="pl-9 pr-8 h-9 bg-muted/50"
-                  onBlur={() => { if (!searchQuery) setSearchOpen(false) }}
-                  autoFocus
-                />
-                <button
-                  onClick={() => { setSearchQuery(''); setSearchOpen(false) }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ) : (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 shrink-0 cursor-pointer"
-                onClick={() => setSearchOpen(true)}
-                title="Search"
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-            )}
-
-            <div className="flex-1" />
-
-            {/* Status filter icon */}
-            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-              <SelectTrigger className="h-9 w-9 p-0 border-0 shadow-none justify-center cursor-pointer [&>svg:last-child]:hidden" title="Filter by status">
-                <div className="relative">
-                  <Filter className="h-4 w-4" />
-                  {statusFilter !== 'all' && (
-                    <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-500" />
-                  )}
+      <div ref={containerRef} className="hidden md:flex flex-1 min-h-0 overflow-hidden">
+        {/* Left panel — toolbar + tabs + list */}
+        <div
+          className="flex flex-col min-h-0 shrink-0 border-r"
+          style={{ width: selectedProposal ? `${listWidthPx}px` : '100%' }}
+        >
+          {/* Toolbar: icons left-aligned */}
+          <div className="shrink-0 bg-background">
+            <div className="flex items-center gap-0.5 px-2 lg:px-3 py-1.5">
+              {/* Search: icon that expands into input */}
+              {searchOpen ? (
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    ref={searchInputRef}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search proposals..."
+                    className="pl-9 pr-8 h-8 bg-muted/50 text-sm"
+                    onBlur={() => { if (!searchQuery) setSearchOpen(false) }}
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => { setSearchQuery(''); setSearchOpen(false) }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
                 </div>
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 cursor-pointer"
+                    onClick={() => setSearchOpen(true)}
+                    title="Search"
+                  >
+                    <Search className="h-4 w-4" />
+                  </Button>
 
-            {/* Sort icon */}
-            <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
-              <SelectTrigger className="h-9 w-9 p-0 border-0 shadow-none justify-center cursor-pointer [&>svg:last-child]:hidden" title="Sort by">
-                <ArrowUpDown className="h-4 w-4" />
-              </SelectTrigger>
-              <SelectContent>
-                {SORT_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  {/* Status filter icon */}
+                  <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+                    <SelectTrigger className="h-8 w-8 p-0 border-0 shadow-none justify-center cursor-pointer [&>svg:last-child]:hidden" title="Filter by status">
+                      <div className="relative">
+                        <Filter className="h-4 w-4" />
+                        {statusFilter !== 'all' && (
+                          <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-500" />
+                        )}
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUS_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-            {/* Refresh */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 shrink-0 cursor-pointer"
-              onClick={handleRefresh}
-              disabled={refreshing}
-            >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
+                  {/* Sort icon */}
+                  <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
+                    <SelectTrigger className="h-8 w-8 p-0 border-0 shadow-none justify-center cursor-pointer [&>svg:last-child]:hidden" title="Sort by">
+                      <ArrowUpDown className="h-4 w-4" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SORT_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-          {/* Proposal type tabs */}
-          <div className="flex items-center gap-0 px-4 lg:px-6">
-            {TYPE_TABS.map((tab) => (
-              <button
-                key={tab.value}
-                onClick={() => setActiveTab(tab.value)}
-                className={`relative px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
-                  activeTab === tab.value
-                    ? 'text-foreground'
-                    : 'text-muted-foreground hover:text-foreground/70'
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  {tab.label}
-                  {tab.count && proposals.length > 0 && (
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                      activeTab === tab.value
-                        ? 'bg-yellow-400/15 text-yellow-600 dark:text-yellow-400'
-                        : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {proposals.length}
-                    </span>
+                  {/* Refresh */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 cursor-pointer"
+                    onClick={handleRefresh}
+                    disabled={refreshing}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                  </Button>
+                </>
+              )}
+            </div>
+
+            {/* Proposal type tabs */}
+            <div className="flex items-center gap-0 px-4 lg:px-6 border-b">
+              {TYPE_TABS.map((tab) => (
+                <button
+                  key={tab.value}
+                  onClick={() => setActiveTab(tab.value)}
+                  className={`relative px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
+                    activeTab === tab.value
+                      ? 'text-foreground'
+                      : 'text-muted-foreground hover:text-foreground/70'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    {tab.label}
+                    {tab.count && proposals.length > 0 && (
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                        activeTab === tab.value
+                          ? 'bg-yellow-400/15 text-yellow-600 dark:text-yellow-400'
+                          : 'bg-muted text-muted-foreground'
+                      }`}>
+                        {proposals.length}
+                      </span>
+                    )}
+                  </span>
+                  {activeTab === tab.value && (
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-500 dark:bg-yellow-400 rounded-full" />
                   )}
-                </span>
-                {activeTab === tab.value && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-500 dark:bg-yellow-400 rounded-full" />
-                )}
-              </button>
-            ))}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Scrollable list */}
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <ProposalList
+              proposals={proposals}
+              selectedId={selectedId}
+              onSelect={handleSelect}
+              searchQuery={searchQuery}
+              statusFilter={statusFilter}
+              sortKey={sortKey}
+              isFullWidth={!selectedProposal}
+            />
           </div>
         </div>
 
-        {/* Content: list + divider + detail — fills remaining height, each panel scrolls independently */}
-        <div ref={containerRef} className="flex flex-1 min-h-0">
-          {/* Left panel — proposal list */}
+        {/* Draggable divider — full height */}
+        {selectedProposal && (
           <div
-            className="flex flex-col min-h-0 shrink-0"
-            style={{ width: selectedProposal ? `${listWidthPx}px` : '100%' }}
+            className="w-1 shrink-0 cursor-col-resize relative bg-border hover:bg-yellow-400/50 active:bg-yellow-400/70 transition-colors group -ml-px"
+            onMouseDown={handleDividerMouseDown}
           >
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              <ProposalList
-                proposals={proposals}
-                selectedId={selectedId}
-                onSelect={handleSelect}
-                searchQuery={searchQuery}
-                statusFilter={statusFilter}
-                sortKey={sortKey}
-                isFullWidth={!selectedProposal}
-              />
-            </div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-6 rounded-full bg-muted-foreground/20 group-hover:bg-yellow-500/60 transition-colors pointer-events-none" />
           </div>
+        )}
 
-          {/* Draggable divider */}
-          {selectedProposal && (
-            <div
-              className="w-1 shrink-0 cursor-col-resize relative bg-border hover:bg-yellow-400/50 active:bg-yellow-400/70 transition-colors group"
-              onMouseDown={handleDividerMouseDown}
-            >
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-6 rounded-full bg-muted-foreground/20 group-hover:bg-yellow-500/60 transition-colors pointer-events-none" />
-            </div>
-          )}
-
-          {/* Right panel — detail (hidden when expanded) */}
-          {selectedProposal && !isExpanded && (
-            <div className="flex-1 min-w-0 min-h-0 flex flex-col">
-              <ProposalDetail
-                key={selectedProposal.id}
-                proposal={selectedProposal}
-                onBack={handleDeselect}
-                onProposalUpdate={handleProposalUpdate}
-                onClose={handleDeselect}
-                onToggleExpand={handleToggleExpand}
-                isExpanded={false}
-              />
-            </div>
-          )}
-        </div>
+        {/* Right panel — detail (hidden when expanded) */}
+        {selectedProposal && !isExpanded && (
+          <div className="flex-1 min-w-0 min-h-0 flex flex-col">
+            <ProposalDetail
+              key={selectedProposal.id}
+              proposal={selectedProposal}
+              onBack={handleDeselect}
+              onProposalUpdate={handleProposalUpdate}
+              onClose={handleDeselect}
+              onToggleExpand={handleToggleExpand}
+              isExpanded={false}
+            />
+          </div>
+        )}
       </div>
 
       {/* ─── Desktop expanded overlay with animation ─── */}
