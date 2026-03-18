@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { Save, Check, Plus, X, ChevronRight, Pencil } from 'lucide-react'
+import { Save, Check, Plus, X, ChevronRight, ChevronDown, Pencil } from 'lucide-react'
 import * as Icons from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
 import { MODULE_CATALOG } from '@/lib/modules/catalog'
@@ -49,7 +49,8 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
   // Desktop: vertical tab selection
   const [activeSection, setActiveSection] = useState<SectionKey>('brief')
 
-  // (mobile now uses same vertical tabs as desktop)
+  // Mobile: accordion — which section is expanded (null = all collapsed)
+  const [mobileOpenSection, setMobileOpenSection] = useState<SectionKey | null>('brief')
 
   // Track if there are unsaved changes
   const [hasChanges, setHasChanges] = useState(false)
@@ -295,40 +296,50 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
         </div>
       </div>
 
-      {/* ─── Mobile: Vertical tabs (full width) ─── */}
+      {/* ─── Mobile: Accordion layout ─── */}
       <div className="md:hidden">
-        {/* Tab list — horizontal scroll or stacked */}
-        <div className="border-b border-border/40">
-          {SECTIONS.map((section, index) => {
-            const isActive = activeSection === section.key
-            return (
-              <div key={section.key}>
-                {index > 0 && (
-                  <div className="mx-3 h-px bg-border/30" />
-                )}
-                <button
-                  type="button"
-                  onClick={() => setActiveSection(section.key)}
-                  className={`w-full text-left px-5 py-3 text-sm transition-colors cursor-pointer border-l-2 ${
-                    isActive
-                      ? 'text-foreground font-medium bg-yellow-50/80 dark:bg-yellow-500/5 border-l-yellow-500'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 border-l-transparent'
-                  }`}
-                >
+        {SECTIONS.map((section, index) => {
+          const isOpen = mobileOpenSection === section.key
+          return (
+            <div key={section.key}>
+              {index > 0 && (
+                <div className="mx-4 h-px bg-border/30" />
+              )}
+              {/* Accordion header */}
+              <button
+                type="button"
+                onClick={() => setMobileOpenSection(isOpen ? null : section.key)}
+                className={`w-full flex items-center justify-between px-5 py-3 text-sm transition-colors cursor-pointer ${
+                  isOpen
+                    ? 'text-foreground font-medium bg-yellow-50/80 dark:bg-yellow-500/5'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                }`}
+              >
+                <span className="flex items-center gap-2">
                   {section.label}
                   {section.sublabel && (
-                    <span className="ml-2 text-[10px] text-amber-500/70">{section.sublabel}</span>
+                    <span className="text-[10px] text-amber-500/70">{section.sublabel}</span>
                   )}
-                </button>
+                </span>
+                {isOpen
+                  ? <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                  : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                }
+              </button>
+              {/* Accordion content */}
+              <div
+                className="grid transition-[grid-template-rows] duration-200 ease-in-out"
+                style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}
+              >
+                <div className="overflow-hidden">
+                  <div className="px-5 py-4 border-t border-border/20">
+                    {renderSectionContent(section.key)}
+                  </div>
+                </div>
               </div>
-            )
-          })}
-        </div>
-
-        {/* Content — below tabs */}
-        <div className="px-5 py-4">
-          {renderSectionContent(activeSection)}
-        </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

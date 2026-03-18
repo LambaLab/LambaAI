@@ -196,15 +196,18 @@ export default function TrackerTab({ proposalId }: Props) {
         </Button>
       </div>
 
+      {/* Scrollable table wrapper */}
+      <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto bg-white dark:bg-background">
+        <div className="min-w-[520px]">
       {/* Column headers */}
-      <div className="grid grid-cols-[1fr_130px_100px] gap-2 px-6 md:px-8 py-2 text-[11px] uppercase tracking-widest font-medium text-muted-foreground/70 border-b bg-zinc-50/50 dark:bg-zinc-900/30">
+      <div className="grid grid-cols-[1fr_130px_100px] gap-2 px-6 md:px-8 py-2 text-[11px] uppercase tracking-widest font-medium text-muted-foreground/70 border-b bg-zinc-50/50 dark:bg-zinc-900/30 sticky top-0 z-10">
         <span>Task</span>
         <span>Status</span>
         <span>Progress</span>
       </div>
 
       {/* Task rows */}
-      <div className="flex-1 min-h-0 overflow-y-auto bg-white dark:bg-background">
+      <div>
         {parentTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <p className="text-sm text-muted-foreground">No tasks yet</p>
@@ -342,6 +345,8 @@ export default function TrackerTab({ proposalId }: Props) {
           })
         )}
       </div>
+        </div>{/* end min-w wrapper */}
+      </div>{/* end scrollable wrapper */}
     </div>
   )
 }
