@@ -2,11 +2,19 @@
 
 import { Suspense, useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Search, RefreshCw, Filter, ArrowUpDown, X } from 'lucide-react'
+import { Search, RefreshCw, Filter, ArrowUpDown, X, ChevronDown, Check } from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import ProposalList from '@/components/admin/ProposalList'
 import ProposalDetail from '@/components/admin/ProposalDetail'
 
@@ -65,6 +73,7 @@ function AdminDashboardContent() {
   const [refreshing, setRefreshing] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [mobileServiceOpen, setMobileServiceOpen] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   // Sync selectedId from URL when browser back/forward changes searchParams
@@ -227,12 +236,50 @@ function AdminDashboardContent() {
           className="flex flex-col min-h-0 shrink-0 border-r"
           style={{ width: selectedProposal ? `${listWidthPx}px` : '100%' }}
         >
-          {/* Toolbar: icons left-aligned */}
-          <div className="shrink-0 bg-background">
-            <div className="flex items-center gap-0.5 px-2 lg:px-3 py-1.5">
-              {/* Search: icon that expands into input */}
+          {/* Toolbar: service dropdown + search + filter/sort/refresh icons */}
+          <div className="shrink-0 bg-background border-b">
+            <div className="flex items-center gap-1 px-2 lg:px-3 py-1.5">
+              {/* Service dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium hover:bg-muted/60 transition-colors cursor-pointer">
+                    {TYPE_TABS.find(t => t.value === activeTab)?.label}
+                    {activeTab === 'build' && proposals.length > 0 && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-yellow-400/15 text-yellow-600 dark:text-yellow-400">
+                        {proposals.length}
+                      </span>
+                    )}
+                    <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="min-w-[140px]">
+                  {TYPE_TABS.map((tab) => (
+                    <DropdownMenuItem
+                      key={tab.value}
+                      onClick={() => setActiveTab(tab.value)}
+                      className="flex items-center justify-between gap-3 text-sm cursor-pointer"
+                    >
+                      <span>{tab.label}</span>
+                      <div className="flex items-center gap-2">
+                        {tab.count && proposals.length > 0 && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-muted text-muted-foreground">
+                            {proposals.length}
+                          </span>
+                        )}
+                        {activeTab === tab.value && (
+                          <Check className="w-3.5 h-3.5 text-yellow-500" />
+                        )}
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <div className="flex-1" />
+
+              {/* Search: compact field that expands */}
               {searchOpen ? (
-                <div className="relative flex-1">
+                <div className="relative flex-1 max-w-xs">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     ref={searchInputRef}
@@ -251,93 +298,83 @@ function AdminDashboardContent() {
                   </button>
                 </div>
               ) : (
-                <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0 cursor-pointer rounded-lg"
+                      onClick={() => setSearchOpen(true)}
+                    >
+                      <Search className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">Search</TooltipContent>
+                </Tooltip>
+              )}
+
+              {/* Status filter icon */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+                      <SelectTrigger className="h-8 w-8 p-0 border-0 shadow-none justify-center cursor-pointer rounded-lg hover:bg-accent [&>svg:last-child]:hidden">
+                        <div className="relative">
+                          <Filter className="h-4 w-4" />
+                          {statusFilter !== 'all' && (
+                            <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-500" />
+                          )}
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {STATUS_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Filter</TooltipContent>
+              </Tooltip>
+
+              {/* Sort icon */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
+                      <SelectTrigger className="h-8 w-8 p-0 border-0 shadow-none justify-center cursor-pointer rounded-lg hover:bg-accent [&>svg:last-child]:hidden">
+                        <ArrowUpDown className="h-4 w-4" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SORT_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Sort</TooltipContent>
+              </Tooltip>
+
+              {/* Refresh */}
+              <Tooltip>
+                <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 shrink-0 cursor-pointer"
-                    onClick={() => setSearchOpen(true)}
-                    title="Search"
-                  >
-                    <Search className="h-4 w-4" />
-                  </Button>
-
-                  {/* Status filter icon */}
-                  <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-                    <SelectTrigger className="h-8 w-8 p-0 border-0 shadow-none justify-center cursor-pointer [&>svg:last-child]:hidden" title="Filter by status">
-                      <div className="relative">
-                        <Filter className="h-4 w-4" />
-                        {statusFilter !== 'all' && (
-                          <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-500" />
-                        )}
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {STATUS_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {/* Sort icon */}
-                  <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
-                    <SelectTrigger className="h-8 w-8 p-0 border-0 shadow-none justify-center cursor-pointer [&>svg:last-child]:hidden" title="Sort by">
-                      <ArrowUpDown className="h-4 w-4" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SORT_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {/* Refresh */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 shrink-0 cursor-pointer"
+                    className="h-8 w-8 shrink-0 cursor-pointer rounded-lg"
                     onClick={handleRefresh}
                     disabled={refreshing}
                   >
                     <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
                   </Button>
-                </>
-              )}
-            </div>
-
-            {/* Proposal type tabs */}
-            <div className="flex items-center gap-0 px-4 lg:px-6 border-b">
-              {TYPE_TABS.map((tab) => (
-                <button
-                  key={tab.value}
-                  onClick={() => setActiveTab(tab.value)}
-                  className={`relative px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
-                    activeTab === tab.value
-                      ? 'text-foreground'
-                      : 'text-muted-foreground hover:text-foreground/70'
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    {tab.label}
-                    {tab.count && proposals.length > 0 && (
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                        activeTab === tab.value
-                          ? 'bg-yellow-400/15 text-yellow-600 dark:text-yellow-400'
-                          : 'bg-muted text-muted-foreground'
-                      }`}>
-                        {proposals.length}
-                      </span>
-                    )}
-                  </span>
-                  {activeTab === tab.value && (
-                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-500 dark:bg-yellow-400 rounded-full" />
-                  )}
-                </button>
-              ))}
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Refresh</TooltipContent>
+              </Tooltip>
             </div>
           </div>
 
@@ -423,10 +460,26 @@ function AdminDashboardContent() {
       {/* ─── Mobile list layout ─── */}
       <div className="flex md:hidden flex-1 flex-col overflow-hidden">
         <div className="flex flex-col h-full overflow-hidden">
-          {/* Mobile search + filters */}
-          <div className="shrink-0 px-4 pt-3 pb-0 border-b space-y-2.5">
-            {/* Icons row: search, filter, sort */}
-            <div className="flex items-center gap-1.5">
+          {/* Mobile toolbar */}
+          <div className="shrink-0 border-b">
+            <div className="flex items-center gap-1.5 px-4 py-2">
+              {/* Service selector — opens bottom sheet */}
+              <button
+                onClick={() => setMobileServiceOpen(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium hover:bg-muted/60 transition-colors cursor-pointer"
+              >
+                {TYPE_TABS.find(t => t.value === activeTab)?.label}
+                {activeTab === 'build' && proposals.length > 0 && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-yellow-400/15 text-yellow-600 dark:text-yellow-400">
+                    {proposals.length}
+                  </span>
+                )}
+                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+
+              <div className="flex-1" />
+
+              {/* Search icon */}
               {searchOpen ? (
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -450,19 +503,16 @@ function AdminDashboardContent() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-10 w-10 cursor-pointer"
+                    className="h-9 w-9 cursor-pointer rounded-lg"
                     onClick={() => setSearchOpen(true)}
-                    title="Search"
                   >
-                    <Search className="h-5 w-5" />
+                    <Search className="h-[18px] w-[18px]" />
                   </Button>
 
-                  <div className="flex-1" />
-
                   <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-                    <SelectTrigger className="h-10 w-10 p-0 border-0 shadow-none justify-center cursor-pointer [&>svg:last-child]:hidden" title="Filter by status">
+                    <SelectTrigger className="h-9 w-9 p-0 border-0 shadow-none justify-center cursor-pointer rounded-lg hover:bg-accent [&>svg:last-child]:hidden">
                       <div className="relative">
-                        <Filter className="h-5 w-5" />
+                        <Filter className="h-[18px] w-[18px]" />
                         {statusFilter !== 'all' && (
                           <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-500" />
                         )}
@@ -478,8 +528,8 @@ function AdminDashboardContent() {
                   </Select>
 
                   <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
-                    <SelectTrigger className="h-10 w-10 p-0 border-0 shadow-none justify-center cursor-pointer [&>svg:last-child]:hidden" title="Sort by">
-                      <ArrowUpDown className="h-5 w-5" />
+                    <SelectTrigger className="h-9 w-9 p-0 border-0 shadow-none justify-center cursor-pointer rounded-lg hover:bg-accent [&>svg:last-child]:hidden">
+                      <ArrowUpDown className="h-[18px] w-[18px]" />
                     </SelectTrigger>
                     <SelectContent>
                       {SORT_OPTIONS.map((opt) => (
@@ -489,40 +539,58 @@ function AdminDashboardContent() {
                       ))}
                     </SelectContent>
                   </Select>
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 cursor-pointer rounded-lg"
+                    onClick={handleRefresh}
+                    disabled={refreshing}
+                  >
+                    <RefreshCw className={`h-[18px] w-[18px] ${refreshing ? 'animate-spin' : ''}`} />
+                  </Button>
                 </>
               )}
             </div>
-            {/* Equal-width type tabs */}
-            <div className="flex">
-              {TYPE_TABS.map((tab) => (
-                <button
-                  key={tab.value}
-                  onClick={() => setActiveTab(tab.value)}
-                  className={`relative flex-1 py-2.5 text-sm font-medium text-center transition-colors cursor-pointer ${
-                    activeTab === tab.value
-                      ? 'text-foreground'
-                      : 'text-muted-foreground'
-                  }`}
-                >
-                  <span className="inline-flex items-center gap-1.5">
-                    {tab.label}
-                    {tab.count && proposals.length > 0 && (
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                        activeTab === tab.value
-                          ? 'bg-yellow-400/15 text-yellow-600 dark:text-yellow-400'
-                          : 'bg-muted text-muted-foreground'
-                      }`}>
-                        {proposals.length}
-                      </span>
-                    )}
-                  </span>
-                  {activeTab === tab.value && (
-                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-500 dark:bg-yellow-400" />
-                  )}
-                </button>
-              ))}
-            </div>
           </div>
+
+          {/* Mobile bottom sheet for service selection */}
+          <Sheet open={mobileServiceOpen} onOpenChange={setMobileServiceOpen}>
+            <SheetContent side="bottom" className="rounded-t-2xl pb-8">
+              <SheetHeader>
+                <SheetTitle className="text-base font-semibold">Select Service</SheetTitle>
+              </SheetHeader>
+              <div className="space-y-1 px-4">
+                {TYPE_TABS.map((tab) => (
+                  <button
+                    key={tab.value}
+                    onClick={() => { setActiveTab(tab.value); setMobileServiceOpen(false) }}
+                    className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-base transition-colors cursor-pointer ${
+                      activeTab === tab.value
+                        ? 'bg-yellow-50/80 dark:bg-yellow-500/5 text-foreground font-medium'
+                        : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2.5">
+                      {tab.label}
+                      {tab.count && proposals.length > 0 && (
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          activeTab === tab.value
+                            ? 'bg-yellow-400/15 text-yellow-600 dark:text-yellow-400'
+                            : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {proposals.length}
+                        </span>
+                      )}
+                    </span>
+                    {activeTab === tab.value && (
+                      <Check className="w-5 h-5 text-yellow-500" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </SheetContent>
+          </Sheet>
           <div className="flex-1 min-h-0 overflow-y-auto">
             <ProposalList
               proposals={proposals}
