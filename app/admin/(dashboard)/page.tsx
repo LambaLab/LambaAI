@@ -1,6 +1,7 @@
 'use client'
 
 import { Suspense, useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Search, RefreshCw, Filter, ArrowUpDown, X, ChevronDown, Check } from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
@@ -75,6 +76,13 @@ function AdminDashboardContent() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [mobileServiceOpen, setMobileServiceOpen] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null)
+
+  // Find the portal target in the header shell
+  useEffect(() => {
+    const el = document.getElementById('header-service-slot')
+    if (el) setHeaderSlot(el)
+  }, [])
 
   // Sync selectedId from URL when browser back/forward changes searchParams
   useEffect(() => {
@@ -219,6 +227,63 @@ function AdminDashboardContent() {
     setProposals((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
   }
 
+  // Service dropdown to render into the header via portal
+  function renderServiceDropdown() {
+    if (!headerSlot) return null
+
+    const triggerButton = (
+      <button className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm font-medium hover:bg-muted/60 transition-colors cursor-pointer text-muted-foreground">
+        <span className="text-foreground/50 mx-0.5">/</span>
+        {TYPE_TABS.find(t => t.value === activeTab)?.label}
+        {activeTab === 'build' && proposals.length > 0 && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-yellow-400/15 text-yellow-600 dark:text-yellow-400">
+            {proposals.length}
+          </span>
+        )}
+        <ChevronDown className="w-3 h-3 text-muted-foreground" />
+      </button>
+    )
+
+    return createPortal(
+      <>
+        {/* Desktop: dropdown */}
+        <div className="hidden md:block">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              {triggerButton}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-[140px]">
+              {TYPE_TABS.map((tab) => (
+                <DropdownMenuItem
+                  key={tab.value}
+                  onClick={() => setActiveTab(tab.value)}
+                  className="flex items-center justify-between gap-3 text-sm cursor-pointer"
+                >
+                  <span>{tab.label}</span>
+                  <div className="flex items-center gap-2">
+                    {tab.count && proposals.length > 0 && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-muted text-muted-foreground">
+                        {proposals.length}
+                      </span>
+                    )}
+                    {activeTab === tab.value && (
+                      <Check className="w-3.5 h-3.5 text-yellow-500" />
+                    )}
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        {/* Mobile: tap opens bottom sheet */}
+        <div className="md:hidden" onClick={() => setMobileServiceOpen(true)}>
+          {triggerButton}
+        </div>
+      </>,
+      headerSlot
+    )
+  }
+
   if (loading) {
     return (
       <div className="flex flex-1 items-center justify-center">
@@ -229,57 +294,22 @@ function AdminDashboardContent() {
 
   return (
     <>
+      {/* Portal: service dropdown into header */}
+      {renderServiceDropdown()}
+
       {/* ─── Desktop layout ─── */}
       <div ref={containerRef} className="hidden md:flex flex-1 min-h-0 overflow-hidden">
-        {/* Left panel — toolbar + tabs + list */}
+        {/* Left panel — toolbar + list */}
         <div
           className="flex flex-col min-h-0 shrink-0 border-r"
           style={{ width: selectedProposal ? `${listWidthPx}px` : '100%' }}
         >
-          {/* Toolbar: service dropdown + search + filter/sort/refresh icons */}
+          {/* Toolbar: search + filter/sort/refresh icons */}
           <div className="shrink-0 bg-background border-b">
-            <div className="flex items-center gap-1 px-2 lg:px-3 py-1.5">
-              {/* Service dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium hover:bg-muted/60 transition-colors cursor-pointer">
-                    {TYPE_TABS.find(t => t.value === activeTab)?.label}
-                    {activeTab === 'build' && proposals.length > 0 && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-yellow-400/15 text-yellow-600 dark:text-yellow-400">
-                        {proposals.length}
-                      </span>
-                    )}
-                    <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="min-w-[140px]">
-                  {TYPE_TABS.map((tab) => (
-                    <DropdownMenuItem
-                      key={tab.value}
-                      onClick={() => setActiveTab(tab.value)}
-                      className="flex items-center justify-between gap-3 text-sm cursor-pointer"
-                    >
-                      <span>{tab.label}</span>
-                      <div className="flex items-center gap-2">
-                        {tab.count && proposals.length > 0 && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-muted text-muted-foreground">
-                            {proposals.length}
-                          </span>
-                        )}
-                        {activeTab === tab.value && (
-                          <Check className="w-3.5 h-3.5 text-yellow-500" />
-                        )}
-                      </div>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <div className="flex-1" />
-
-              {/* Search: compact field that expands */}
+            <div className={`flex items-center gap-1 px-2 lg:px-3 py-1.5 ${selectedProposal ? 'justify-between' : 'justify-start'}`}>
+              {/* Search: expandable field */}
               {searchOpen ? (
-                <div className="relative flex-1 max-w-xs">
+                <div className={`relative ${selectedProposal ? 'flex-1' : 'w-64'}`}>
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     ref={searchInputRef}
@@ -287,10 +317,11 @@ function AdminDashboardContent() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search proposals..."
                     className="pl-9 pr-8 h-8 bg-muted/50 text-sm"
-                    onBlur={() => { if (!searchQuery) setSearchOpen(false) }}
+                    onBlur={() => { if (!searchQuery) setTimeout(() => setSearchOpen(false), 150) }}
                     autoFocus
                   />
                   <button
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => { setSearchQuery(''); setSearchOpen(false) }}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
                   >
@@ -304,7 +335,7 @@ function AdminDashboardContent() {
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 shrink-0 cursor-pointer rounded-lg"
-                      onClick={() => setSearchOpen(true)}
+                      onClick={() => { setSearchOpen(true); setTimeout(() => searchInputRef.current?.focus(), 50) }}
                     >
                       <Search className="h-4 w-4" />
                     </Button>
@@ -462,23 +493,7 @@ function AdminDashboardContent() {
         <div className="flex flex-col h-full overflow-hidden">
           {/* Mobile toolbar */}
           <div className="shrink-0 border-b">
-            <div className="flex items-center gap-1.5 px-4 py-2">
-              {/* Service selector — opens bottom sheet */}
-              <button
-                onClick={() => setMobileServiceOpen(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium hover:bg-muted/60 transition-colors cursor-pointer"
-              >
-                {TYPE_TABS.find(t => t.value === activeTab)?.label}
-                {activeTab === 'build' && proposals.length > 0 && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-yellow-400/15 text-yellow-600 dark:text-yellow-400">
-                    {proposals.length}
-                  </span>
-                )}
-                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
-
-              <div className="flex-1" />
-
+            <div className="flex items-center gap-1.5 px-4 py-2 justify-start">
               {/* Search icon */}
               {searchOpen ? (
                 <div className="relative flex-1">
@@ -488,10 +503,11 @@ function AdminDashboardContent() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search proposals..."
                     className="pl-9 pr-8 h-10 text-base"
-                    onBlur={() => { if (!searchQuery) setSearchOpen(false) }}
+                    onBlur={() => { if (!searchQuery) setTimeout(() => setSearchOpen(false), 150) }}
                     autoFocus
                   />
                   <button
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => { setSearchQuery(''); setSearchOpen(false) }}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
                   >
@@ -554,7 +570,7 @@ function AdminDashboardContent() {
             </div>
           </div>
 
-          {/* Mobile bottom sheet for service selection */}
+          {/* Mobile bottom sheet for service selection (triggered from header) */}
           <Sheet open={mobileServiceOpen} onOpenChange={setMobileServiceOpen}>
             <SheetContent side="bottom" className="rounded-t-2xl pb-8">
               <SheetHeader>
