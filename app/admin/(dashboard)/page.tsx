@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Search, RefreshCw } from 'lucide-react'
+import { Search, RefreshCw, Filter, ArrowUpDown, X } from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -64,6 +64,8 @@ function AdminDashboardContent() {
   const [activeTab, setActiveTab] = useState<ProposalType>('build')
   const [refreshing, setRefreshing] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   // Sync selectedId from URL when browser back/forward changes searchParams
   useEffect(() => {
@@ -222,20 +224,50 @@ function AdminDashboardContent() {
       <div className="hidden md:flex flex-col flex-1 min-h-0 overflow-hidden">
         {/* Sticky toolbar: search + filters + tabs — never scrolls */}
         <div className="shrink-0 z-40 bg-background border-b">
-          <div className="flex items-center gap-3 px-4 lg:px-6 py-2.5">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search proposals..."
-                className="pl-9 h-9 bg-muted/50"
-              />
-            </div>
+          <div className="flex items-center gap-1.5 px-4 lg:px-6 py-2.5">
+            {/* Search: icon that expands into input */}
+            {searchOpen ? (
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  ref={searchInputRef}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search proposals..."
+                  className="pl-9 pr-8 h-9 bg-muted/50"
+                  onBlur={() => { if (!searchQuery) setSearchOpen(false) }}
+                  autoFocus
+                />
+                <button
+                  onClick={() => { setSearchQuery(''); setSearchOpen(false) }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 shrink-0 cursor-pointer"
+                onClick={() => setSearchOpen(true)}
+                title="Search"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            )}
 
+            <div className="flex-1" />
+
+            {/* Status filter icon */}
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-              <SelectTrigger className="w-[150px] h-9 text-xs">
-                <SelectValue placeholder="All statuses" />
+              <SelectTrigger className="h-9 w-9 p-0 border-0 shadow-none justify-center cursor-pointer [&>svg:last-child]:hidden" title="Filter by status">
+                <div className="relative">
+                  <Filter className="h-4 w-4" />
+                  {statusFilter !== 'all' && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-500" />
+                  )}
+                </div>
               </SelectTrigger>
               <SelectContent>
                 {STATUS_OPTIONS.map((opt) => (
@@ -246,9 +278,10 @@ function AdminDashboardContent() {
               </SelectContent>
             </Select>
 
+            {/* Sort icon */}
             <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
-              <SelectTrigger className="w-[120px] h-9 text-xs">
-                <SelectValue placeholder="Newest" />
+              <SelectTrigger className="h-9 w-9 p-0 border-0 shadow-none justify-center cursor-pointer [&>svg:last-child]:hidden" title="Sort by">
+                <ArrowUpDown className="h-4 w-4" />
               </SelectTrigger>
               <SelectContent>
                 {SORT_OPTIONS.map((opt) => (
@@ -259,10 +292,11 @@ function AdminDashboardContent() {
               </SelectContent>
             </Select>
 
+            {/* Refresh */}
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 shrink-0"
+              className="h-9 w-9 shrink-0 cursor-pointer"
               onClick={handleRefresh}
               disabled={refreshing}
             >
@@ -393,40 +427,72 @@ function AdminDashboardContent() {
         <div className="flex flex-col h-full overflow-hidden">
           {/* Mobile search + filters */}
           <div className="shrink-0 px-4 pt-3 pb-0 border-b space-y-2.5">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search proposals..."
-                className="pl-9 h-10 text-base"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-                <SelectTrigger className="flex-1 h-9 text-sm">
-                  <SelectValue placeholder="All statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value} className="text-sm">
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
-                <SelectTrigger className="w-[110px] h-9 text-sm">
-                  <SelectValue placeholder="Newest" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SORT_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value} className="text-sm">
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Icons row: search, filter, sort */}
+            <div className="flex items-center gap-1.5">
+              {searchOpen ? (
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search proposals..."
+                    className="pl-9 pr-8 h-10 text-base"
+                    onBlur={() => { if (!searchQuery) setSearchOpen(false) }}
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => { setSearchQuery(''); setSearchOpen(false) }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 cursor-pointer"
+                    onClick={() => setSearchOpen(true)}
+                    title="Search"
+                  >
+                    <Search className="h-5 w-5" />
+                  </Button>
+
+                  <div className="flex-1" />
+
+                  <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+                    <SelectTrigger className="h-10 w-10 p-0 border-0 shadow-none justify-center cursor-pointer [&>svg:last-child]:hidden" title="Filter by status">
+                      <div className="relative">
+                        <Filter className="h-5 w-5" />
+                        {statusFilter !== 'all' && (
+                          <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-500" />
+                        )}
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUS_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value} className="text-sm">
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
+                    <SelectTrigger className="h-10 w-10 p-0 border-0 shadow-none justify-center cursor-pointer [&>svg:last-child]:hidden" title="Sort by">
+                      <ArrowUpDown className="h-5 w-5" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SORT_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value} className="text-sm">
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </>
+              )}
             </div>
             {/* Equal-width type tabs */}
             <div className="flex">

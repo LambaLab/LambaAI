@@ -110,7 +110,7 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
   }
 
   return (
-    <div className="px-6 md:px-8 py-6 space-y-8">
+    <div className="px-6 md:px-8 py-5 space-y-5">
       {/* Save indicator */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         {saving && <span className="flex items-center gap-1"><Save className="w-3 h-3 animate-pulse" /> Saving...</span>}
@@ -215,7 +215,7 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
 
 function Field({ label, sublabel, children }: { label: string; sublabel?: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1">
       <div>
         <p className="text-[11px] uppercase tracking-widest font-medium text-muted-foreground/70">{label}</p>
         {sublabel && <p className="text-[10px] text-muted-foreground/50 mt-0.5">{sublabel}</p>}
