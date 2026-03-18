@@ -235,21 +235,19 @@ export default function ProposalDetail({ proposal, onBack, onProposalUpdate, isM
       {/* Tab content — scrolls independently, centered in expanded mode */}
       <div className="flex-1 min-h-0 overflow-y-auto bg-white dark:bg-background">
         <div className={isExpanded ? 'max-w-4xl mx-auto' : ''}>
-          {activeTab === 'proposal' && (
-            <div>
-              <ProposalEditor proposal={proposal} onUpdate={onProposalUpdate} />
-              {/* Budget section within Proposal tab */}
-              <div className="border-t">
-                <BudgetTab proposalId={proposal.id} proposalEmail={proposal.email} proposalSlug={proposal.slug} />
-              </div>
+          <div className={activeTab === 'proposal' ? '' : 'hidden'}>
+            <ProposalEditor proposal={proposal} onUpdate={onProposalUpdate} />
+            {/* Budget section within Proposal tab */}
+            <div className="border-t">
+              <BudgetTab proposalId={proposal.id} proposalEmail={proposal.email} proposalSlug={proposal.slug} />
             </div>
-          )}
-          {activeTab === 'tracker' && (
+          </div>
+          <div className={activeTab === 'tracker' ? '' : 'hidden'}>
             <TrackerTab proposalId={proposal.id} />
-          )}
-          {activeTab === 'chat' && (
+          </div>
+          <div className={activeTab === 'chat' ? '' : 'hidden'}>
             <ChatTab proposalId={proposal.id} />
-          )}
+          </div>
         </div>
       </div>
     </div>
