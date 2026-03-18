@@ -171,11 +171,11 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
     // Read-only mode
     if (!isEditing) {
       if (!value) {
-        return <p className="text-sm text-muted-foreground/40 italic">No content yet</p>
+        return <p className="text-base md:text-sm text-muted-foreground/40 italic">No content yet</p>
       }
       return (
         <p className={`whitespace-pre-wrap leading-relaxed text-foreground ${
-          key === 'prd' || key === 'techArch' ? 'font-mono text-xs' : 'text-sm'
+          key === 'prd' || key === 'techArch' ? 'font-mono text-sm md:text-xs' : 'text-base md:text-sm'
         }`}>
           {value}
         </p>
@@ -187,17 +187,17 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
 
     switch (key) {
       case 'brief':
-        return <textarea value={brief} onChange={(e) => handleFieldChange('brief', e.target.value)} className={`${baseClass} min-h-[120px] text-sm leading-relaxed`} placeholder="2-4 sentence summary" />
+        return <textarea value={brief} onChange={(e) => handleFieldChange('brief', e.target.value)} className={`${baseClass} min-h-[120px] text-base md:text-sm leading-relaxed`} placeholder="2-4 sentence summary" />
       case 'overview':
-        return <textarea value={productOverview} onChange={(e) => handleFieldChange('productOverview', e.target.value)} className={`${baseClass} min-h-[160px] text-sm leading-relaxed`} placeholder="Detailed product description" />
+        return <textarea value={productOverview} onChange={(e) => handleFieldChange('productOverview', e.target.value)} className={`${baseClass} min-h-[160px] text-base md:text-sm leading-relaxed`} placeholder="Detailed product description" />
       case 'prd':
-        return <textarea value={prd} onChange={(e) => handleFieldChange('prd', e.target.value)} className={`${baseClass} min-h-[250px] font-mono text-xs leading-relaxed`} placeholder="Product requirements document" />
+        return <textarea value={prd} onChange={(e) => handleFieldChange('prd', e.target.value)} className={`${baseClass} min-h-[250px] font-mono text-sm md:text-xs leading-relaxed`} placeholder="Product requirements document" />
       case 'techArch':
-        return <textarea value={techArch} onChange={(e) => handleFieldChange('technical_architecture', e.target.value)} className={`${baseClass} min-h-[200px] font-mono text-xs leading-relaxed`} placeholder="Architecture details" />
+        return <textarea value={techArch} onChange={(e) => handleFieldChange('technical_architecture', e.target.value)} className={`${baseClass} min-h-[200px] font-mono text-sm md:text-xs leading-relaxed`} placeholder="Architecture details" />
       case 'timeline':
-        return <textarea value={timeline} onChange={(e) => handleFieldChange('timeline', e.target.value)} className={`${baseClass} min-h-[120px] text-sm leading-relaxed`} placeholder="Project timeline" />
+        return <textarea value={timeline} onChange={(e) => handleFieldChange('timeline', e.target.value)} className={`${baseClass} min-h-[120px] text-base md:text-sm leading-relaxed`} placeholder="Project timeline" />
       case 'adminNotes':
-        return <textarea value={adminNotes} onChange={(e) => handleFieldChange('admin_notes', e.target.value)} className={`${baseClass} min-h-[120px] text-sm leading-relaxed bg-amber-50/50 dark:bg-amber-500/5`} placeholder="Internal notes, not visible to client" />
+        return <textarea value={adminNotes} onChange={(e) => handleFieldChange('admin_notes', e.target.value)} className={`${baseClass} min-h-[120px] text-base md:text-sm leading-relaxed bg-amber-50/50 dark:bg-amber-500/5`} placeholder="Internal notes, not visible to client" />
     }
   }
 
@@ -208,7 +208,7 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
       {/* ─── Section header: PROPOSAL DETAILS ─── */}
       <div className="flex items-center justify-between px-6 md:px-8 py-3 border-b border-border/40">
         <div className="flex items-center gap-3">
-          <p className="text-[11px] uppercase tracking-widest font-medium text-muted-foreground/70">Proposal Details</p>
+          <p className="text-xs md:text-[11px] uppercase tracking-widest font-medium text-muted-foreground/70">Proposal Details</p>
           {/* Save status */}
           <div className="text-xs h-5 flex items-center">
             {saving && (
@@ -309,7 +309,7 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
               <button
                 type="button"
                 onClick={() => setMobileOpenSection(isOpen ? null : section.key)}
-                className={`w-full flex items-center justify-between px-5 py-3 text-sm transition-colors cursor-pointer ${
+                className={`w-full flex items-center justify-between px-5 py-3.5 text-base transition-colors cursor-pointer ${
                   isOpen
                     ? 'text-foreground font-medium bg-yellow-50/80 dark:bg-yellow-500/5'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -318,12 +318,12 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
                 <span className="flex items-center gap-2">
                   {section.label}
                   {section.sublabel && (
-                    <span className="text-[10px] text-amber-500/70">{section.sublabel}</span>
+                    <span className="text-xs text-amber-500/70">{section.sublabel}</span>
                   )}
                 </span>
                 {isOpen
-                  ? <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
-                  : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  ? <ChevronDown className="w-5 h-5 text-muted-foreground shrink-0" />
+                  : <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0" />
                 }
               </button>
               {/* Accordion content */}
@@ -395,7 +395,7 @@ function ModulesContent({
                     : 'text-muted-foreground'
                 }`} />
               </div>
-              <span className="text-sm font-medium text-foreground flex-1 truncate">{mod.name}</span>
+              <span className="text-base md:text-sm font-medium text-foreground flex-1 truncate">{mod.name}</span>
               {isEditing && (
                 <button
                   type="button"
@@ -418,7 +418,7 @@ function ModulesContent({
                 <div className="overflow-hidden">
                   <div className="px-3 pb-3">
                     <div className="h-px bg-yellow-200/50 dark:bg-yellow-500/10 mb-2" />
-                    <p className="text-xs text-muted-foreground leading-relaxed">{summary}</p>
+                    <p className="text-sm md:text-xs text-muted-foreground leading-relaxed">{summary}</p>
                   </div>
                 </div>
               </div>
@@ -444,7 +444,7 @@ function ModulesContent({
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-muted/50">
                     <IconComponent className="w-3.5 h-3.5 text-muted-foreground" />
                   </div>
-                  <span className="text-sm text-muted-foreground">{mod.name}</span>
+                  <span className="text-base md:text-sm text-muted-foreground">{mod.name}</span>
                   <Plus className="w-3.5 h-3.5 text-muted-foreground/50 ml-auto" />
                 </button>
               )
@@ -454,7 +454,7 @@ function ModulesContent({
       )}
 
       {modules.length === 0 && !isEditing && (
-        <p className="text-sm text-muted-foreground/40 italic">No modules selected</p>
+        <p className="text-base md:text-sm text-muted-foreground/40 italic">No modules selected</p>
       )}
     </div>
   )
