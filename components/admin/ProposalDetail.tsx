@@ -233,8 +233,8 @@ export default function ProposalDetail({ proposal, onBack, onProposalUpdate, isM
       </div>
 
       {/* Tab content — scrolls independently, centered in expanded mode */}
-      <div className="flex-1 min-h-0 overflow-y-auto bg-white dark:bg-background">
-        <div className={isExpanded ? 'max-w-4xl mx-auto' : ''}>
+      <div className="flex-1 min-h-0 flex flex-col bg-white dark:bg-background">
+        <div className={`${isExpanded ? 'max-w-4xl mx-auto w-full' : ''} ${activeTab === 'chat' ? 'flex-1 min-h-0 flex flex-col' : 'overflow-y-auto flex-1'}`}>
           <div className={activeTab === 'proposal' ? '' : 'hidden'}>
             <ProposalEditor proposal={proposal} onUpdate={onProposalUpdate} />
             {/* Budget section within Proposal tab */}
@@ -245,7 +245,7 @@ export default function ProposalDetail({ proposal, onBack, onProposalUpdate, isM
           <div className={activeTab === 'tracker' ? '' : 'hidden'}>
             <TrackerTab proposalId={proposal.id} />
           </div>
-          <div className={activeTab === 'chat' ? '' : 'hidden'}>
+          <div className={`${activeTab === 'chat' ? 'flex-1 min-h-0 flex flex-col' : 'hidden'}`}>
             <ChatTab proposalId={proposal.id} />
           </div>
         </div>
