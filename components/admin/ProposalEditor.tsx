@@ -49,22 +49,10 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
   // Desktop: vertical tab selection
   const [activeSection, setActiveSection] = useState<SectionKey>('brief')
 
-  // Mobile: collapsible sections — default all open
-  const [openSections, setOpenSections] = useState<Set<SectionKey>>(
-    new Set(['brief', 'overview', 'modules', 'prd', 'techArch', 'timeline', 'adminNotes'])
-  )
+  // (mobile now uses same vertical tabs as desktop)
 
   // Track if there are unsaved changes
   const [hasChanges, setHasChanges] = useState(false)
-
-  const toggleSection = (key: SectionKey) => {
-    setOpenSections(prev => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
-    })
-  }
 
   // Reset form when proposal changes
   useEffect(() => {
@@ -212,19 +200,6 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
     }
   }
 
-  // Get preview text for a section
-  function getPreview(key: SectionKey): string | undefined {
-    switch (key) {
-      case 'brief': return brief ? truncate(brief, 60) : undefined
-      case 'overview': return productOverview ? truncate(productOverview, 60) : undefined
-      case 'modules': return modules.length > 0 ? `${modules.length} selected` : undefined
-      case 'prd': return prd ? truncate(prd, 60) : undefined
-      case 'techArch': return techArch ? truncate(techArch, 60) : undefined
-      case 'timeline': return timeline ? truncate(timeline, 60) : undefined
-      case 'adminNotes': return adminNotes ? truncate(adminNotes, 60) : undefined
-    }
-  }
-
   const activeSectionDef = SECTIONS.find(s => s.key === activeSection)!
 
   return (
@@ -285,29 +260,29 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
       {/* ─── Desktop: Vertical tabs layout ─── */}
       <div className="hidden md:flex min-h-[400px]">
         {/* Tab list — left side */}
-        <div className="w-44 shrink-0 border-r border-border/40 py-1">
-          {SECTIONS.map((section) => {
+        <div className="w-44 shrink-0 border-r border-border/40">
+          {SECTIONS.map((section, index) => {
             const isActive = activeSection === section.key
-            const preview = getPreview(section.key)
             return (
-              <button
-                key={section.key}
-                type="button"
-                onClick={() => setActiveSection(section.key)}
-                className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer border-l-2 ${
-                  isActive
-                    ? 'text-foreground font-medium bg-yellow-50/80 dark:bg-yellow-500/5 border-l-yellow-500'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 border-l-transparent'
-                }`}
-              >
-                <span className="block">{section.label}</span>
-                {!isActive && preview && (
-                  <span className="block text-[10px] text-muted-foreground/40 truncate mt-0.5">{preview}</span>
+              <div key={section.key}>
+                {index > 0 && (
+                  <div className="mx-3 h-px bg-border/30" />
                 )}
-                {section.sublabel && !isActive && (
-                  <span className="block text-[10px] text-amber-500/70 mt-0.5">{section.sublabel}</span>
-                )}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSection(section.key)}
+                  className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer border-l-2 ${
+                    isActive
+                      ? 'text-foreground font-medium bg-yellow-50/80 dark:bg-yellow-500/5 border-l-yellow-500'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 border-l-transparent'
+                  }`}
+                >
+                  {section.label}
+                  {section.sublabel && (
+                    <span className="block text-[10px] text-amber-500/70 mt-0.5">{section.sublabel}</span>
+                  )}
+                </button>
+              </div>
             )
           })}
         </div>
@@ -320,21 +295,40 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
         </div>
       </div>
 
-      {/* ─── Mobile: Collapsible sections ─── */}
-      <div className="md:hidden px-6 py-4 space-y-0">
-        {SECTIONS.map((section) => (
-          <CollapsibleSection
-            key={section.key}
-            label={section.key === 'modules' ? `Modules (${modules.length})` : section.label}
-            sublabel={section.sublabel}
-            isOpen={openSections.has(section.key)}
-            onToggle={() => toggleSection(section.key)}
-            preview={getPreview(section.key)}
-            variant={section.key === 'adminNotes' ? 'warning' : undefined}
-          >
-            {renderSectionContent(section.key)}
-          </CollapsibleSection>
-        ))}
+      {/* ─── Mobile: Vertical tabs (full width) ─── */}
+      <div className="md:hidden">
+        {/* Tab list — horizontal scroll or stacked */}
+        <div className="border-b border-border/40">
+          {SECTIONS.map((section, index) => {
+            const isActive = activeSection === section.key
+            return (
+              <div key={section.key}>
+                {index > 0 && (
+                  <div className="mx-3 h-px bg-border/30" />
+                )}
+                <button
+                  type="button"
+                  onClick={() => setActiveSection(section.key)}
+                  className={`w-full text-left px-5 py-3 text-sm transition-colors cursor-pointer border-l-2 ${
+                    isActive
+                      ? 'text-foreground font-medium bg-yellow-50/80 dark:bg-yellow-500/5 border-l-yellow-500'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 border-l-transparent'
+                  }`}
+                >
+                  {section.label}
+                  {section.sublabel && (
+                    <span className="ml-2 text-[10px] text-amber-500/70">{section.sublabel}</span>
+                  )}
+                </button>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Content — below tabs */}
+        <div className="px-5 py-4">
+          {renderSectionContent(activeSection)}
+        </div>
       </div>
     </div>
   )
@@ -455,60 +449,3 @@ function ModulesContent({
   )
 }
 
-function truncate(text: string, max: number): string {
-  if (text.length <= max) return text
-  return text.slice(0, max).trim() + '…'
-}
-
-function CollapsibleSection({
-  label,
-  sublabel,
-  isOpen,
-  onToggle,
-  preview,
-  variant,
-  children,
-}: {
-  label: string
-  sublabel?: string
-  isOpen: boolean
-  onToggle: () => void
-  preview?: string
-  variant?: 'warning'
-  children: React.ReactNode
-}) {
-  return (
-    <div className={`border-b border-border/40 ${variant === 'warning' ? '' : ''}`}>
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-center gap-2 py-3 text-left cursor-pointer group"
-      >
-        <ChevronRight
-          className={`w-3.5 h-3.5 text-muted-foreground/50 shrink-0 transition-transform duration-200 ${
-            isOpen ? 'rotate-90' : ''
-          }`}
-        />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-[11px] uppercase tracking-widest font-medium text-muted-foreground/70">{label}</p>
-            {sublabel && <p className="text-[10px] text-muted-foreground/50">{sublabel}</p>}
-          </div>
-          {!isOpen && preview && (
-            <p className="text-xs text-muted-foreground/50 truncate mt-0.5">{preview}</p>
-          )}
-        </div>
-      </button>
-      <div
-        className="grid transition-[grid-template-rows] duration-200 ease-in-out"
-        style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}
-      >
-        <div className="overflow-hidden">
-          <div className="pb-4">
-            {children}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
