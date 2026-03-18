@@ -233,7 +233,6 @@ function AdminDashboardContent() {
 
     const triggerButton = (
       <button className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-sm font-medium hover:bg-muted/60 transition-colors cursor-pointer text-muted-foreground">
-        <span className="text-foreground/50 mx-0.5">/</span>
         {TYPE_TABS.find(t => t.value === activeTab)?.label}
         {activeTab === 'build' && proposals.length > 0 && (
           <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-yellow-400/15 text-yellow-600 dark:text-yellow-400">
