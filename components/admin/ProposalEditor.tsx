@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { Save, Check, Plus, X } from 'lucide-react'
+import { Save, Check, Plus, X, ChevronDown } from 'lucide-react'
+import * as Icons from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
 import { MODULE_CATALOG } from '@/lib/modules/catalog'
 import { Button } from '@/components/ui/button'
@@ -33,6 +34,8 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
   const [techArch, setTechArch] = useState(proposal.technical_architecture ?? '')
   const [timeline, setTimeline] = useState(proposal.timeline ?? '')
   const [modules, setModules] = useState<string[]>((proposal.modules ?? []) as string[])
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set())
+  const moduleSummaries = (meta.moduleSummaries ?? {}) as Record<string, string>
 
   // Reset form when proposal changes
   useEffect(() => {
@@ -150,23 +153,92 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
       </Field>
 
       {/* Modules */}
-      <Field label="Modules">
-        <div className="flex flex-wrap gap-2">
-          {MODULE_CATALOG.map((mod) => {
-            const active = modules.includes(mod.id)
+      <Field label={`Modules (${modules.length})`}>
+        <div className="space-y-2">
+          {/* Selected modules */}
+          {modules.map((moduleId) => {
+            const mod = MODULE_CATALOG.find((m) => m.id === moduleId)
+            if (!mod) return null
+            const IconComponent = (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[mod.icon] ?? Icons.Box
+            const summary = moduleSummaries[moduleId]
+            const isOpen = expandedModules.has(moduleId)
+
             return (
-              <Button
-                key={mod.id}
-                variant={active ? 'default' : 'outline'}
-                size="sm"
-                className="rounded-full cursor-pointer"
-                onClick={() => handleToggleModule(mod.id)}
+              <div
+                key={moduleId}
+                className="rounded-xl border border-yellow-200 dark:border-yellow-500/20 bg-yellow-50/50 dark:bg-yellow-500/5 overflow-hidden transition-all"
               >
-                {active ? <X className="w-3 h-3 mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
-                {mod.name}
-              </Button>
+                <div className="flex items-center gap-2.5 p-3 group">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-yellow-100 dark:bg-yellow-500/15">
+                    <IconComponent className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                  </div>
+                  <span className="text-sm font-medium text-foreground flex-1 truncate">{mod.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleModule(moduleId)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-muted-foreground hover:text-destructive cursor-pointer"
+                    title="Remove module"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                  {summary && (
+                    <button
+                      type="button"
+                      onClick={() => setExpandedModules(prev => {
+                        const next = new Set(prev)
+                        if (next.has(moduleId)) next.delete(moduleId)
+                        else next.add(moduleId)
+                        return next
+                      })}
+                      className="p-1 text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                    >
+                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                  )}
+                </div>
+                {/* Expandable summary */}
+                {summary && (
+                  <div
+                    className="grid transition-[grid-template-rows] duration-300 ease-in-out"
+                    style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="px-3 pb-3">
+                        <div className="h-px bg-yellow-200/50 dark:bg-yellow-500/10 mb-2" />
+                        <p className="text-xs text-muted-foreground leading-relaxed">{summary}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             )
           })}
+
+          {/* Available modules to add */}
+          {MODULE_CATALOG.filter((m) => !modules.includes(m.id)).length > 0 && (
+            <div className="pt-2">
+              <p className="text-[10px] uppercase tracking-widest font-medium text-muted-foreground/50 mb-2">Add modules</p>
+              <div className="space-y-1.5">
+                {MODULE_CATALOG.filter((m) => !modules.includes(m.id)).map((mod) => {
+                  const IconComponent = (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[mod.icon] ?? Icons.Box
+                  return (
+                    <button
+                      key={mod.id}
+                      type="button"
+                      onClick={() => handleToggleModule(mod.id)}
+                      className="w-full flex items-center gap-2.5 p-2.5 rounded-xl border border-dashed border-muted-foreground/15 opacity-50 hover:opacity-100 hover:border-yellow-300 dark:hover:border-yellow-500/30 hover:bg-yellow-50/30 dark:hover:bg-yellow-500/5 transition-all cursor-pointer text-left"
+                    >
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-muted/50">
+                        <IconComponent className="w-3.5 h-3.5 text-muted-foreground" />
+                      </div>
+                      <span className="text-sm text-muted-foreground">{mod.name}</span>
+                      <Plus className="w-3.5 h-3.5 text-muted-foreground/50 ml-auto" />
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </Field>
 
