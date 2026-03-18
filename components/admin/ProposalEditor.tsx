@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { Save, Check, Plus, X, ChevronRight } from 'lucide-react'
+import { Save, Check, Plus, X, ChevronRight, Pencil } from 'lucide-react'
 import * as Icons from 'lucide-react'
 import type { Database } from '@/lib/supabase/types'
 import { MODULE_CATALOG } from '@/lib/modules/catalog'
+import { Button } from '@/components/ui/button'
 
 type Proposal = Database['public']['Tables']['proposals']['Row']
 
@@ -28,6 +29,7 @@ const SECTIONS: { key: SectionKey; label: string; sublabel?: string }[] = [
 export default function ProposalEditor({ proposal, onUpdate }: Props) {
   const [saving, setSaving] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const savedDismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -52,6 +54,9 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
     new Set(['brief', 'overview', 'modules', 'prd', 'techArch', 'timeline', 'adminNotes'])
   )
 
+  // Track if there are unsaved changes
+  const [hasChanges, setHasChanges] = useState(false)
+
   const toggleSection = (key: SectionKey) => {
     setOpenSections(prev => {
       const next = new Set(prev)
@@ -72,6 +77,8 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
     setTechArch(proposal.technical_architecture ?? '')
     setTimeline(proposal.timeline ?? '')
     setModules((proposal.modules ?? []) as string[])
+    setIsEditing(false)
+    setHasChanges(false)
   }, [proposal.id])
 
   const saveChanges = useCallback(async (updates: Record<string, unknown>) => {
@@ -85,47 +92,52 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
       const updated = await res.json()
       onUpdate(updated)
       setShowSaved(true)
+      setHasChanges(false)
       if (savedDismissTimer.current) clearTimeout(savedDismissTimer.current)
       savedDismissTimer.current = setTimeout(() => setShowSaved(false), 2000)
     }
     setSaving(false)
   }, [proposal.id, onUpdate])
 
-  function debounceSave(updates: Record<string, unknown>) {
-    if (saveTimer.current) clearTimeout(saveTimer.current)
-    saveTimer.current = setTimeout(() => saveChanges(updates), 1000)
+  // Save all current field values at once
+  function handleSaveAll() {
+    saveChanges({
+      brief,
+      admin_notes: adminNotes,
+      prd,
+      technical_architecture: techArch,
+      timeline,
+      modules,
+      metadata: { ...meta, projectName, productOverview },
+    })
+    setIsEditing(false)
+  }
+
+  function handleCancel() {
+    // Reset to proposal values
+    const m = (proposal.metadata ?? {}) as Record<string, unknown>
+    setProjectName((m.projectName as string) ?? '')
+    setBrief(proposal.brief ?? '')
+    setProductOverview((m.productOverview as string) ?? '')
+    setAdminNotes(proposal.admin_notes ?? '')
+    setPrd(proposal.prd ?? '')
+    setTechArch(proposal.technical_architecture ?? '')
+    setTimeline(proposal.timeline ?? '')
+    setModules((proposal.modules ?? []) as string[])
+    setIsEditing(false)
+    setHasChanges(false)
   }
 
   function handleFieldChange(field: string, value: string) {
+    setHasChanges(true)
     switch (field) {
-      case 'brief':
-        setBrief(value)
-        debounceSave({ brief: value })
-        break
-      case 'admin_notes':
-        setAdminNotes(value)
-        debounceSave({ admin_notes: value })
-        break
-      case 'prd':
-        setPrd(value)
-        debounceSave({ prd: value })
-        break
-      case 'technical_architecture':
-        setTechArch(value)
-        debounceSave({ technical_architecture: value })
-        break
-      case 'timeline':
-        setTimeline(value)
-        debounceSave({ timeline: value })
-        break
-      case 'projectName':
-        setProjectName(value)
-        debounceSave({ metadata: { ...meta, projectName: value } })
-        break
-      case 'productOverview':
-        setProductOverview(value)
-        debounceSave({ metadata: { ...meta, productOverview: value } })
-        break
+      case 'brief': setBrief(value); break
+      case 'admin_notes': setAdminNotes(value); break
+      case 'prd': setPrd(value); break
+      case 'technical_architecture': setTechArch(value); break
+      case 'timeline': setTimeline(value); break
+      case 'projectName': setProjectName(value); break
+      case 'productOverview': setProductOverview(value); break
     }
   }
 
@@ -134,7 +146,7 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
       ? modules.filter((m) => m !== moduleId)
       : [...modules, moduleId]
     setModules(updated)
-    saveChanges({ modules: updated })
+    setHasChanges(true)
   }
 
   function toggleModuleExpand(moduleId: string) {
@@ -146,65 +158,57 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
     })
   }
 
+  // Get display value for read-only mode
+  function getDisplayValue(key: SectionKey): string {
+    switch (key) {
+      case 'brief': return brief
+      case 'overview': return productOverview
+      case 'prd': return prd
+      case 'techArch': return techArch
+      case 'timeline': return timeline
+      case 'adminNotes': return adminNotes
+      default: return ''
+    }
+  }
+
   // Section content renderer
   function renderSectionContent(key: SectionKey) {
+    if (key === 'modules') {
+      return <ModulesContent modules={modules} moduleSummaries={moduleSummaries} expandedModules={expandedModules} onToggleModule={handleToggleModule} onToggleExpand={toggleModuleExpand} isEditing={isEditing} />
+    }
+
+    const value = getDisplayValue(key)
+
+    // Read-only mode
+    if (!isEditing) {
+      if (!value) {
+        return <p className="text-sm text-muted-foreground/40 italic">No content yet</p>
+      }
+      return (
+        <p className={`whitespace-pre-wrap leading-relaxed text-foreground ${
+          key === 'prd' || key === 'techArch' ? 'font-mono text-xs' : 'text-sm'
+        }`}>
+          {value}
+        </p>
+      )
+    }
+
+    // Edit mode
+    const baseClass = 'w-full resize-y bg-muted/20 dark:bg-muted/10 rounded-lg p-3 outline-none border border-border/60 focus:border-yellow-400 dark:focus:border-yellow-500/40 transition-colors placeholder:text-muted-foreground/40 text-foreground'
+
     switch (key) {
       case 'brief':
-        return (
-          <textarea
-            value={brief}
-            onChange={(e) => handleFieldChange('brief', e.target.value)}
-            className="w-full min-h-[120px] resize-y bg-transparent outline-none text-sm leading-relaxed placeholder:text-muted-foreground/40 text-foreground"
-            placeholder="2-4 sentence summary"
-          />
-        )
+        return <textarea value={brief} onChange={(e) => handleFieldChange('brief', e.target.value)} className={`${baseClass} min-h-[120px] text-sm leading-relaxed`} placeholder="2-4 sentence summary" />
       case 'overview':
-        return (
-          <textarea
-            value={productOverview}
-            onChange={(e) => handleFieldChange('productOverview', e.target.value)}
-            className="w-full min-h-[160px] resize-y bg-transparent outline-none text-sm leading-relaxed placeholder:text-muted-foreground/40 text-foreground"
-            placeholder="Detailed product description"
-          />
-        )
-      case 'modules':
-        return <ModulesContent modules={modules} moduleSummaries={moduleSummaries} expandedModules={expandedModules} onToggleModule={handleToggleModule} onToggleExpand={toggleModuleExpand} />
+        return <textarea value={productOverview} onChange={(e) => handleFieldChange('productOverview', e.target.value)} className={`${baseClass} min-h-[160px] text-sm leading-relaxed`} placeholder="Detailed product description" />
       case 'prd':
-        return (
-          <textarea
-            value={prd}
-            onChange={(e) => handleFieldChange('prd', e.target.value)}
-            className="w-full min-h-[250px] resize-y bg-transparent outline-none font-mono text-xs leading-relaxed placeholder:text-muted-foreground/40 text-foreground"
-            placeholder="Product requirements document"
-          />
-        )
+        return <textarea value={prd} onChange={(e) => handleFieldChange('prd', e.target.value)} className={`${baseClass} min-h-[250px] font-mono text-xs leading-relaxed`} placeholder="Product requirements document" />
       case 'techArch':
-        return (
-          <textarea
-            value={techArch}
-            onChange={(e) => handleFieldChange('technical_architecture', e.target.value)}
-            className="w-full min-h-[200px] resize-y bg-transparent outline-none font-mono text-xs leading-relaxed placeholder:text-muted-foreground/40 text-foreground"
-            placeholder="Architecture details"
-          />
-        )
+        return <textarea value={techArch} onChange={(e) => handleFieldChange('technical_architecture', e.target.value)} className={`${baseClass} min-h-[200px] font-mono text-xs leading-relaxed`} placeholder="Architecture details" />
       case 'timeline':
-        return (
-          <textarea
-            value={timeline}
-            onChange={(e) => handleFieldChange('timeline', e.target.value)}
-            className="w-full min-h-[120px] resize-y bg-transparent outline-none text-sm leading-relaxed placeholder:text-muted-foreground/40 text-foreground"
-            placeholder="Project timeline"
-          />
-        )
+        return <textarea value={timeline} onChange={(e) => handleFieldChange('timeline', e.target.value)} className={`${baseClass} min-h-[120px] text-sm leading-relaxed`} placeholder="Project timeline" />
       case 'adminNotes':
-        return (
-          <textarea
-            value={adminNotes}
-            onChange={(e) => handleFieldChange('admin_notes', e.target.value)}
-            className="w-full min-h-[120px] resize-y bg-amber-50/50 dark:bg-amber-500/5 rounded-lg p-3 outline-none text-sm leading-relaxed placeholder:text-muted-foreground/40 text-foreground"
-            placeholder="Internal notes, not visible to client"
-          />
-        )
+        return <textarea value={adminNotes} onChange={(e) => handleFieldChange('admin_notes', e.target.value)} className={`${baseClass} min-h-[120px] text-sm leading-relaxed bg-amber-50/50 dark:bg-amber-500/5`} placeholder="Internal notes, not visible to client" />
     }
   }
 
@@ -213,7 +217,7 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
     switch (key) {
       case 'brief': return brief ? truncate(brief, 60) : undefined
       case 'overview': return productOverview ? truncate(productOverview, 60) : undefined
-      case 'modules': return modules.length > 0 ? modules.map(id => MODULE_CATALOG.find(m => m.id === id)?.name ?? id).join(', ') : undefined
+      case 'modules': return modules.length > 0 ? `${modules.length} selected` : undefined
       case 'prd': return prd ? truncate(prd, 60) : undefined
       case 'techArch': return techArch ? truncate(techArch, 60) : undefined
       case 'timeline': return timeline ? truncate(timeline, 60) : undefined
@@ -225,16 +229,12 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
 
   return (
     <div>
-      {/* Project Name — always visible */}
-      <div className="px-6 md:px-8 py-3 border-b border-border/40">
-        <div className="flex items-center gap-2">
-          <input
-            value={projectName}
-            onChange={(e) => handleFieldChange('projectName', e.target.value)}
-            placeholder="e.g., FitTrack Pro"
-            className="w-full text-lg font-medium bg-transparent outline-none placeholder:text-muted-foreground/40 text-foreground flex-1"
-          />
-          <div className="shrink-0 text-xs h-5 flex items-center">
+      {/* ─── Section header: PROPOSAL DETAILS ─── */}
+      <div className="flex items-center justify-between px-6 md:px-8 py-3 border-b border-border/40">
+        <div className="flex items-center gap-3">
+          <p className="text-[11px] uppercase tracking-widest font-medium text-muted-foreground/70">Proposal Details</p>
+          {/* Save status */}
+          <div className="text-xs h-5 flex items-center">
             {saving && (
               <span className="flex items-center gap-1 text-muted-foreground animate-pulse">
                 <Save className="w-3 h-3" /> Saving
@@ -246,6 +246,39 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
               </span>
             )}
           </div>
+        </div>
+        {/* Edit / Save / Cancel buttons */}
+        <div className="flex items-center gap-2">
+          {isEditing ? (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCancel}
+                className="text-xs cursor-pointer h-7"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleSaveAll}
+                disabled={saving || !hasChanges}
+                className="text-xs cursor-pointer h-7 bg-yellow-500 hover:bg-yellow-600 text-black"
+              >
+                {saving ? 'Saving...' : 'Save changes'}
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditing(true)}
+              className="text-xs cursor-pointer h-7 gap-1.5"
+            >
+              <Pencil className="w-3 h-3" />
+              Edit
+            </Button>
+          )}
         </div>
       </div>
 
@@ -261,21 +294,17 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
                 key={section.key}
                 type="button"
                 onClick={() => setActiveSection(section.key)}
-                className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer relative ${
+                className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer border-l-2 ${
                   isActive
-                    ? 'text-foreground font-medium bg-muted/40'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/20'
+                    ? 'text-foreground font-medium bg-yellow-50/80 dark:bg-yellow-500/5 border-l-yellow-500'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 border-l-transparent'
                 }`}
               >
-                {/* Active indicator */}
-                {isActive && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-yellow-500 dark:bg-yellow-400 rounded-r" />
-                )}
                 <span className="block">{section.label}</span>
                 {!isActive && preview && (
                   <span className="block text-[10px] text-muted-foreground/40 truncate mt-0.5">{preview}</span>
                 )}
-                {section.sublabel && (
+                {section.sublabel && !isActive && (
                   <span className="block text-[10px] text-amber-500/70 mt-0.5">{section.sublabel}</span>
                 )}
               </button>
@@ -286,18 +315,12 @@ export default function ProposalEditor({ proposal, onUpdate }: Props) {
         {/* Content — right side */}
         <div className="flex-1 min-w-0 overflow-y-auto">
           <div className="px-6 py-4">
-            <p className="text-[11px] uppercase tracking-widest font-medium text-muted-foreground/70 mb-3">
-              {activeSectionDef.label}
-              {activeSectionDef.sublabel && (
-                <span className="normal-case tracking-normal text-muted-foreground/50 ml-2">— {activeSectionDef.sublabel}</span>
-              )}
-            </p>
             {renderSectionContent(activeSection)}
           </div>
         </div>
       </div>
 
-      {/* ─── Mobile: Collapsible sections (unchanged) ─── */}
+      {/* ─── Mobile: Collapsible sections ─── */}
       <div className="md:hidden px-6 py-4 space-y-0">
         {SECTIONS.map((section) => (
           <CollapsibleSection
@@ -324,12 +347,14 @@ function ModulesContent({
   expandedModules,
   onToggleModule,
   onToggleExpand,
+  isEditing,
 }: {
   modules: string[]
   moduleSummaries: Record<string, string>
   expandedModules: Set<string>
   onToggleModule: (id: string) => void
   onToggleExpand: (id: string) => void
+  isEditing: boolean
 }) {
   return (
     <div className="space-y-2">
@@ -350,7 +375,6 @@ function ModulesContent({
                 : 'border-border/60 bg-muted/20 dark:bg-muted/10'
             }`}
           >
-            {/* Entire header row is clickable to expand */}
             <div
               className={`flex items-center gap-2.5 p-3 group ${summary ? 'cursor-pointer' : ''}`}
               onClick={() => { if (summary) onToggleExpand(moduleId) }}
@@ -367,19 +391,20 @@ function ModulesContent({
                 }`} />
               </div>
               <span className="text-sm font-medium text-foreground flex-1 truncate">{mod.name}</span>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); onToggleModule(moduleId) }}
-                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-muted-foreground hover:text-destructive cursor-pointer"
-                title="Remove module"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+              {isEditing && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onToggleModule(moduleId) }}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-muted-foreground hover:text-destructive cursor-pointer"
+                  title="Remove module"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
               {summary && (
                 <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
               )}
             </div>
-            {/* Expandable summary */}
             {summary && (
               <div
                 className="grid transition-[grid-template-rows] duration-300 ease-in-out"
@@ -397,8 +422,8 @@ function ModulesContent({
         )
       })}
 
-      {/* Available modules to add */}
-      {MODULE_CATALOG.filter((m) => !modules.includes(m.id)).length > 0 && (
+      {/* Available modules to add — only in edit mode */}
+      {isEditing && MODULE_CATALOG.filter((m) => !modules.includes(m.id)).length > 0 && (
         <div className="pt-2">
           <p className="text-[10px] uppercase tracking-widest font-medium text-muted-foreground/50 mb-2">Add modules</p>
           <div className="space-y-1.5">
@@ -421,6 +446,10 @@ function ModulesContent({
             })}
           </div>
         </div>
+      )}
+
+      {modules.length === 0 && !isEditing && (
+        <p className="text-sm text-muted-foreground/40 italic">No modules selected</p>
       )}
     </div>
   )
