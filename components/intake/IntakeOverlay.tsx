@@ -15,6 +15,7 @@ import {
   hydrateProposalFromRestore,
   getIdeaForSession,
   clearProposalData,
+  validateSession,
   type SessionData,
 } from '@/lib/session'
 import SessionLoadingScreen from './SessionLoadingScreen'
@@ -133,19 +134,36 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
     // or email link — restore the existing session.
     const hasExistingParam = new URLSearchParams(window.location.search).has('c')
     const forceNew = !!initialMessage && !hasExistingParam
-    getOrCreateSession(forceNew).then((data) => {
-      setSession(data)
-      // Store the idea so we can restore it on refresh
-      if (initialMessage) {
-        storeIdeaForSession(data.proposalId, initialMessage)
+
+    async function initSession() {
+      const data = await getOrCreateSession(forceNew)
+
+      // Validate the stored session still exists on the server.
+      // If the proposal was deleted or expired, start fresh.
+      if (!forceNew) {
+        const isValid = await validateSession(data.proposalId)
+        if (!isValid) {
+          // Clear stale data and create a new session
+          clearProposalData(data.proposalId)
+          localStorage.removeItem('lamba_session')
+          localStorage.removeItem('lamba_app_name')
+          const freshData = await getOrCreateSession(true)
+          setSession(freshData)
+          if (initialMessage) storeIdeaForSession(freshData.proposalId, initialMessage)
+          window.history.replaceState(null, '', `/?c=${freshData.proposalId}`)
+          return
+        }
       }
-      // Push unique conversation URL
+
+      setSession(data)
+      if (initialMessage) storeIdeaForSession(data.proposalId, initialMessage)
       window.history.replaceState(null, '', `/?c=${data.proposalId}`)
-      // Check if email was already verified for this proposal
       if (localStorage.getItem(`lamba_email_verified_${data.proposalId}`)) {
         setEmailVerified(true)
       }
-    }).catch(() => setSessionError(true))
+    }
+
+    initSession().catch(() => setSessionError(true))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Fetch proposals for the drawer ──
@@ -400,7 +418,9 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
 
   function handleRetry() {
     setSessionError(false)
-    getOrCreateSession()
+    // Clear stale session data so we don't restore a broken/expired session
+    localStorage.removeItem('lamba_session')
+    getOrCreateSession(true)
       .then((data) => {
         setSession(data)
         if (initialMessage) storeIdeaForSession(data.proposalId, initialMessage)
@@ -409,7 +429,9 @@ export default function IntakeOverlay({ initialMessage, onClose }: Props) {
       .catch(() => setSessionError(true))
   }
 
-  const isBlank = currentIdea === ''
+  // Only show X (close) when there's truly no work — no idea AND no stored messages
+  const hasStoredMessages = session ? !!localStorage.getItem(`lamba_msgs_${session.proposalId}`) : false
+  const isBlank = currentIdea === '' && !hasStoredMessages
 
   function handleCloseOrMinimize() {
     if (isBlank) {

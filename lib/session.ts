@@ -46,12 +46,12 @@ export function getIdeaForSession(proposalId: string): string | null {
 // In-flight guard — prevents concurrent API calls (e.g. React StrictMode double-fire)
 let inflightPromise: Promise<SessionData> | null = null
 
-// Retry up to 3 attempts with exponential backoff (800ms, 1600ms) before throwing
+// Retry up to 5 attempts with exponential backoff before throwing
 async function createNewSession(attempt = 1): Promise<SessionData> {
   const res = await fetch('/api/intake/session', { method: 'POST' })
   if (!res.ok) {
-    if (attempt < 3) {
-      await new Promise(r => setTimeout(r, 800 * attempt))
+    if (attempt < 5) {
+      await new Promise(r => setTimeout(r, 1000 * attempt))
       return createNewSession(attempt + 1)
     }
     throw new Error('Failed to create session')
@@ -59,6 +59,17 @@ async function createNewSession(attempt = 1): Promise<SessionData> {
   const data: SessionData = await res.json()
   storeSession(data)
   return data
+}
+
+/** Validate a stored session still exists on the server. Returns true if valid. */
+export async function validateSession(proposalId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/proposals/${proposalId}/validate`, { method: 'GET' })
+    return res.ok
+  } catch {
+    // Network error — assume session might still be valid (offline scenario)
+    return true
+  }
 }
 
 export async function getOrCreateSession(forceNew = false): Promise<SessionData> {

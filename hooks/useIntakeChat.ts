@@ -222,7 +222,24 @@ export function useIntakeChat({ proposalId, idea }: Props) {
         }
       })
 
+    // Reconnect the realtime channel when the tab regains focus after being idle.
+    // Supabase websocket may silently disconnect after prolonged background.
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        const state = channel.state
+        if (state !== 'joined' && state !== 'joining') {
+          channel.subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') {
+              await channel.track({ user_type: 'client' })
+            }
+          })
+        }
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
       supabase.removeChannel(channel)
     }
   }, [proposalId])
@@ -964,6 +981,26 @@ export function useIntakeChat({ proposalId, idea }: Props) {
                   completedModules: completedModulesRef.current,
                 }
                 localStorage.setItem(PHASE_KEY(proposalId), JSON.stringify(phaseState))
+
+                // Auto-sync proposal metadata to Supabase (even without email verification)
+                // so the admin dashboard can see the proposal as soon as AI starts analyzing it.
+                const storedSession = getStoredSession()
+                if (storedSession?.sessionId && newScore > 0) {
+                  fetch(`/api/proposals/${proposalId}/sync-metadata`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      sessionId: storedSession.sessionId,
+                      confidenceScore: newScore,
+                      modules: newModules,
+                      brief: savedBrief,
+                      metadata: {
+                        ...(savedProjectName ? { projectName: savedProjectName } : {}),
+                        ...(savedOverview ? { productOverview: savedOverview } : {}),
+                      },
+                    }),
+                  }).catch(() => { /* best-effort, ignore errors */ })
+                }
               } catch { /* Ignore QuotaExceededError */ }
             }
 
