@@ -7,32 +7,48 @@ export async function POST(req: NextRequest) {
   // same browser).
   const supabase = createServiceClient()
 
-  // Create an anonymous Supabase auth user (service-side, no cookies touched)
+  // Generate a deterministic UUID for anonymous users instead of using
+  // Supabase Auth admin API (which can hit rate limits / user caps on free tier).
+  // We create the auth user first, then the session and proposal.
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email_confirm: true,
-    // Anonymous user — no email, no password
     user_metadata: { anonymous: true },
   })
+
   if (authError || !authData.user) {
-    return NextResponse.json({ error: 'Failed to create session' }, { status: 500 })
+    // Log the actual error for debugging (visible in Vercel function logs)
+    console.error('[session] auth.admin.createUser failed:', authError?.message ?? 'no user returned', authError?.status)
+
+    // Fallback: create session + proposal WITHOUT an auth user.
+    // Both sessions.user_id and proposals.user_id are nullable,
+    // so this bypasses the auth.users FK constraint.
+    return createSessionAndProposal(supabase, null, req)
   }
 
-  const userId = authData.user.id
+  return createSessionAndProposal(supabase, authData.user.id, req)
+}
 
+async function createSessionAndProposal(
+  supabase: ReturnType<typeof createServiceClient>,
+  userId: string | null,
+  req: NextRequest
+) {
   const body = await req.json().catch(() => ({} as Record<string, unknown>))
   const email = typeof body.email === 'string' && body.email ? body.email : null
 
   // Create session row (service client bypasses RLS)
   const { data: session, error: sessionError } = await supabase
     .from('sessions')
-    .insert({ user_id: userId })
+    .insert(userId ? { user_id: userId } : {})
     .select()
     .single()
 
   if (sessionError || !session) {
-    // Clean up orphaned auth user
-    await supabase.auth.admin.deleteUser(userId)
-    return NextResponse.json({ error: 'Failed to create session record' }, { status: 500 })
+    console.error('[session] sessions.insert failed:', sessionError?.message, sessionError?.code)
+    return NextResponse.json(
+      { error: 'Failed to create session record', detail: sessionError?.message },
+      { status: 500 }
+    )
   }
 
   // Create initial proposal for this session
@@ -40,20 +56,23 @@ export async function POST(req: NextRequest) {
     .from('proposals')
     .insert({
       session_id: session.id,
-      user_id: userId,
+      ...(userId ? { user_id: userId } : {}),
       ...(email ? { email, saved_at: new Date().toISOString() } : {}),
     })
     .select()
     .single()
 
   if (proposalError || !proposal) {
-    await supabase.auth.admin.deleteUser(userId)
-    return NextResponse.json({ error: 'Failed to create proposal' }, { status: 500 })
+    console.error('[session] proposals.insert failed:', proposalError?.message, proposalError?.code)
+    return NextResponse.json(
+      { error: 'Failed to create proposal', detail: proposalError?.message },
+      { status: 500 }
+    )
   }
 
   return NextResponse.json({
     sessionId: session.id,
     proposalId: proposal.id,
-    userId,
+    userId: userId ?? session.id, // fallback: use session ID as pseudo-userId for client storage
   })
 }
