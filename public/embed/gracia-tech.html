@@ -41,8 +41,8 @@
   /* ── Top bar ─────────────────────────────────────────── */
   .top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line-soft)}
   .top .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:10px;padding-bottom:10px}
-  .logo{font-family:"Bebas Neue",Impact,sans-serif;font-size:24px;letter-spacing:.02em;direction:ltr}
-  .logo span{color:var(--hi)}
+  /* the Gracia Tech name is written neutrally, not in Lamba's brand font or colours */
+  .logo{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-weight:700;font-size:18px;letter-spacing:.01em;color:var(--fg);white-space:nowrap;direction:ltr}
   .tools{display:flex;gap:8px}
   .btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;border-radius:999px;padding:8px 14px;cursor:pointer;border:1px solid var(--line);background:var(--card)}
   .btn:hover{border-color:var(--tint-line)}
@@ -201,7 +201,7 @@
 <div class="top"><div class="wrap">
   <div class="brand">
     <button class="burger" type="button" id="menuBtn" aria-controls="menu" aria-expanded="false" aria-label="Menu"><span></span><span></span><span></span></button>
-    <a class="brand-link" href="#home" data-nav="home" aria-label="Gracia Tech · Lamba"><span class="marks" aria-hidden="true"><img class="lamba-mark lt" src="lamba-light.png" alt="" width="32" height="32"><img class="lamba-mark dk" src="lamba-dark.jpg" alt="" width="32" height="32"><img class="gracia-mark" src="https://graciagroup.ae/newgracia/images/home/logo.png" alt="" height="30" onerror="this.remove()"></span><span class="mdiv" aria-hidden="true"></span><span class="logo">GRACIA <span>TECH</span></span></a>
+    <a class="brand-link" href="#home" data-nav="home" aria-label="Gracia Tech · Lamba"><span class="marks" aria-hidden="true"><img class="lamba-mark lt" src="lamba-light.png" alt="" width="32" height="32"><img class="lamba-mark dk" src="lamba-dark.jpg" alt="" width="32" height="32"><img class="gracia-mark" src="https://graciagroup.ae/newgracia/images/home/logo.png" alt="" height="30" onerror="this.remove()"></span><span class="mdiv" aria-hidden="true"></span><span class="logo">Gracia Tech</span></a>
   </div>
   <div class="tools">
     <button class="btn" type="button" data-act="lang"></button>
@@ -211,7 +211,7 @@
 <div class="scrim" id="scrim"></div>
 <aside class="menu" id="menu" role="dialog" aria-modal="true" aria-labelledby="menuTitle">
   <div class="menu-head">
-    <span class="brand-link"><span class="marks" aria-hidden="true"><img class="lamba-mark lt" src="lamba-light.png" alt="" width="32" height="32"><img class="lamba-mark dk" src="lamba-dark.jpg" alt="" width="32" height="32"><img class="gracia-mark" src="https://graciagroup.ae/newgracia/images/home/logo.png" alt="" height="30" onerror="this.remove()"></span><span class="mdiv" aria-hidden="true"></span><span class="logo">GRACIA <span>TECH</span></span></span>
+    <span class="brand-link"><span class="marks" aria-hidden="true"><img class="lamba-mark lt" src="lamba-light.png" alt="" width="32" height="32"><img class="lamba-mark dk" src="lamba-dark.jpg" alt="" width="32" height="32"><img class="gracia-mark" src="https://graciagroup.ae/newgracia/images/home/logo.png" alt="" height="30" onerror="this.remove()"></span><span class="mdiv" aria-hidden="true"></span><span class="logo">Gracia Tech</span></span>
     <button class="close" type="button" id="menuClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
   <div class="menu-kicker eyebrow hi" id="menuTitle"></div>
@@ -224,7 +224,7 @@
 
 <header class="hero" id="home"><div class="wrap" id="hero"></div></header>
 <main id="app"></main>
-<footer><div class="wrap"><span class="logo" style="font-size:20px">GRACIA <span>TECH</span></span><span id="foot"></span></div></footer>
+<footer><div class="wrap"><span class="logo" style="font-size:16px">Gracia Tech</span><span id="foot"></span></div></footer>
 
 <div class="dock">
   <nav class="levels" id="levels" aria-label="Level of detail"></nav>
