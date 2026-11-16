@@ -157,7 +157,15 @@
 
   /* ── Hamburger menu ─────────────────────────────────────────── */
   .brand{display:flex;align-items:center;gap:10px;min-width:0}
-  a.logo{color:inherit;text-decoration:none}
+  .brand-link{display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none;min-width:0}
+  .marks{display:flex;align-items:center;gap:8px;flex:none}
+  .lamba-mark{display:block;width:32px;height:32px;border-radius:9px;object-fit:cover}
+  .lamba-mark.dk{display:none}
+  [data-theme="dark"] .lamba-mark.lt{display:none}
+  [data-theme="dark"] .lamba-mark.dk{display:block}
+  .gracia-mark{display:block;height:30px;width:auto;max-width:110px;object-fit:contain}
+  .mdiv{flex:none;width:1px;height:26px;background:var(--line)}
+  @media(max-width:360px){.gracia-mark{max-width:72px}.brand-link{gap:8px}}
   .burger{flex:none;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--card);display:grid;place-content:center;gap:4px;cursor:pointer;padding:0}
   .burger:hover{border-color:var(--tint-line)}
   .burger span{display:block;width:18px;height:2px;border-radius:2px;background:var(--fg);transition:transform .22s,opacity .22s}
@@ -193,7 +201,7 @@
 <div class="top"><div class="wrap">
   <div class="brand">
     <button class="burger" type="button" id="menuBtn" aria-controls="menu" aria-expanded="false" aria-label="Menu"><span></span><span></span><span></span></button>
-    <a class="logo" href="#home" data-nav="home">GRACIA <span>TECH</span></a>
+    <a class="brand-link" href="#home" data-nav="home" aria-label="Gracia Tech · Lamba"><span class="marks" aria-hidden="true"><img class="lamba-mark lt" src="lamba-light.png" alt="" width="32" height="32"><img class="lamba-mark dk" src="lamba-dark.jpg" alt="" width="32" height="32"><img class="gracia-mark" src="https://graciagroup.ae/newgracia/images/home/logo.png" alt="" height="30" onerror="this.remove()"></span><span class="mdiv" aria-hidden="true"></span><span class="logo">GRACIA <span>TECH</span></span></a>
   </div>
   <div class="tools">
     <button class="btn" type="button" data-act="lang"></button>
@@ -203,7 +211,7 @@
 <div class="scrim" id="scrim"></div>
 <aside class="menu" id="menu" role="dialog" aria-modal="true" aria-labelledby="menuTitle">
   <div class="menu-head">
-    <span class="logo">GRACIA <span>TECH</span></span>
+    <span class="brand-link"><span class="marks" aria-hidden="true"><img class="lamba-mark lt" src="lamba-light.png" alt="" width="32" height="32"><img class="lamba-mark dk" src="lamba-dark.jpg" alt="" width="32" height="32"><img class="gracia-mark" src="https://graciagroup.ae/newgracia/images/home/logo.png" alt="" height="30" onerror="this.remove()"></span><span class="mdiv" aria-hidden="true"></span><span class="logo">GRACIA <span>TECH</span></span></span>
     <button class="close" type="button" id="menuClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
   <div class="menu-kicker eyebrow hi" id="menuTitle"></div>
