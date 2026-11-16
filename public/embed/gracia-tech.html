@@ -129,17 +129,24 @@
   #app.fading{opacity:0;transform:translateY(6px)}
 
   /* ── Level bar ─────────────────────────────────────────── */
-  .dock{position:fixed;inset-inline:0;bottom:12px;z-index:30;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;padding:0 12px}
-  .levels{pointer-events:auto;display:flex;align-items:center;gap:2px;background:var(--bar);border:1px solid var(--line);border-radius:999px;padding:4px;box-shadow:var(--shadow);backdrop-filter:blur(10px);max-width:100%}
-  .levels button{border:0;background:transparent;cursor:pointer;font-size:14px;font-weight:600;color:var(--faint);padding:8px 14px;border-radius:999px;white-space:nowrap}
-  .levels button:hover{color:var(--fg)}
-  .levels button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
-  .levels .sep{color:var(--faint);opacity:.5;font-size:12px}
-  [dir="rtl"] .levels .sep{transform:scaleX(-1)}
-  .hint{pointer-events:auto;font-size:12px;color:var(--faint);background:var(--bar);border-radius:999px;padding:2px 10px}
-  @media(max-width:640px){.hint{display:none}}
-  @media(max-width:460px){.levels button{padding:7px 9px;font-size:12.5px}.levels .sep{display:none}}
-  @media(max-width:380px){.card{padding:18px}.levels button{padding:7px 7px;font-size:12px}}
+  .dock{position:fixed;inset-inline:0;bottom:calc(14px + env(safe-area-inset-bottom));z-index:30;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;padding:0 16px;pointer-events:none}
+  .dock>*{pointer-events:auto}
+  /* views: one icon that expands sideways into the five levels */
+  .views{display:flex;align-items:center;background:var(--bar);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:3px;max-width:100%}
+  .vbtn{flex:none;width:42px;height:42px;border-radius:50%;border:0;background:transparent;cursor:pointer;display:grid;place-items:center;color:var(--fg)}
+  .vbtn svg{width:22px;height:22px}
+  .views.open .vbtn{background:var(--card2)}
+  .vlist{display:flex;align-items:center;gap:2px;max-width:0;opacity:0;overflow:hidden;white-space:nowrap;transition:max-width .32s cubic-bezier(.2,.8,.2,1),opacity .2s,padding .32s;padding:0}
+  .views.open .vlist{max-width:460px;opacity:1;padding-inline:2px 4px}
+  .vlist button{border:0;background:transparent;cursor:pointer;font-size:14px;font-weight:600;color:var(--faint);padding:9px 13px;border-radius:999px;white-space:nowrap}
+  .vlist button:hover{color:var(--fg)}
+  .vlist button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+  /* back to top */
+  .totop{flex:none;width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:var(--bar);box-shadow:var(--shadow);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);cursor:pointer;display:grid;place-items:center;color:var(--fg);opacity:0;transform:translateY(10px);visibility:hidden;transition:opacity .2s,transform .2s,visibility 0s .2s}
+  .totop svg{width:20px;height:20px}
+  .totop.on{opacity:1;transform:none;visibility:visible;transition:opacity .2s,transform .2s}
+  @media(max-width:460px){.vlist button{padding:8px 9px;font-size:12.5px}.dock.views-open .totop{opacity:0;visibility:hidden;pointer-events:none}}
+  @media(max-width:380px){.card{padding:18px}.vlist button{padding:7px 7px;font-size:12px}}
 
   footer{border-top:1px solid var(--line-soft);padding:28px 0;color:var(--faint);font-size:14px}
   footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center}
@@ -166,19 +173,25 @@
   .gracia-mark{display:block;height:30px;width:auto;max-width:110px;object-fit:contain}
   .mdiv{flex:none;width:1px;height:26px;background:var(--line)}
   @media(max-width:360px){.gracia-mark{max-width:72px}.brand-link{gap:8px}}
-  .burger{flex:none;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--card);display:grid;place-content:center;gap:4px;cursor:pointer;padding:0}
-  .burger:hover{border-color:var(--tint-line)}
-  .burger span{display:block;width:18px;height:2px;border-radius:2px;background:var(--fg);transition:transform .22s,opacity .22s}
-  .burger[aria-expanded="true"] span:nth-child(1){transform:translateY(6px) rotate(45deg)}
-  .burger[aria-expanded="true"] span:nth-child(2){opacity:0}
-  .burger[aria-expanded="true"] span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+  .burger{flex:none;width:40px;height:40px;margin-inline-start:-8px;border:0;background:transparent;display:grid;place-content:center;gap:7px;cursor:pointer;padding:0;border-radius:10px}
+  .burger span{display:block;width:22px;height:2px;border-radius:2px;background:var(--fg);transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+  .burger[aria-expanded="true"] span:nth-child(1){transform:translateY(4.5px) rotate(45deg)}
+  .burger[aria-expanded="true"] span:nth-child(2){transform:translateY(-4.5px) rotate(-45deg)}
+  .langbtn{flex:none;border:0;background:transparent;cursor:pointer;font-size:14px;font-weight:600;color:var(--fg);padding:8px 4px 8px 10px;border-radius:10px;display:inline-flex;align-items:center;gap:6px}
+  [dir="rtl"] .langbtn{padding:8px 10px 8px 4px}
+  .langbtn svg{width:18px;height:18px;opacity:.7}
+  .langbtn:hover{color:var(--hi)}
+  .langbtn .short{display:none}
+  @media(max-width:520px){.langbtn .full{display:none}.langbtn .short{display:inline}}
+  @media(max-width:400px){.mdiv{display:none}.brand-link{gap:7px}.marks{gap:6px}.gracia-mark{max-width:64px}.top .logo{font-size:16px}}
   .scrim{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.38);opacity:0;visibility:hidden;transition:opacity .22s,visibility 0s .22s}
   .scrim.on{opacity:1;visibility:visible;transition:opacity .22s}
   .menu{position:fixed;top:0;bottom:0;inset-inline-start:0;z-index:50;width:min(380px,88vw);background:var(--bg);border-inline-end:1px solid var(--line);box-shadow:0 0 40px rgba(0,0,0,.18);display:flex;flex-direction:column;transform:translateX(-100%);visibility:hidden;transition:transform .26s cubic-bezier(.2,.8,.2,1),visibility 0s .26s}
   [dir="rtl"] .menu{transform:translateX(100%)}
   .menu.open,[dir="rtl"] .menu.open{transform:none;visibility:visible;transition:transform .26s cubic-bezier(.2,.8,.2,1)}
   .menu-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line-soft)}
-  .close{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--card);cursor:pointer;display:grid;place-items:center;padding:0}
+  .close{width:40px;height:40px;border-radius:10px;border:0;background:transparent;cursor:pointer;display:grid;place-items:center;padding:0;color:var(--fg);margin-inline-end:-8px}
+  .close:hover{background:var(--card2)}
   .close svg{width:18px;height:18px}
   .menu-kicker{padding:18px 22px 6px}
   .menu nav{flex:1;overflow-y:auto;padding:4px 10px 16px;overscroll-behavior:contain}
@@ -191,22 +204,18 @@
   .mi .t{display:block;font-weight:700;font-size:16px;line-height:1.3}
   .mi .w{display:block;font-size:13px;color:var(--faint);margin-top:2px}
   .menu-foot{display:flex;gap:8px;padding:14px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line-soft)}
-  .menu-foot .btn{flex:1;justify-content:center;padding:10px 14px}
+  .menu-foot .btn{flex:1;justify-content:center;padding:11px 14px}
   html.menu-open,html.menu-open body{overflow:hidden}
-  @media(max-width:560px){.top .tools{display:none}}
-  @media print{.dock,.tools,.burger,.menu,.scrim{display:none}.top{position:static}}
+  @media print{.dock,.langbtn,.burger,.menu,.scrim{display:none}.top{position:static}}
 </style>
 </head>
 <body>
 <div class="top"><div class="wrap">
   <div class="brand">
-    <button class="burger" type="button" id="menuBtn" aria-controls="menu" aria-expanded="false" aria-label="Menu"><span></span><span></span><span></span></button>
+    <button class="burger" type="button" id="menuBtn" aria-controls="menu" aria-expanded="false" aria-label="Menu"><span></span><span></span></button>
     <a class="brand-link" href="#home" data-nav="home" aria-label="Gracia Tech · Lamba"><span class="marks" aria-hidden="true"><img class="lamba-mark lt" src="lamba-light.png" alt="" width="32" height="32"><img class="lamba-mark dk" src="lamba-dark.jpg" alt="" width="32" height="32"><img class="gracia-mark" src="https://graciagroup.ae/newgracia/images/home/logo.png" alt="" height="30" onerror="this.remove()"></span><span class="mdiv" aria-hidden="true"></span><span class="logo">Gracia Tech</span></a>
   </div>
-  <div class="tools">
-    <button class="btn" type="button" data-act="lang"></button>
-    <button class="btn" type="button" data-act="theme"></button>
-  </div>
+  <button class="langbtn" type="button" data-act="lang"></button>
 </div></div>
 <div class="scrim" id="scrim"></div>
 <aside class="menu" id="menu" role="dialog" aria-modal="true" aria-labelledby="menuTitle">
@@ -217,7 +226,6 @@
   <div class="menu-kicker eyebrow hi" id="menuTitle"></div>
   <nav id="menuNav"></nav>
   <div class="menu-foot">
-    <button class="btn" type="button" data-act="lang"></button>
     <button class="btn" type="button" data-act="theme"></button>
   </div>
 </aside>
@@ -226,9 +234,12 @@
 <main id="app"></main>
 <footer><div class="wrap"><span class="logo" style="font-size:16px">Gracia Tech</span><span id="foot"></span></div></footer>
 
-<div class="dock">
-  <nav class="levels" id="levels" aria-label="Level of detail"></nav>
-  <div class="hint" id="hint"></div>
+<div class="dock" id="dock">
+  <div class="views" id="views">
+    <button class="vbtn" type="button" id="viewsBtn" aria-controls="levels" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6.5h16M4 12h11M4 17.5h6"/></svg></button>
+    <nav class="vlist" id="levels" aria-label="Level of detail"></nav>
+  </div>
+  <button class="totop" type="button" id="toTop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/></svg></button>
 </div>
 
 <script>
@@ -253,7 +264,8 @@
     pill:T('Execution Blueprint · 12 Months','مخطط التنفيذ · 12 شهرًا'),
     h1a:T('Gracia Tech','غراسيا تك'), h1b:T('Commercial Activation','التفعيل التجاري'),
     lead:T('A high-end tech innovation powerhouse uniting elite institutional access across the Emirates with Silicon Valley product, AI engineering, and venture-building expertise.','قوة رائدة في الابتكار التقني الراقي تجمع بين الوصول المؤسسي النخبوي في أنحاء الإمارات وخبرة وادي السيليكون في المنتجات وهندسة الذكاء الاصطناعي وبناء المشاريع.'),
-    contents:T('Contents','المحتويات'), home:T('Overview','نظرة عامة'), homeSub:T('Gracia Tech at a glance','غراسيا تك في لمحة'),
+    contents:T('Contents','المحتويات'), langShort:T('ع','EN'), views:T('Views','طرق العرض'), toTop:T('Back to top','العودة إلى الأعلى'),
+    lightMode:T('Light mode','الوضع الفاتح'), darkMode:T('Dark mode','الوضع الداكن'), home:T('Overview','نظرة عامة'), homeSub:T('Gracia Tech at a glance','غراسيا تك في لمحة'),
     menu:T('Menu','القائمة'), closeMenu:T('Close menu','إغلاق القائمة'),
     foot:T('Commercial Activation & 12-Month Execution Blueprint','التفعيل التجاري ومخطط التنفيذ لـ12 شهرًا'),
     pa:T('Pillar A · ','الركيزة (أ) · '), pb:T('Pillar B · ','الركيزة (ب) · ')
@@ -485,7 +497,7 @@
   function load(k){try{return localStorage.getItem('gracia.'+k)}catch(e){return null}}
   var qs=new URLSearchParams(location.search);
   S.lang=qs.get('lang')||load('lang')||'en'; if(S.lang!=='ar')S.lang='en';
-  S.theme=qs.get('theme')||load('theme')||'light'; if(S.theme!=='dark')S.theme='light';
+  S.theme=qs.get('theme')==='dark'?'dark':'light';  // light is always the default
   var ql=parseInt(qs.get('level'),10); if(ql>=1&&ql<=5)S.level=ql;
   function tx(o){return o[S.lang]}
 
@@ -591,25 +603,35 @@
   document.getElementById('menuClose').addEventListener('click',function(){ closeMenu(true); });
   scrim.addEventListener('click',function(){ closeMenu(true); });
   var ticking=false;
-  window.addEventListener('scroll',function(){ if(ticking) return; ticking=true; requestAnimationFrame(function(){ticking=false; updateSticky();}); },{passive:true});
+  window.addEventListener('scroll',function(){ if(ticking) return; ticking=true; requestAnimationFrame(function(){ticking=false; updateSticky(); toTop.classList.toggle('on',window.scrollY>500);}); },{passive:true});
+  var VIEWS_OPEN=false, views=document.getElementById('views'), dock=document.getElementById('dock'), toTop=document.getElementById('toTop');
+  function setViews(open){ VIEWS_OPEN=open; views.classList.toggle('open',open); dock.classList.toggle('views-open',open); document.getElementById('viewsBtn').setAttribute('aria-expanded',String(open)); views.querySelectorAll('.vlist button').forEach(function(b){ b.tabIndex=open?0:-1; }); }
+  document.getElementById('viewsBtn').addEventListener('click',function(){ setViews(!VIEWS_OPEN); if(VIEWS_OPEN){ var a=views.querySelector('[aria-pressed="true"]'); if(a) a.focus({preventScroll:true}); } });
+  document.addEventListener('pointerdown',function(e){ if(VIEWS_OPEN&&!views.contains(e.target)) setViews(false); });
+  toTop.addEventListener('click',function(){ window.scrollTo({top:0,behavior:'smooth'}); });
+  /* tapping the top bar (anywhere except its buttons) scrolls to the top, like tapping the iPhone status bar.
+     iOS's own status-bar tap can't reach a page shown inside another site's frame, so the top bar does it. */
+  document.querySelector('.top').addEventListener('click',function(e){ if(e.target.closest('button,a')) return; window.scrollTo({top:0,behavior:'smooth'}); });
   window.addEventListener('resize',function(){ measure(); updateSticky(); });
   function renderChrome(){
     var h=document.documentElement;
     h.lang=S.lang; h.dir=S.lang==='ar'?'rtl':'ltr'; h.setAttribute('data-theme',S.theme);
     document.getElementById('hero').innerHTML='<span class="pill">'+esc(tx(UI.pill))+'</span><h1 class="bebas">'+esc(tx(UI.h1a))+'<br><span class="mark">'+esc(tx(UI.h1b))+'</span></h1><p class="lead">'+esc(tx(UI.lead))+'</p>';
     document.getElementById('foot').textContent=tx(UI.foot);
-    document.getElementById('hint').textContent=tx(UI.hint);
     var dark=S.theme==='dark';
     var themeHTML=(dark
-      ?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>'+esc(tx(UI.light))
-      :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>'+esc(tx(UI.dark)));
-    document.querySelectorAll('[data-act="lang"]').forEach(function(b){ b.textContent=tx(UI.lang); b.setAttribute('lang',S.lang==='ar'?'en':'ar'); });
+      ?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>'+esc(tx(UI.lightMode))
+      :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>'+esc(tx(UI.darkMode)));
+    var globe='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg>';
+    document.querySelectorAll('[data-act="lang"]').forEach(function(b){ b.innerHTML=globe+'<span class="full">'+esc(tx(UI.lang))+'</span><span class="short">'+esc(tx(UI.langShort))+'</span>'; b.setAttribute('lang',S.lang==='ar'?'en':'ar'); b.setAttribute('aria-label',tx(UI.lang)); });
     document.querySelectorAll('[data-act="theme"]').forEach(function(b){ b.innerHTML=themeHTML; });
     document.getElementById('menuBtn').setAttribute('aria-label',tx(UI.menu));
     document.getElementById('menuClose').setAttribute('aria-label',tx(UI.closeMenu));
     renderMenu();
     var lv=document.getElementById('levels'); lv.setAttribute('aria-label',S.lang==='ar'?'مستوى التفاصيل':'Level of detail');
-    lv.innerHTML=UI.levels.map(function(n,i){return (i?'<span class="sep" aria-hidden="true">›</span>':'')+'<button type="button" data-level="'+(i+1)+'" aria-pressed="'+(S.level===i+1)+'">'+esc(tx(n))+'</button>'}).join('');
+    lv.innerHTML=UI.levels.map(function(n,i){return '<button type="button" data-level="'+(i+1)+'" aria-pressed="'+(S.level===i+1)+'" tabindex="'+(VIEWS_OPEN?0:-1)+'">'+esc(tx(n))+'</button>'}).join('');
+    document.getElementById('viewsBtn').setAttribute('aria-label',tx(UI.views)+': '+tx(UI.levels[S.level-1]));
+    document.getElementById('toTop').setAttribute('aria-label',tx(UI.toTop));
   }
 
   /* keep the reader's place when the text changes length */
@@ -644,13 +666,14 @@
     if(t.hasAttribute('data-nav')){ e.preventDefault(); return go(t.getAttribute('data-nav')); }
     if(t.hasAttribute('data-act')){ return t.getAttribute('data-act')==='lang' ? toggleLang() : toggleTheme(); }
     if(t.hasAttribute('data-top')){ var sec=document.getElementById(t.getAttribute('data-top')); if(sec) sec.scrollIntoView({block:'start',behavior:'smooth'}); return; }
-    if(t.hasAttribute('data-level')) return setLevel(+t.getAttribute('data-level'));
+    if(t.hasAttribute('data-level')){ setLevel(+t.getAttribute('data-level')); setTimeout(function(){ setViews(false); },350); return; }
     if(t.hasAttribute('data-goto')) return setLevel(1,t.getAttribute('data-goto'));
     if(t.hasAttribute('data-s')){ var id=t.getAttribute('data-s'); if(S.secs[id]) delete S.secs[id]; else S.secs[id]=1; rerender(false); var el=document.getElementById(id); if(el&&el.getBoundingClientRect().top<TB) el.scrollIntoView({block:'start'}); return; }
     if(t.hasAttribute('data-u')){ var u=t.getAttribute('data-u'); if(S.open[u]) delete S.open[u]; else S.open[u]=1; rerender(false); var n=app.querySelector('[data-u="'+u+'"]'); if(n) n.focus({preventScroll:true}); }
   });
   document.addEventListener('keydown',function(e){
     var t=e.target;
+    if(VIEWS_OPEN&&e.key==='Escape'){ setViews(false); document.getElementById('viewsBtn').focus(); return; }
     if(menu.classList.contains('open')){
       if(e.key==='Escape'){ e.preventDefault(); closeMenu(true); return; }
       if(e.key==='Tab'){ var f=menu.querySelectorAll('button'), first=f[0], last=f[f.length-1];
@@ -664,7 +687,7 @@
     else if(e.key==='l'||e.key==='L') toggleLang();
   });
   function toggleLang(){ S.lang=S.lang==='ar'?'en':'ar'; store('lang',S.lang); renderChrome(); rerender(false); }
-  function toggleTheme(){ S.theme=S.theme==='dark'?'light':'dark'; store('theme',S.theme); renderChrome(); }
+  function toggleTheme(){ S.theme=S.theme==='dark'?'light':'dark'; renderChrome(); }
 
   renderChrome(); measure(); renderApp();
 })();
