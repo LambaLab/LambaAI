@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gracia Tech Blueprint</title>
+<meta name="description" content="Gracia Tech: Commercial Activation & 12-Month Execution Blueprint">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#1d1d1d; --fg:#ffffff; --yellow:#fffc00;
+    --muted:rgba(255,255,255,.72); --faint:rgba(255,255,255,.5);
+    --line:rgba(255,255,255,.1); --line-soft:rgba(255,255,255,.06);
+    --card:rgba(255,255,255,.025); --tint:rgba(255,252,0,.06); --tint-line:rgba(255,252,0,.35);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--fg)}
+  body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 16px}
+  .bebas{font-family:"Bebas Neue",Impact,sans-serif;font-weight:400;letter-spacing:.01em}
+  .eyebrow{font-size:12px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--faint)}
+  .y{color:var(--yellow)}
+  p{margin:0}
+  ul{margin:0;padding:0;list-style:none}
+
+  /* Toolbar */
+  .bar{position:sticky;top:0;z-index:10;background:rgba(29,29,29,.9);backdrop-filter:blur(8px);border-bottom:1px solid var(--line-soft)}
+  .bar .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:10px;padding-bottom:10px}
+  .logo{font-size:24px}
+  .tools{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{font:600 13px Inter,sans-serif;border-radius:999px;padding:8px 14px;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--fg)}
+  .btn:hover{border-color:var(--tint-line)}
+  .btn.primary{background:var(--yellow);color:#1d1d1d;border-color:var(--yellow)}
+  .btn:focus-visible,summary:focus-visible{outline:2px solid var(--yellow);outline-offset:3px}
+
+  /* Hero */
+  .hero{position:relative;overflow:hidden;padding:72px 0 56px}
+  .hero:before{content:"";position:absolute;top:-160px;right:-10%;width:520px;height:520px;border-radius:50%;background:rgba(255,252,0,.1);filter:blur(64px);pointer-events:none}
+  .pill{display:inline-block;border:1px solid var(--tint-line);background:rgba(255,252,0,.05);color:var(--yellow);border-radius:999px;padding:6px 16px;font-size:12px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;margin-bottom:24px}
+  .hero h1{margin:0;font-size:clamp(56px,11vw,128px);line-height:.88}
+  .hero h1 span{display:block;color:var(--yellow)}
+  .hero p.lead{margin-top:28px;max-width:640px;font-size:clamp(17px,2vw,20px);color:var(--muted)}
+
+  /* Foldable sections */
+  details.sec{border-top:1px solid var(--line-soft);scroll-margin-top:64px}
+  details.sec>summary{list-style:none;cursor:pointer;padding:40px 0}
+  details.sec>summary::-webkit-details-marker{display:none}
+  .sum{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+  .sum h2{margin:4px 0 0;font-size:clamp(34px,5.5vw,60px);line-height:.95}
+  .chev{flex:none;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;transition:transform .2s,border-color .2s}
+  .chev svg{width:18px;height:18px;stroke:var(--yellow)}
+  details[open]>summary .chev{transform:rotate(180deg)}
+  summary:hover .chev{border-color:var(--tint-line)}
+  .sec-body{padding-bottom:64px}
+  .kicker{max-width:780px;color:var(--muted);font-size:clamp(16px,1.8vw,18px);margin-bottom:32px}
+
+  /* Grids & cards */
+  .grid{display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
+  .grid>*,.cols>*{min-width:0}
+  h1,h2,h3,p,li{overflow-wrap:break-word}
+  @media(max-width:380px){details.fold>summary{padding:16px;gap:12px}.fold-body{padding:0 16px 16px}details.fold>summary .num{font-size:30px;min-width:30px}.card{padding:18px}}
+  .g4m{grid-template-columns:repeat(2,minmax(0,1fr))}
+  @media(min-width:768px){.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}}
+  .card{border:1px solid var(--line);border-radius:18px;padding:22px;background:transparent}
+  .card.hl{border-color:var(--tint-line);background:var(--tint)}
+  .card h3{margin:0;font-size:18px;font-weight:700}
+  .card p{color:var(--muted);margin-top:8px}
+  .stat{border:1px solid var(--line-soft);background:var(--card);border-radius:18px;padding:18px}
+  .stat b{display:block;font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:44px;line-height:1;color:var(--yellow)}
+  .stat span{display:block;margin-top:8px;font-size:14px;color:var(--faint)}
+  .bullets li{display:flex;gap:12px;color:var(--muted);margin-top:8px}
+  .bullets li:before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--yellow);margin-top:10px}
+  .note{margin-top:16px;background:rgba(255,255,255,.05);border-radius:12px;padding:12px 16px;font-weight:600;font-size:14px}
+  .h-card{font-size:clamp(28px,3.4vw,38px);line-height:1;margin:6px 0 0}
+  .quote{border-left:2px solid var(--yellow);padding-left:20px;font-size:18px;max-width:780px;margin-bottom:36px}
+  .model{margin-top:20px;border:1px solid var(--line-soft);background:var(--card);border-radius:12px;padding:14px 16px}
+  .model p{color:rgba(255,255,255,.88);margin-top:4px}
+  .tag{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .badge{display:inline-block;background:var(--yellow);color:#1d1d1d;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+  .sub{font-size:13px;font-weight:700;margin-bottom:6px}
+  .pa{color:var(--muted);margin-top:10px}
+  .pa b{color:var(--yellow);font-weight:600}
+  .closing{margin-top:40px;border:1px solid var(--tint-line);background:rgba(255,252,0,.05);border-radius:24px;padding:clamp(24px,4vw,40px);font-size:clamp(17px,2vw,20px)}
+
+  /* Foldable cards */
+  details.fold{border:1px solid var(--line);border-radius:18px;background:transparent;transition:border-color .2s}
+  details.fold[open]{border-color:rgba(255,255,255,.16)}
+  details.fold.hl{border-color:var(--tint-line);background:var(--tint)}
+  details.fold>summary{list-style:none;cursor:pointer;padding:20px 22px;display:flex;align-items:center;gap:16px}
+  details.fold>summary::-webkit-details-marker{display:none}
+  details.fold>summary .t{flex:1;min-width:0}
+  details.fold>summary .num{font-family:"Bebas Neue",sans-serif;font-size:38px;line-height:1;color:rgba(255,255,255,.3);flex:none;min-width:42px}
+  details.fold.hl>summary .num,.num.y{color:var(--yellow)!important}
+  details.fold>summary h3{margin:0;font-size:18px;font-weight:700}
+  details.fold>summary .chev{width:32px;height:32px}
+  details.fold>summary .chev svg{width:15px;height:15px}
+  .fold-body{padding:0 22px 22px}
+  @media(min-width:768px){.fold-body{padding-left:80px}}
+  .cols{display:grid;gap:20px}
+  @media(min-width:768px){.cols{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .rev{background:rgba(255,252,0,.05);border-radius:12px;padding:16px}
+  footer{border-top:1px solid var(--line-soft);padding:28px 0;color:rgba(255,255,255,.45);font-size:14px}
+  footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center}
+  @media print{.bar{position:static}.tools{display:none}details>summary .chev{display:none}}
+</style>
+</head>
+<body>
+<div class="bar"><div class="wrap">
+  <div class="bebas logo">GRACIA <span class="y">TECH</span></div>
+  <div class="tools">
+    <button class="btn primary" type="button" data-act="open">Expand all</button>
+    <button class="btn" type="button" data-act="close">Collapse all</button>
+  </div>
+</div></div>
+
+<header class="hero"><div class="wrap" style="position:relative">
+  <span class="pill">Execution Blueprint · 12 Months</span>
+  <h1 class="bebas">Gracia Tech<span>Commercial Activation</span></h1>
+  <p class="lead">A high-end tech innovation powerhouse uniting elite institutional access across the Emirates with Silicon Valley product, AI engineering, and venture-building expertise.</p>
+</div></header>
+
+<main id="app"></main>
+
+<footer><div class="wrap">
+  <span class="bebas" style="font-size:20px;color:rgba(255,255,255,.75)">GRACIA <span class="y">TECH</span></span>
+  <span>Commercial Activation &amp; 12-Month Execution Blueprint</span>
+</div></footer>
+
+<script>
+(function(){
+  var CHEV='<span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>';
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+  function bullets(a){return '<ul class="bullets">'+a.map(function(x){return '<li><span>'+esc(x)+'</span></li>'}).join('')+'</ul>'}
+  function section(id,idx,title,body,open){
+    return '<details class="sec" id="'+id+'"'+(open?' open':'')+'><summary><div class="wrap sum"><div><div class="eyebrow y">'+esc(idx)+'</div><h2 class="bebas">'+esc(title)+'</h2></div>'+CHEV+'</div></summary><div class="wrap sec-body">'+body+'</div></details>';
+  }
+  function fold(num,title,body,opts){
+    opts=opts||{};
+    return '<details class="fold'+(opts.hl?' hl':'')+'"'+(opts.open?' open':'')+'><summary><span class="num">'+esc(num)+'</span><div class="t">'+(opts.badge?'<span class="badge">'+esc(opts.badge)+'</span>':'')+(opts.eyebrow?'<div class="eyebrow">'+esc(opts.eyebrow)+'</div>':'')+'<h3>'+esc(title)+'</h3></div>'+CHEV+'</summary><div class="fold-body">'+body+'</div></details>';
+  }
+
+  var ABOUT=[
+    ['Founder of Lamba','Currently the founder of Lamba, an AI-focused tech innovation company and the creator of Lamba TV, Lamba Lab, Lamba Academy, Oono, Aila, and many more.'],
+    ['Robotics & Electrical Engineer','Attended Carnegie Mellon University (ranked the #1 robotics university in the world) and holds a Bachelor of Engineering in Electrical Engineering from the American University of Beirut (AUB).'],
+    ['Launched Google in the Middle East (2008)','Was Google’s first regional marketing executive in the Middle East, launching and managing Google’s presence across 32 countries.'],
+    ['Silicon Valley Growth & Startup Expert (20+ Years)','Built, scaled, and sold multiple technology companies in Silicon Valley and the Middle East, including serving as Founder & CEO of Loomni.com in Silicon Valley.'],
+    ['CMO of Tango ($1B+ Silicon Valley Unicorn)','Served as Chief Marketing Officer of Tango, a $1B+ Silicon Valley unicorn and the #1 video calling app in the world.'],
+    ['CMO of N2V (Middle East’s First & Largest Tech Holding Group)','Served as Chief Marketing Officer of N2V, the first and largest tech holding and investment group in the Middle East, alongside serving as Regional Brand Manager at Procter & Gamble (P&G).'],
+    ['Creator of the #1 Online Startup Growth Academy','Created the #1 online startup growth academy with over 13,000 startups trained under it, and mentored 300+ startups across Y Combinator (YC), 500 Startups, Techstars, and Stanford StartX—helping founders raise or exit for $90M+.'],
+    ['Business & Executive Education','Holds an MBA from Michael Smurfit Business School (Ireland) and Executive Education in Marketing from Harvard Business School.']
+  ];
+  var STATS=[['13,000+','Startups trained'],['300+','YC / StartX startups mentored'],['$90M+','Raised or exited by founders'],['32','MENA countries launched for Google']];
+  var PILLARS=[
+    {tag:'Pillar A',name:'Elite Tech Services & Venture Expertise',items:[
+      ['Custom AI & Product Engineering','Building enterprise-grade Arabic/English AI agents, complex software platforms, and automated workflows.'],
+      ['Lamba Lab (Autonomous AI Platform)','A proprietary development engine featuring automated proposal building, AI fact-checking, and milestone-based payments validated autonomously by an AI code checker for total enterprise transparency.'],
+      ['Lamba Academy','Practical, hands-on venture-building and AI execution programs led directly by Nagi—featuring our flagship “How to Build and Design a Startup with AI” curriculum, combining 20+ years of Silicon Valley startup scaling with deep GCC & MENA market mastery.']],
+      model:'High-ticket product development contracts, AI retainers, and institutional academy cohort fees.'},
+    {tag:'Pillar B',name:'Proprietary Global Products',items:[
+      ['Lamba TV','A first-of-its-kind global OS that transforms idle flat screens in lobbies, boardrooms, classrooms, and retail spaces into smartphone-controlled interactive experiences via QR code (camera, voice, gesture, and mobile intake).'],
+      ['Oono (oono.ai)','A category-creating platform that converts static web traffic into interactive 9:16 tappable stories with instant lead capture, in-story checkouts, and nano-apps.']],
+      model:'Recurring SaaS license fees per screen/brand, enterprise subscriptions, and B2B2B channel deals.'}
+  ];
+  var MODULES=[
+    ['How to Build and Design a Startup with AI',['Moving from raw idea to a functional, designed, and deployed AI product in days rather than months without traditional engineering bottlenecks.','Mastering modern AI-native product design, rapid prototyping workflows, AI agent orchestration, and user-centric interface architecture.'],true],
+    ['Product-Market Fit & Silicon Valley Growth Engineering',['Applying battle-tested Silicon Valley acquisition loops, viral product mechanics, and retention frameworks (drawn from scaling Tango to unicorn status and training 13,000+ startups).','Running rapid customer discovery and validation sprints without burning capital.']],
+    ['Building & Scaling Across GCC & MENA Realities',['Navigating regional enterprise sales, government procurement, family business partnerships, and B2B2B distribution channels across the Emirates and wider MENA region.','Adapting global tech models to local cultural, regulatory, and payment ecosystems.']],
+    ['Go-To-Market Execution & Customer Acquisition Mastery',['Turning early prototypes into revenue-generating businesses using story-commerce, automated outbound systems, and high-conversion digital funnels.','Mastering unit economics, pricing strategy, and enterprise deal closing.']],
+    ['Venture Fundraising, Pitch Engineering & Investor Readiness',['Structuring cap tables, valuations, and term sheets using Silicon Valley standards.','Crafting high-conviction investor decks and pitching directly to regional family offices, UAE sovereign/innovation funds, and global VCs.']],
+    ['Corporate & Family Office Venture Building (Intrapreneurship Track)',['Designed specifically for Next-Gen family business leaders and corporate innovation teams to launch internal AI spin-offs, evaluate tech investments, and modernize legacy operations.']]
+  ];
+  var VERTICALS=[
+    ['Universities & Higher Education',['University Chancellors','Deans of Business & Engineering','Campus Innovation Directors'],'Installing Lamba Academy (including “How to Build and Design a Startup with AI”) as the university’s flagship practical venture and AI program.','Deploying Lamba TV across student unions, lecture halls, and campus lobbies.'],
+    ['Family Businesses & Conglomerates',['Family Office Principals','Group Chief Executive Officers','Next-Gen Council Heads'],'Building custom AI agents and digital transformation platforms via Lamba Lab, plus Next-Gen venture & AI training through Lamba Academy.','Implementing Oono across group retail/real estate websites and Lamba TV in corporate headquarters.'],
+    ['Government & Semi-Government Entities',['Government Undersecretaries','Digital Transformation Directors','Innovation Fund Heads'],'Delivering national-scale Lamba Academy AI & entrepreneurship bootcamps and executing transparent custom AI builds via Lamba Lab.','Deploying Lamba TV interactive screens across citizen service and happiness centers.'],
+    ['Banks & Major Financial Institutions',['Heads of SME Banking','Chief Digital Officers (CDOs)','Heads of Innovation'],'Building secure enterprise AI workflow automation and custom internal software platforms.','B2B2B channel distribution of Oono across their thousands of SME merchant accounts, plus Lamba TV in branches.'],
+    ['Conferences, Summits & Major Events',['Event Organizing Managing Directors','Exhibition & Venue Directors'],'Positioning Nagi on major UAE event stages speaking on AI and Silicon Valley growth under Gracia Tech.','Deploying temporary or permanent Lamba TV interactive engagement networks for event attendees.']
+  ];
+  var ROADMAP=[
+    ['Q1','Months 1–3','Immediate Multi-Stream Launch','Universities & Family Businesses',
+      ['Deploy Lamba TV and Oono inside Gracia Group offices and facilities as live UAE showcase sites.','Receive the first batch of targeted introductions from Hamed into Universities and Family Businesses.','Nagi conducts executive meetings, live 10-second QR demos, and technical scoping sessions across all offerings immediately.'],
+      ['Close initial Lamba Academy cohorts (“How to Build and Design a Startup with AI”) with university partners and Next-Gen family councils.','Sign paid pilot deployments for Lamba TV and Oono across corporate headquarters and retail/real estate arms.','Kick off our first custom AI agent and product development contracts managed through Lamba Lab.']],
+    ['Q2','Months 4–6','Government & Banking Expansion','Government Entities & SME Banking',
+      ['Receive the second batch of targeted introductions from Hamed into Government Entities and Heads of SME Banking.','Leverage live Q1 university and family business deployments as local UAE proof points.','Deliver the first university Lamba Academy cohorts and complete initial milestone-verified custom builds via Lamba Lab.'],
+      ['Close a B2B2B channel partnership with a UAE bank or major enterprise to distribute Oono across their SME merchant base.','Sign government innovation bootcamps under Lamba Academy and public-sector Lamba TV / custom AI contracts.','Convert Q1 product pilots into annual recurring SaaS agreements.']],
+    ['Q3','Months 7–9','Conference Dominance & Enterprise Scaling','Conferences, Summits & Large Conglomerates',
+      ['Receive targeted introductions from Hamed to Major Conferences, Summits, and Large Conglomerates.','Position Nagi on premier UAE event stages under the Gracia Tech banner to drive high-intent inbound enterprise demand.','Expand engineering capacity to execute multiple high-ticket custom product development builds concurrently.'],
+      ['Close multi-screen enterprise Lamba TV deployments across banking branches, healthcare groups, and event venues.','Secure large-scale custom AI product builds and recurring Lamba Lab retainers with enterprise conglomerates.']],
+    ['Q4','Months 10–12','Market Leadership & Regional Expansion','Recurring Programs & GCC Expansion',
+      ['Institutionalize multi-semester recurring intake cycles for Lamba Academy across universities and ministries.','Host the inaugural Gracia Tech Annual Innovation & Demo Day, bringing together university cohorts, family business principals, banks, and government leaders.','Finalize Year-2 expansion playbooks across the broader GCC.'],
+      ['Compound recurring annual SaaS revenue (Lamba TV + Oono) alongside high-margin custom product development and institutional Lamba Academy retainers.']]
+  ];
+  var REVENUE=[
+    ['Pillar A','High-Margin Product Development & AI Services','Lucrative custom software builds, enterprise AI agents, and transparent Lamba Lab execution contracts.'],
+    ['Pillar A','Institutional Lamba Academy Programs','High-value recurring retainers and cohorts with universities, government innovation funds, and family conglomerates.'],
+    ['Pillar B','Scalable Proprietary SaaS','Predictable, compounding subscription cash flows from Lamba TV screen networks and Oono merchant channels across the UAE.']
+  ];
+
+  var html='';
+
+  html+=section('about','About','About Nagi',
+    '<div class="grid g4m g4" style="margin-bottom:28px">'+STATS.map(function(s){return '<div class="stat"><b>'+esc(s[0])+'</b><span>'+esc(s[1])+'</span></div>'}).join('')+'</div>'+
+    '<div class="grid g2">'+ABOUT.map(function(a,i){return fold(String(i+1).padStart(2,'0'),a[0],'<p style="color:var(--muted)">'+esc(a[1])+'</p>')}).join('')+'</div>',true);
+
+  html+=section('vision','01','The Core Vision & Division of Labor',
+    '<p class="kicker">Gracia Tech is a high-end tech innovation powerhouse—<strong style="color:#fff">not</strong> a conventional web agency. As the UAE accelerates national AI adoption across public and private sectors, Gracia Tech unites <strong style="color:#fff">Hamed’s elite institutional trust, network, and access across the Emirates</strong> with <strong style="color:#fff">Nagi’s deep technical expertise in proprietary global products and high-ticket product development services.</strong></p>'+
+    '<p style="color:var(--faint);margin-bottom:20px">To make this partnership a hyper-efficient commercial engine, our operational split is clear:</p>'+
+    '<div class="grid g2">'+
+      '<div class="card"><div class="eyebrow">Hamed’s Role</div><h3 class="bebas h-card">Strategic Network Access</h3><p>Providing targeted, high-level introductions to key decision-makers across our core UAE verticals, while authorizing internal showcase deployments across Gracia Group.</p><div class="note">Hamed does zero selling, zero pitching, and zero meeting attendance.</div></div>'+
+      '<div class="card hl"><div class="eyebrow y">Nagi’s Role</div><h3 class="bebas h-card">100% Commercial &amp; Technical Engine</h3><p>Leading all executive presentations, live product demos, conference stages, commercial negotiations, contract closings, AI engineering, and client delivery.</p></div>'+
+    '</div>',true);
+
+  html+=section('pillars','02','Our Core Pillars',
+    '<p class="kicker">Services first, products second.</p><div class="grid g2">'+PILLARS.map(function(p){
+      return '<div class="card" style="border-radius:24px;padding:28px"><div class="eyebrow y">'+esc(p.tag)+'</div><h3 class="bebas h-card">'+esc(p.name)+'</h3>'+
+        p.items.map(function(i){return '<div style="margin-top:20px"><div style="font-weight:700">'+esc(i[0])+'</div><p style="color:var(--muted);margin-top:4px">'+esc(i[1])+'</p></div>'}).join('')+
+        '<div class="model"><div class="eyebrow">Commercial Model</div><p>'+esc(p.model)+'</p></div></div>';
+    }).join('')+'</div>',true);
+
+  html+=section('academy','03','Deep Dive: Lamba Academy',
+    '<p class="kicker">Unlike traditional academic courses taught by theorists, <strong style="color:#fff">Lamba Academy</strong> is a practical, battle-tested venture-building program designed and led by Nagi. It distills <strong style="color:#fff">20+ years of building, scaling, and exiting companies in Silicon Valley and the Middle East</strong>, mentoring 300+ YC/StartX startups, and launching Google across 32 MENA countries into an actionable blueprint.</p>'+
+    '<p class="quote">Participants do not leave with theory—they leave with <strong>deployed AI products, real customer traction, and investor-ready ventures</strong> tailored to the realities of the GCC and global markets.</p>'+
+    '<h3 class="bebas" style="font-size:30px;line-height:1.05;margin:0 0 16px;font-weight:400">Flagship Topic &amp; Core Curriculum Modules</h3>'+
+    '<div class="grid">'+MODULES.map(function(m,i){
+      return fold(String(i+1).padStart(2,'0'),m[0],bullets(m[1]),{hl:!!m[2],open:!!m[2],badge:m[2]?'Flagship Track':''});
+    }).join('')+'</div>',true);
+
+  html+=section('verticals','04','Targeted Verticals & Introduction Requirements',
+    '<p class="kicker">To respect Hamed’s time and utilize his network with surgical precision, here are the exact verticals we are targeting from Month 1, the specific decision-makers we need introductions to, and what we deploy inside each organization.</p>'+
+    '<div class="grid">'+VERTICALS.map(function(v,i){
+      return fold((i+1)+'.',v[0],
+        '<div class="cols"><div><div class="eyebrow" style="margin-bottom:4px">Decision-makers for Hamed to introduce</div>'+bullets(v[1])+'</div>'+
+        '<div><div class="eyebrow" style="margin-bottom:4px">What we deploy &amp; monetize</div><p class="pa"><b>Pillar A · </b>'+esc(v[2])+'</p><p class="pa"><b>Pillar B · </b>'+esc(v[3])+'</p></div></div>',
+        {open:i===0});
+    }).join('')+'</div>',true);
+
+  html+=section('roadmap','05','12-Month Go-To-Market Execution Roadmap',
+    '<div class="grid">'+ROADMAP.map(function(q,i){
+      return fold(q[0],q[2],
+        '<div class="cols"><div><div class="sub">The Work We Do</div>'+bullets(q[4])+'</div><div class="rev"><div class="sub y">Revenue Closed</div>'+bullets(q[5])+'</div></div>',
+        {open:i===0,eyebrow:q[1]+' · '+q[3]});
+    }).join('')+'</div>',true);
+
+  html+=section('revenue','06','The Multi-Million Dollar Vision',
+    '<p class="kicker">Gracia Tech is engineered to be a dominant, multi-million dollar tech powerhouse in the Emirates. By pairing Hamed’s elite institutional network access with Nagi’s proven Silicon Valley expertise across both proprietary global products and elite development services, Gracia Tech captures revenue from every angle:</p>'+
+    '<div class="grid g3">'+REVENUE.map(function(r,i){
+      return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><span class="bebas y" style="font-size:48px;line-height:1">'+(i+1)+'</span><span class="tag">'+esc(r[0])+'</span></div><h3 style="margin-top:14px">'+esc(r[1])+'</h3><p>'+esc(r[2])+'</p></div>';
+    }).join('')+'</div>'+
+    '<p class="closing">With Hamed opening the right institutional doors and Nagi leading 100% of product execution, sales, and delivery, Gracia Tech is positioned to capture significant market share, generate multi-million dollar cash flows, and define the future of AI and tech innovation in the region.</p>',true);
+
+  document.getElementById('app').innerHTML=html;
+
+  // Expand / collapse all
+  document.querySelectorAll('[data-act]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var open=b.getAttribute('data-act')==='open';
+      document.querySelectorAll('details').forEach(function(d){d.open=open});
+      if(!open) window.scrollTo({top:0});
+      sendHeight();
+    });
+  });
+
+  // Auto-height for iframe embeds: parent page can listen for this message.
+  var last=0;
+  function sendHeight(){
+    var h=document.documentElement.scrollHeight;
+    if(h!==last && window.parent!==window){last=h;window.parent.postMessage({type:'gracia-embed-height',height:h},'*');}
+  }
+  window.addEventListener('load',sendHeight);
+  document.addEventListener('toggle',function(){setTimeout(sendHeight,0)},true);
+  if('ResizeObserver' in window) new ResizeObserver(sendHeight).observe(document.body);
+})();
+</script>
+</body>
+</html>
